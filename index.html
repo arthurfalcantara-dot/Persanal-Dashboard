@@ -1516,6 +1516,36 @@ button.c-tag:hover { background: var(--car-soft); color: var(--car-ink); }
 .c-seen svg { width: 14px; height: 14px; }
 .c-seen[disabled] { background: var(--car-soft); border-color: transparent; color: var(--car-ink); cursor: default; }
 
+/* vaga por link: entrada, fila e plano de tarefas */
+.c-intake-row { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+.c-intake-row .field { flex: 1 1 320px; min-width: 0; }
+.c-intake-row .field input { width: 100%; }
+.c-intake-more summary { cursor: pointer; font-size: 12.5px; color: var(--ink-2); font-weight: 500; }
+.c-intake-more[open] summary { margin-bottom: 8px; }
+.c-qitem { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; font-size: 13px; }
+.c-qitem .qu { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.c-qitem .qu b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-qitem .qu small { color: var(--muted); font-size: 12px; }
+.c-qitem .qu small.err { color: var(--bad); }
+.c-scout { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: 12.5px; color: var(--ink-2); padding: 8px 12px; border-radius: 10px; background: var(--car-soft); }
+.c-scout b { color: var(--car-ink); font-weight: 650; }
+.c-steps { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; counter-reset: st; }
+.c-steps li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; counter-increment: st; }
+.c-steps li:last-child { border-bottom: 0; }
+.c-steps li::before { content: counter(st); width: 20px; height: 20px; border-radius: 50%; background: var(--car-soft); color: var(--car-ink); font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.c-steps li b { font-weight: 600; }
+.c-steps li small { display: block; color: var(--muted); font-size: 12px; }
+.c-steps li .c-tag { align-self: center; }
+.c-ptasks { display: flex; flex-direction: column; gap: 6px; }
+.c-ptask { display: grid; grid-template-columns: 18px minmax(0, 1fr) 148px; gap: 4px 10px; align-items: start; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.c-ptask:has(input[type=checkbox]:not(:checked)) { opacity: .5; }
+.c-ptask input[type=checkbox] { width: 16px; height: 16px; margin-top: 7px; accent-color: var(--car); }
+.c-ptask .pn { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.c-ptask .pn input { width: 100%; border: 1px solid var(--line-strong); border-radius: 8px; padding: 5px 8px; background: var(--surface); }
+.c-ptask .pn small { color: var(--muted); font-size: 12px; }
+.c-ptask input[type=date] { width: 100%; border: 1px solid var(--line-strong); border-radius: 8px; padding: 5px 6px; background: var(--surface); }
+@media (max-width: 640px) { .c-ptask { grid-template-columns: 18px minmax(0, 1fr); } .c-ptask input[type=date] { grid-column: 2; } }
+
 /* modal da carreira */
 .c-modal-box { width: min(980px, 100%); gap: 16px; }
 .c-modal-box > .modal-head h3 { font: 650 19px/1.25 var(--display); margin: 0; min-width: 0; overflow-wrap: anywhere; }
@@ -2301,6 +2331,20 @@ button.c-tag:hover { background: var(--car-soft); color: var(--car-ink); }
             <div id="c-funnel" class="c-funnel"></div>
           </section>
         </div>
+        <section class="card c-ai-only" id="c-intake-card">
+          <div class="card-head"><div><h3 data-i="spark">Nova vaga por link</h3><p class="hint">Cole o link do anúncio. O Claude lê a vaga, identifica o contexto, as competências e as etapas do processo seletivo e transforma tudo em tarefas no Job Tasks, com datas contadas a partir do prazo. Você revisa antes de criar.</p></div></div>
+          <form id="c-intake" class="c-sec" autocomplete="off">
+            <div class="c-intake-row">
+              <label class="field" for="ci-url">Link da vaga<input id="ci-url" type="url" placeholder="https://www.linkedin.com/jobs/view/… ou careers.un.org/…"></label>
+              <button class="btn primary" type="submit" id="ci-go"><i class="ic" data-i="spark"></i>Ler e planejar</button>
+            </div>
+            <details class="c-intake-more"><summary>Colar o texto do anúncio (use se o link pedir login)</summary>
+              <textarea id="ci-text" class="c-ta" placeholder="Cole aqui o texto completo do anúncio."></textarea>
+            </details>
+            <p class="c-msg" id="ci-msg" hidden></p>
+          </form>
+          <div id="ci-queue" class="c-leads"></div>
+        </section>
         <section class="card">
           <div class="card-head">
             <div><h3 data-i="briefcase">Candidaturas</h3><p class="hint">Abra uma vaga para ver as tarefas, medir a aderência ao seu currículo e gerar CV e carta adaptados com o Claude.</p></div>
@@ -2314,6 +2358,7 @@ button.c-tag:hover { background: var(--car-soft); color: var(--car-ink); }
         <div class="grid-2 wide-left c-align-start">
           <section class="card">
             <div class="card-head"><div><h3 data-i="radar">Radar de vagas</h3><p class="hint">Vagas encontradas que ainda não entraram no Notion. Cole um anúncio para o Claude extrair cargo, organização e prazo; depois leve ao tracker ou arquive.</p></div></div>
+            <div id="c-scout" class="c-scout"></div>
             <div class="c-sec">
               <label class="field" for="c-lead-text">Anúncio da vaga (texto e link)
                 <textarea id="c-lead-text" class="c-ta" placeholder="Cole aqui o texto do anúncio, incluindo o link, se tiver."></textarea>
@@ -2386,12 +2431,12 @@ button.c-tag:hover { background: var(--car-soft); color: var(--car-ink); }
         </div>
         <section class="card c-ai-only">
           <div class="card-head">
-            <div><h3 data-i="spark">Importar com o Claude</h3><p class="hint">Cole o texto do seu CV ou do perfil do LinkedIn. O Claude separa experiências, formação, idiomas e certificações; você revisa antes de gravar.</p></div>
+            <div><h3 data-i="spark">Contar ao Claude</h3><p class="hint">Descreva com as suas palavras uma experiência, um projeto, um curso ou uma habilidade nova, ou cole um CV ou perfil do LinkedIn. O Claude escreve no formato do currículo (cargo, período, realizações com verbo de ação, competências) e você revisa antes de gravar.</p></div>
           </div>
-          <label class="field" for="c-import-text">Texto do currículo
-            <textarea id="c-import-text" class="c-ta" placeholder="Cole aqui o currículo completo."></textarea>
+          <label class="field" for="c-import-text">O que você fez
+            <textarea id="c-import-text" class="c-ta" placeholder="Ex.: Desde março de 2026 coordeno, no INCT-INEU, o monitoramento das posições dos EUA sobre o TPI. Montei o protocolo de coleta, treinei 3 bolsistas e já publicamos 2 sínteses. Também aprendi Power BI num curso da FGV em agosto."></textarea>
           </label>
-          <div class="c-actions"><button class="btn" id="c-import-go"><i class="ic" data-i="spark"></i>Interpretar</button><p class="c-msg" id="c-import-msg" hidden></p></div>
+          <div class="c-actions"><button class="btn" id="c-import-go"><i class="ic" data-i="spark"></i>Converter para o currículo</button><p class="c-msg" id="c-import-msg" hidden></p></div>
           <div id="c-import-out"></div>
         </section>
         <div class="c-cv-grid">
@@ -6145,7 +6190,7 @@ ${text}`;
     sub: "hunt", skv: "mapa", appFilter: "ativas", srcFilter: "todas", stFilter: "",
     apps: [], jtasks: [], employers: [], compRows: null, comps: [], devtasks: [], courses: [], skills: [],
     err: {}, fw: null, fwErr: null, fwLoading: false,
-    cfg: {}, cv: emptyCv(), stories: [], dossies: {}, leads: [], treinos: [],
+    cfg: {}, cv: emptyCv(), stories: [], dossies: {}, leads: [], treinos: [], fila: [], scout: null, fetchArg: undefined,
     dbReady: false, busy: new Set(), modal: null, buscaFilled: false,
   };
 
@@ -6267,6 +6312,23 @@ ${text}`;
     const url = p && Array.isArray(p.pages) && p.pages[0] ? p.pages[0].url : null;
     return { url, id: pageId(url) };
   }
+  // várias páginas na mesma base numa chamada só (as tarefas de um plano)
+  async function notionCreateMany(parent, pages) {
+    if (!C.mcp) throw { code: "no_mcp" };
+    const res = await C.mcp.callTool(NOTION, T_CREATE, { parent, pages }, { cache: false });
+    try { await C.mcp.invalidate(NOTION, T_QUERY); } catch { /* sem cache */ }
+    const p = payloadOf(res);
+    return p && Array.isArray(p.pages) ? p.pages.map(x => (x && x.url) || null) : [];
+  }
+  async function ensureEmployer(orgName) {
+    if (!orgName) return null;
+    const found = C.employers.find(e => normName(e.name) === normName(orgName));
+    if (found) return found;
+    const r = await notionCreate({ data_source_id: DS.employers }, { Name: orgName });
+    const emp = { id: r.id, url: r.url, name: orgName, link: "", area: "", apps: [] };
+    if (r.id) C.employers.push(emp);
+    return emp;
+  }
 
   // ---------- banco do painel (db) ----------
   const wq = new Map();
@@ -6293,6 +6355,9 @@ ${text}`;
     db.collection("carreira/vagas/dossies").limit(500).onSnapshot(q => { const m = {}; q.docs.forEach(d => { m[d.id] = d.data(); }); C.dossies = m; render(); }, fail);
     db.collection("carreira/radar/leads").limit(500).onSnapshot(q => { C.leads = q.docs.map(d => Object.assign({ id: d.id }, d.data())); render(); }, fail);
     db.collection("carreira/treino/tentativas").orderBy("data", "desc").limit(300).onSnapshot(q => { C.treinos = q.docs.map(d => Object.assign({ id: d.id }, d.data())); render(); refreshModal(); }, fail);
+    // fila de links que a rotina do app lê; resumo da varredura semanal
+    db.collection("carreira/fila/links").limit(200).onSnapshot(q => { C.fila = q.docs.map(d => Object.assign({ id: d.id }, d.data())); render(); }, fail);
+    db.doc("carreira/scout").onSnapshot(s => { C.scout = s.exists ? s.data() : null; render(); }, fail);
   }
   async function saveCfg(patch) {
     if (!needDb()) return false;
@@ -6579,7 +6644,7 @@ ${text}`;
       kpi("chat", "Entrevistas", apps.filter(a => a.status === "Interview").length, "Etapa Interview no tracker") +
       kpi("check", "Concluídas", done.length, done.length ? `${resCount} com resultado anotado` : "Nenhuma concluída") +
       kpi("tasks", "Tarefas abertas", openT.length, lateT.length ? `<span class="c-bad">${plural(lateT.length, "atrasada", "atrasadas")}</span>` : "Nenhuma atrasada");
-    renderAgenda(); renderFunnel(); renderBoard(); renderLeads(); fillBusca(); renderLinks(); renderSources();
+    renderAgenda(); renderFunnel(); renderIntake(); renderBoard(); renderScout(); renderLeads(); fillBusca(); renderLinks(); renderSources();
   }
   function renderAgenda() {
     const items = agendaItems();
@@ -6629,7 +6694,7 @@ ${text}`;
       return `<div class="c-lead"><div class="lt"><b>${esc(l.titulo || "(sem título)")}</b>${l.prazo ? `<span class="c-mini ${k < 0 ? "c-bad" : k <= 7 ? "c-warn" : ""}">prazo ${ddmm(l.prazo)}</span>` : ""}</div>
         <div class="lm">${[l.organizacao, l.local, l.nivel, l.fonte].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join("")}${safeUrl(l.link) ? `<a class="c-link" href="${esc(l.link)}" target="_blank" rel="noopener"><i class="ic" data-i="ext"></i>Anúncio</a>` : ""}</div>
         ${l.resumo ? `<p>${esc(l.resumo)}</p>` : ""}
-        <div class="c-row-actions"><button class="btn" data-lead-promote="${l.id}">Levar ao Notion</button><button class="btn ghost" data-lead-edit="${l.id}">Editar</button><button class="btn ghost" data-lead-archive="${l.id}">Arquivar</button></div></div>`;
+        <div class="c-row-actions"><button class="btn c-ai-only" data-lead-plan="${l.id}"><i class="ic" data-i="spark"></i>Planejar tarefas</button><button class="btn" data-lead-promote="${l.id}">Levar ao Notion</button><button class="btn ghost" data-lead-edit="${l.id}">Editar</button><button class="btn ghost" data-lead-archive="${l.id}">Arquivar</button></div></div>`;
     }).join("");
   }
   function fillBusca() {
@@ -6678,7 +6743,8 @@ ${text}`;
       const n = e.apps.length || C.apps.filter(a => a.employers.includes(e.id)).length;
       return { id: "e-" + e.id, nome: e.name, url: e.link, notion: e.url, sub: [e.area, n ? plural(n, "candidatura", "candidaturas") : "sem candidatura"].filter(Boolean).join(" · "), kind: "Empregador" };
     }));
-    rows.forEach(r => { r.last = seen[r.id] || null; r.age = r.last ? daysBetween(r.last, todayISO) : Infinity; });
+    const sv = C.scout?.vistos || {}; // fontes que a varredura semanal conferiu
+    rows.forEach(r => { const a = seen[r.id] || null, b = sv[r.id] || null; r.last = a && b ? (a > b ? a : b) : (a || b); r.age = r.last ? daysBetween(r.last, todayISO) : Infinity; });
     rows = rows.sort((a, b) => (b.age - a.age) || a.nome.localeCompare(b.nome));
     if (!rows.length) { $("c-sources").innerHTML = `<p class="empty">Nenhum empregador lido do Notion ainda.</p>`; return; }
     const LIMIT = 12, shown = C.srcAll ? rows : rows.slice(0, LIMIT);
@@ -6860,12 +6926,15 @@ ${text}`;
       <div class="c-grid2">
         <div class="c-box"><h4><i class="ic" data-i="tasks"></i>Tarefas</h4><div id="cm-tasks" class="tasklist"></div>
           <form class="inline-form" id="cm-task-form" data-app="${a.id}"><label class="field" for="cm-task-name" style="flex:1;min-width:150px">Nova tarefa<input id="cm-task-name" type="text" placeholder="Ex.: revisar a carta"></label><label class="field" for="cm-task-date">Data<input id="cm-task-date" type="date"></label><button class="btn" type="submit">Adicionar</button></form>
-          <p class="c-msg" id="cm-task-msg" hidden></p></div>
+          <p class="c-msg" id="cm-task-msg" hidden></p>
+          <div class="c-actions c-ai-only"><button class="btn" data-plan-app="${a.id}"><i class="ic" data-i="spark"></i>Gerar tarefas com o Claude</button><span class="c-note">Lê a descrição abaixo ou o link do anúncio.</span></div>
+          <p class="c-msg" id="cm-plan-msg" hidden></p></div>
         <div class="c-box"><h4><i class="ic" data-i="flag"></i>Andamento</h4>
           <label class="field" for="cm-res">Resultado do processo<select id="cm-res" data-app-res="${a.id}">${RESULTADOS.map(r => `<option value="${esc(r)}"${(d.resultado || "") === r ? " selected" : ""}>${r || "Ainda sem resultado"}</option>`).join("")}</select></label>
           <label class="field" for="cm-notas">Notas (contatos, recrutador, próximos passos)<textarea id="cm-notas" data-app-notas="${a.id}" rows="4">${esc(d.notas || "")}</textarea></label>
           <p class="c-note">Resultado e notas ficam no banco do painel; a etapa vai para o Notion.</p></div>
       </div>
+      ${d.plano?.etapas?.length ? `<div class="c-box"><h4><i class="ic" data-i="flag"></i>Etapas do processo seletivo</h4>${d.plano.contexto ? `<p class="c-note">${esc(d.plano.contexto)}</p>` : ""}${stepsHtml(d.plano.etapas)}</div>` : ""}
       <div class="c-box"><h4><i class="ic" data-i="file"></i>Descrição da vaga</h4>
         <label class="field" for="cm-jd">Cole o texto completo do anúncio (responsabilidades, requisitos e competências)<textarea id="cm-jd" class="c-ta tall" data-app-jd="${a.id}">${esc(d.jd || "")}</textarea></label>
         <div class="c-actions"><button class="btn c-ai-only" id="cm-analyze" data-analyze="${a.id}"><i class="ic" data-i="spark"></i>Analisar aderência</button><span class="c-note">O Claude compara o anúncio com o seu currículo e o banco de histórias.</span></div>
@@ -7033,12 +7102,7 @@ ${ctx}`;
     if (!C.mcp) { showMsg(msg, errCopy({ code: "no_mcp" })); return; }
     btn.disabled = true; btn.textContent = "Criando…"; showMsg(msg, "");
     try {
-      let emp = orgName ? C.employers.find(e => normName(e.name) === normName(orgName)) : null;
-      if (orgName && !emp) {
-        const r = await notionCreate({ data_source_id: DS.employers }, { Name: orgName });
-        emp = { id: r.id, url: r.url, name: orgName, link: "", area: "", apps: [] };
-        if (r.id) C.employers.push(emp);
-      }
+      const emp = await ensureEmployer(orgName);
       const props = { Name: name, Status: status };
       if (date) { props["date:Date:start"] = date; props["date:Date:is_datetime"] = 0; }
       if (platform) props["Job Platform"] = platform;
@@ -7105,6 +7169,257 @@ ${text.slice(0, 20000)}`, { modelTier: "quick" });
       const data = { titulo: String(out.titulo).slice(0, 200), organizacao: String(out.organizacao || ""), local: [out.local, out.modalidade].filter(Boolean).join(" · "), nivel: String(out.nivel || ""), prazo, link: safeUrl(out.link) || safeUrl(linkInText), fonte: "", resumo: String(out.resumo || ""), requisitos: (out.requisitos || []).map(String).slice(0, 10), idiomas: (out.idiomas || []).map(String), texto: text.slice(0, 30000), status: "novo", criado: new Date().toISOString() };
       if (await saveDoc("carreira/radar/leads/" + uid(), data)) { $("c-lead-text").value = ""; showMsg(msg, `“${data.titulo}” entrou no radar.`, true); }
     });
+  }
+
+  // ----- vaga por link → plano de tarefas -----
+  // Leitura do link: primeiro um conector de leitura web do claude.ai (se estiver conectado);
+  // sem ele, o link entra na fila carreira/fila/links e a rotina agendada do app lê a página.
+  const FETCH = { server: "Parallel Search", tool: "web_fetch" };
+  const normUrl = u => String(u || "").trim().replace(/#.*$/, "").replace(/\/+$/, "").toLowerCase();
+  const sameUrl = (a, b) => !!a && !!b && normUrl(a) === normUrl(b);
+  async function fetchViaConnector(url) {
+    const mcp = C.mcp || await window.claude?.use?.("mcp");
+    if (!mcp || !safeUrl(url)) return null;
+    C.mcp = mcp;
+    if (C.fetchArg === undefined) {
+      // o nome do argumento vem do esquema da ferramenta, lido na hora
+      try {
+        const d = await mcp.describeTool(FETCH.server, FETCH.tool);
+        const s = d && d.inputSchema, props = (s && s.properties) || {};
+        const key = Object.keys(props).find(k => /url/i.test(k)) || null;
+        const extra = (Array.isArray(s?.required) ? s.required : []).filter(k => k !== key);
+        C.fetchArg = key && !extra.length ? { key, list: props[key]?.type === "array" } : null;
+      } catch { C.fetchArg = null; }
+    }
+    if (!C.fetchArg) return null;
+    try {
+      const r = await mcp.callTool(FETCH.server, FETCH.tool, { [C.fetchArg.key]: C.fetchArg.list ? [url] : url }, { cache: false });
+      let text = (r?.content || []).filter(b => b && b.type === "text").map(b => b.text).join("\n\n").trim();
+      if (!text && r?.payload) text = typeof r.payload === "string" ? r.payload : JSON.stringify(r.payload);
+      return text && text.length >= 200 ? text.slice(0, 30000) : null;
+    } catch { return null; }
+  }
+  function stepsHtml(etapas) {
+    return `<ol class="c-steps">${(etapas || []).map(e => `<li><span><b>${esc(e.nome)}</b>${e.descricao ? `<small>${esc(e.descricao)}</small>` : ""}</span><span class="c-tag${e.fonte === "anúncio" ? " on" : ""}">${e.data ? ddmm(e.data) + " · " : ""}${e.fonte === "anúncio" ? "no anúncio" : "provável"}</span></li>`).join("")}</ol>`;
+  }
+  function planPrompt(src, app) {
+    return `Você é um recrutador experiente em organizações internacionais (sistema ONU, ONGs, organismos multilaterais, governo e think tanks) e um coach de carreira. Leia o ANÚNCIO e transforme a vaga num plano de ação para o candidato.
+${RULE}
+Hoje é ${todayISO}.
+Responda somente com um objeto JSON neste formato:
+{"titulo": string, "organizacao": string, "local": string, "nivel": string, "prazo": "AAAA-MM-DD" ou null, "plataforma": string, "resumo": string, "contexto": string, "competencias": [{"key": string, "motivo": string}], "requisitos": [{"item": string, "tipo": "obrigatório" ou "desejável", "atende": "sim" ou "parcial" ou "não", "evidencia": string}], "lacunas": [{"lacuna": string, "acao": string}], "palavrasChave": [string], "etapas": [{"nome": string, "fonte": "anúncio" ou "provável", "data": "AAAA-MM-DD" ou null, "descricao": string}], "tarefas": [{"nome": string, "etapa": string, "data": "AAAA-MM-DD" ou null, "competencia": string ou null, "detalhe": string}]}
+- "prazo": a data limite de candidatura escrita no anúncio; null se não houver. Não deduza.
+- "nivel": nível ou tipo de contrato (Intern, P-2, NO-A, Consultant, Analista…); "" se o anúncio não disser.
+- "plataforma": onde se candidatar (Inspira, Workday, LinkedIn, e-mail, formulário próprio…), conforme o anúncio ou o link.
+- "resumo": 2 frases em português sobre a aderência, com o ponto mais forte e a maior lacuna.
+- "contexto": 2 a 4 frases em português sobre o mandato da organização e da equipe e o que a pessoa vai fazer, só com o que o anúncio diz.
+- "competencias": de 3 a 6, usando apenas chaves da lista COMPETÊNCIAS; "motivo" cita o trecho do anúncio.
+- "requisitos": de 5 a 12 itens que o anúncio pede, comparados com o CURRÍCULO; "evidencia" diz onde aparece no currículo ou o que falta. "lacunas": até 5, com ação realista. "palavrasChave": até 12 termos do anúncio.
+- "etapas": o processo seletivo, em ordem. "anúncio" para etapas escritas no texto; complete com etapas "provável" típicas desse tipo de organização e nível (no sistema ONU, por exemplo: triagem, teste escrito ou técnico, entrevista por competências, checagem de referências, oferta), dizendo na descrição que é uma expectativa.
+- "tarefas": de 6 a 12 tarefas concretas, cada uma começando com verbo no infinitivo, em até 90 caracteres, ligadas a uma etapa pelo nome. Cubra o que se aplicar: pesquisar a organização e a equipe; adaptar o CV às palavras-chave; escrever a carta ou as respostas do formulário; preencher o perfil na plataforma (ex.: Inspira, P11/PHP); reunir documentos (diplomas, certificado de idioma, referências); preparar o teste técnico no tema da vaga; preparar histórias CAR para as competências principais (uma tarefa por competência, com "competencia" preenchida com a chave); fechar lacunas que dê para fechar antes do prazo; enviar a candidatura.
+- Datas: tarefas da candidatura vão de hoje até 1 dia antes do prazo, em ordem lógica (pesquisa e CV primeiro, envio por último), nunca antes de hoje; sem prazo, distribua nas próximas 2 semanas. Tarefas de etapas posteriores (teste, entrevista) ficam com "data": null, salvo se o anúncio der a data.
+- "detalhe": uma frase dizendo o que fazer e por quê, citando o anúncio.
+
+COMPETÊNCIAS (chave — nome — grupo):
+${compCatalog()}
+
+PERFIL DE BUSCA DO CANDIDATO:
+${buscaText()}
+${app ? `\nA VAGA JÁ ESTÁ NO TRACKER COMO: ${app.name}${appOrgText(app) ? " — " + appOrgText(app) : ""}${app.date ? ` (data registrada ${app.date})` : ""}\n` : ""}
+LINK: ${src.url || "(não informado)"}
+ANÚNCIO:
+${String(src.text).slice(0, 20000)}
+
+CURRÍCULO:
+${cvText(12000) || "(currículo vazio)"}`;
+  }
+  function normPlan(out) {
+    const d = s => /^\d{4}-\d{2}-\d{2}$/.test(s || "") ? s : null;
+    const list = v => Array.isArray(v) ? v : [];
+    return {
+      titulo: String(out.titulo || "").slice(0, 200) || "(vaga sem título)", organizacao: String(out.organizacao || "").slice(0, 200), local: String(out.local || ""), nivel: String(out.nivel || ""),
+      prazo: d(out.prazo), plataforma: String(out.plataforma || ""), resumo: String(out.resumo || ""), contexto: String(out.contexto || ""),
+      competencias: list(out.competencias).filter(c => c && compBy(String(c.key))).map(c => ({ key: String(c.key), motivo: String(c.motivo || "") })).slice(0, 8),
+      requisitos: list(out.requisitos).filter(r => r && r.item).map(r => ({ item: String(r.item), tipo: String(r.tipo || ""), atende: ["sim", "parcial", "não", "nao"].includes(r.atende) ? (r.atende === "nao" ? "não" : r.atende) : "não", evidencia: String(r.evidencia || "") })).slice(0, 14),
+      lacunas: list(out.lacunas).filter(l => l && l.lacuna).map(l => ({ lacuna: String(l.lacuna), acao: String(l.acao || "") })).slice(0, 6),
+      palavrasChave: list(out.palavrasChave).map(String).slice(0, 14),
+      etapas: list(out.etapas).filter(e => e && e.nome).slice(0, 8).map(e => ({ nome: String(e.nome), fonte: /an[uú]ncio/i.test(e.fonte || "") ? "anúncio" : "provável", data: d(e.data), descricao: String(e.descricao || "") })),
+      tarefas: list(out.tarefas).filter(t => t && t.nome).slice(0, 14).map(t => {
+        let data = d(t.data);
+        if (data && data < todayISO) data = todayISO;
+        return { nome: String(t.nome).slice(0, 140), etapa: String(t.etapa || ""), data, competencia: t.competencia && compBy(String(t.competencia)) ? String(t.competencia) : null, detalhe: String(t.detalhe || "") };
+      }),
+    };
+  }
+  async function planFrom(src, btn, msg) {
+    let ok = false;
+    await withClaude(btn, msg, async sample => {
+      if (msg) showMsg(msg, "O Claude está lendo a vaga e o seu currículo. Isso leva de 20 a 60 segundos.", true);
+      const out = await sample.json(planPrompt(src, src.appId ? appBy(src.appId) : null));
+      if (!out || typeof out !== "object" || Array.isArray(out)) throw { code: "invalid_json" };
+      const plan = normPlan(out);
+      if (!plan.tarefas.length) throw { code: "empty_completion" };
+      if (msg) showMsg(msg, "");
+      openPlan(plan, src); ok = true;
+    });
+    return ok;
+  }
+  function openPlan(plan, src) {
+    const app = src.appId ? appBy(src.appId) : null;
+    const sub = [plan.organizacao, plan.local, plan.nivel, plan.prazo ? `Prazo ${ddmm(plan.prazo)}/${plan.prazo.slice(0, 4)}` : "Sem prazo no anúncio", plan.plataforma].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join("")
+      + (src.url ? `<a class="c-link" href="${esc(src.url)}" target="_blank" rel="noopener"><i class="ic" data-i="ext"></i>Anúncio</a>` : "");
+    const sc = scoreOf(plan);
+    const rows = plan.tarefas.map((t, i) => `<div class="c-ptask"><input type="checkbox" data-pt-on="${i}" checked aria-label="Incluir a tarefa ${i + 1}"><span class="pn"><input data-pt-name="${i}" value="${esc(t.nome)}" aria-label="Nome da tarefa ${i + 1}"><small>${esc([t.etapa, t.competencia ? compName(t.competencia) : "", t.detalhe].filter(Boolean).join(" · "))}</small></span><input type="date" data-pt-date="${i}" value="${esc(t.data || "")}" aria-label="Data da tarefa ${i + 1}"></div>`).join("");
+    openModal(mhead(app ? "Tarefas para " + app.name : plan.titulo, sub) + `
+      <div class="c-grid2">
+        <div class="c-ai">
+          <div class="c-score"><b>${sc === null ? "—" : sc + "%"}</b><span>aderência aos requisitos</span><span class="c-claude"><i class="ic" data-i="spark"></i>Claude</span></div>
+          ${plan.resumo ? `<p>${esc(plan.resumo)}</p>` : ""}
+          ${plan.contexto ? `<h5>Contexto da vaga</h5><p>${esc(plan.contexto)}</p>` : ""}
+          ${plan.competencias.length ? `<h5>Competências que a vaga pede</h5><div class="c-tags">${plan.competencias.map(c => `<span class="c-tag" title="${esc(c.motivo)}">${esc(compName(c.key))} · ${evidenceOf(c.key) === null ? "sem história" : "evidência " + (evidenceOf(c.key) || "NE")}</span>`).join("")}</div>` : ""}
+          ${plan.lacunas.length ? `<h5>Lacunas</h5><ul>${plan.lacunas.map(l => `<li><b>${esc(l.lacuna)}</b>${l.acao ? ` — ${esc(l.acao)}` : ""}</li>`).join("")}</ul>` : ""}
+        </div>
+        <div class="c-box"><h4><i class="ic" data-i="flag"></i>Etapas do processo seletivo</h4>${plan.etapas.length ? stepsHtml(plan.etapas) : `<p class="empty">O anúncio não descreve as etapas.</p>`}</div>
+      </div>
+      <div class="c-box"><h4><i class="ic" data-i="tasks"></i>Tarefas para o Job Tasks</h4>
+        <p class="c-note">Desmarque o que não quiser e ajuste nomes e datas. Etapa, competência e o porquê vão no corpo de cada tarefa no Notion.</p>
+        <div class="c-ptasks">${rows}</div></div>
+      ${app ? "" : `<div class="c-box"><h4><i class="ic" data-i="briefcase"></i>Candidatura no Job Application Tracker</h4>
+        <div class="c-fields">
+          <label class="field wide" for="pt-name">Nome no tracker<input id="pt-name" value="${esc(plan.organizacao ? `${plan.titulo} — ${plan.organizacao}` : plan.titulo)}"></label>
+          <label class="field" for="pt-org">Empregador<input id="pt-org" list="pt-orgs" value="${esc(plan.organizacao)}"><datalist id="pt-orgs">${C.employers.map(e => `<option value="${esc(e.name)}"></option>`).join("")}</datalist></label>
+          <label class="field" for="pt-prazo">Prazo<input id="pt-prazo" type="date" value="${esc(plan.prazo || "")}"></label>
+          <label class="field" for="pt-plat">Plataforma<input id="pt-plat" value="${esc(plan.plataforma)}"></label>
+        </div><p class="c-note">Entra como Não aplicada; um empregador novo também é criado na base Employers.</p></div>`}
+      <div class="c-actions"><button class="btn primary" id="cp-create">${app ? "Criar tarefas no Notion" : "Criar candidatura e tarefas no Notion"}</button><p class="c-msg" id="cp-msg" hidden></p><span class="c-note">Nada vai para o Notion antes deste clique.</span></div>`, { type: "plan", plan, src });
+  }
+  async function createPlan(btn) {
+    const m = C.modal;
+    if (!m || m.type !== "plan") return;
+    const { plan, src } = m, msg = $("cp-msg");
+    if (!C.mcp) { showMsg(msg, errCopy({ code: "no_mcp" })); return; }
+    const picked = plan.tarefas.map((t, i) => ({ t, on: !!document.querySelector(`[data-pt-on="${i}"]`)?.checked, nome: (document.querySelector(`[data-pt-name="${i}"]`)?.value || "").trim(), data: document.querySelector(`[data-pt-date="${i}"]`)?.value || "" })).filter(x => x.on && x.nome);
+    if (!picked.length) { showMsg(msg, "Marque ao menos uma tarefa."); return; }
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = "Criando…"; showMsg(msg, "");
+    try {
+      let app = src.appId ? appBy(src.appId) : null;
+      if (!app) {
+        const name = $("pt-name").value.trim() || plan.titulo, orgName = $("pt-org").value.trim(), date = $("pt-prazo").value, platform = $("pt-plat").value.trim();
+        const emp = await ensureEmployer(orgName);
+        const props = { Name: name, Status: "Not Applied" };
+        if (date) { props["date:Date:start"] = date; props["date:Date:is_datetime"] = 0; }
+        if (platform) props["Job Platform"] = platform;
+        if (safeUrl(src.url)) props["userDefined:URL"] = src.url;
+        if (emp && emp.url) props.Employer = [emp.url];
+        const r = await notionCreate({ data_source_id: DS.apps }, props);
+        if (!r.id) throw { code: "tool_error", message: "o Notion não devolveu o endereço da candidatura criada" };
+        app = { id: r.id, url: r.url, name, status: "Not Applied", date: date || null, link: safeUrl(src.url), platform, employers: emp && emp.id ? [emp.id] : [] };
+        C.apps.push(app);
+        src.appId = app.id; // se as tarefas falharem, tentar de novo não duplica a candidatura
+      }
+      const pages = picked.map(({ t, nome, data }) => {
+        const properties = { Name: nome, Status: "Not started", "Job Application Tracker": [app.url] };
+        if (data) { properties["date:Due Date:start"] = data; properties["date:Due Date:is_datetime"] = 0; }
+        const body = [];
+        if (t.etapa) body.push(`**Etapa:** ${t.etapa}`);
+        if (t.competencia) body.push(`**Competência:** ${compName(t.competencia)}`);
+        if (t.detalhe) body.push(t.detalhe);
+        body.push("_Criada pelo painel a partir do anúncio da vaga._");
+        return { properties, content: body.join("\n\n") };
+      });
+      const urls = await notionCreateMany({ data_source_id: DS.jtasks }, pages);
+      picked.forEach((x, i) => { const id = pageId(urls[i]); if (id) C.jtasks.push({ id, url: urls[i], name: x.nome, status: "Not started", done: false, due: x.data || null, apps: [app.id] }); });
+      const now = new Date().toISOString();
+      const analise = { nivel: plan.nivel, resumo: plan.resumo, requisitos: plan.requisitos, competencias: plan.competencias, lacunas: plan.lacunas, perguntas: C.dossies[app.id]?.analise?.perguntas || [], palavrasChave: plan.palavrasChave, data: now };
+      await saveDossie(app.id, { jd: String(src.text).slice(0, 30000), analise, plano: { contexto: plan.contexto, etapas: plan.etapas, link: safeUrl(src.url), tarefas: picked.length, data: now } });
+      const fila = src.filaId ? C.fila.find(f => f.id === src.filaId) : C.fila.find(f => f.status !== "feito" && sameUrl(f.url, src.url));
+      if (fila) await markFila(fila.id, { status: "feito", appUrl: app.url });
+      const leadId = src.leadId || fila?.leadId;
+      const l = leadId ? C.leads.find(x => x.id === leadId) : null;
+      if (l) { const upd = Object.assign({}, l, { status: "no-notion", appUrl: app.url }); delete upd.id; await saveDoc("carreira/radar/leads/" + l.id, upd); }
+      writeCache(); closeModal(); render();
+      toast(`${plural(picked.length, "tarefa criada", "tarefas criadas")} no Job Tasks`);
+      setTimeout(() => load(true), 1500);
+    } catch (e) { showMsg(msg, writeErr(e)); }
+    finally { if (btn.isConnected) { btn.disabled = false; btn.textContent = label; } }
+  }
+  function markFila(id, patch) {
+    const f = C.fila.find(x => x.id === id);
+    const d = Object.assign({}, f || {}, patch);
+    delete d.id;
+    return saveDoc("carreira/fila/links/" + id, d);
+  }
+  async function submitIntake() {
+    const raw = $("ci-url").value.trim(), url = safeUrl(raw), pasted = $("ci-text").value.trim(), msg = $("ci-msg"), btn = $("ci-go");
+    if (raw && !url) { showMsg(msg, "O link precisa começar com http:// ou https://."); return; }
+    if (!url && pasted.length < 200) { showMsg(msg, "Cole o link da vaga ou, se ele pedir login, o texto completo do anúncio."); return; }
+    const dup = url ? C.apps.find(a => sameUrl(a.link, url)) : null;
+    if (dup && pasted.length < 200) { showMsg(msg, `Esta vaga já está no tracker como “${dup.name}”. Abra-a e use Gerar tarefas com o Claude.`); return; }
+    let text = pasted.length >= 200 ? pasted : null;
+    if (!text) {
+      btn.disabled = true; showMsg(msg, "Lendo o link…", true);
+      try { text = await fetchViaConnector(url); } finally { btn.disabled = false; }
+    }
+    if (!text) {
+      if (!needDb()) { showMsg(msg, ""); return; }
+      if (C.fila.some(f => f.status !== "feito" && f.status !== "descartado" && sameUrl(f.url, url))) { showMsg(msg, "Este link já está na fila abaixo."); return; }
+      if (await saveDoc("carreira/fila/links/" + uid(), { url, status: "pendente", criado: new Date().toISOString() })) {
+        $("ci-url").value = "";
+        showMsg(msg, "Não dá para ler o link daqui, então ele entrou na fila. A rotina do app do Claude abre a página em até 2 horas; quando aparecer como pronta, clique em Planejar tarefas. Com pressa, cole o texto do anúncio.", true);
+      } else showMsg(msg, "");
+      return;
+    }
+    const filaId = url ? C.fila.find(f => f.status !== "feito" && sameUrl(f.url, url))?.id : undefined;
+    if (await planFrom({ text, url, filaId, appId: dup?.id }, btn, msg)) { $("ci-url").value = ""; $("ci-text").value = ""; }
+  }
+  async function planLead(l, btn) {
+    const msg = $("c-lead-msg");
+    let text = l.texto && l.texto.length >= 200 ? l.texto : null;
+    if (!text && safeUrl(l.link)) { showMsg(msg, "Lendo o link…", true); text = await fetchViaConnector(l.link); }
+    if (!text) {
+      if (!safeUrl(l.link)) { showMsg(msg, "Esta vaga não tem texto nem link. Use Editar e cole o anúncio."); return; }
+      if (C.fila.some(f => f.status !== "feito" && f.status !== "descartado" && sameUrl(f.url, l.link))) { showMsg(msg, "O link desta vaga já está na fila de Nova vaga por link."); return; }
+      if (await saveDoc("carreira/fila/links/" + uid(), { url: l.link, status: "pendente", criado: new Date().toISOString(), leadId: l.id, titulo: l.titulo || "" })) showMsg(msg, `“${l.titulo || "Vaga"}” entrou na fila de links: quando a rotina ler a página, planeje em Nova vaga por link.`, true);
+      return;
+    }
+    showMsg(msg, "");
+    await planFrom({ text, url: safeUrl(l.link), leadId: l.id }, btn, msg);
+  }
+  async function planApp(a, btn) {
+    const msg = $("cm-plan-msg");
+    let text = ($("cm-jd")?.value || C.dossies[a.id]?.jd || "").trim();
+    if (text.length < 200 && a.link) { showMsg(msg, "Lendo o link…", true); text = (await fetchViaConnector(a.link)) || ""; }
+    if (text.length < 200) { showMsg(msg, a.link ? "Não consegui ler o link daqui. Cole o texto do anúncio em Descrição da vaga, abaixo, e tente de novo." : "Cole o texto do anúncio em Descrição da vaga, abaixo, e tente de novo."); return; }
+    showMsg(msg, "");
+    await planFrom({ text, url: a.link || "", appId: a.id }, btn, msg);
+  }
+  function renderIntake() {
+    const el = $("ci-queue");
+    if (!el) return;
+    const list = C.fila.filter(f => f.status !== "feito" && f.status !== "descartado").sort((a, b) => String(b.criado || "").localeCompare(String(a.criado || "")));
+    el.hidden = !list.length;
+    if (!list.length) { el.innerHTML = ""; return; }
+    const host = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
+    el.innerHTML = `<p class="c-label">Fila de links · ${list.length}</p>` + list.map(f => {
+      const st = f.status === "lido" ? `<small>Pronta para planejar${f.lidoEm ? " · lida " + sinceLabel(String(f.lidoEm).slice(0, 10)) : ""}</small>`
+        : f.status === "erro" ? `<small class="err">${esc(f.motivo || "A rotina não conseguiu ler a página.")} Cole o texto do anúncio.</small>`
+        : `<small>Aguardando a rotina do app (a cada 2 horas, das 8h às 22h)</small>`;
+      return `<div class="c-qitem"><span class="qu"><b>${esc(f.titulo || host(f.url) || f.url)}</b><a class="c-link" href="${esc(safeUrl(f.url))}" target="_blank" rel="noopener"><i class="ic" data-i="ext"></i>${esc(host(f.url) || "Abrir")}</a>${st}</span><span class="c-row-actions">${f.status === "lido" ? `<button class="btn c-ai-only" data-q-plan="${esc(f.id)}"><i class="ic" data-i="spark"></i>Planejar tarefas</button>` : ""}${f.status === "erro" ? `<button class="btn" data-q-paste="${esc(f.id)}">Colar texto</button>` : ""}<button class="btn ghost" data-q-del="${esc(f.id)}">Descartar</button></span></div>`;
+    }).join("");
+  }
+  function nextScout() {
+    const d = new Date(); let add = (3 - d.getDay() + 7) % 7;
+    if (add === 0 && d.getHours() >= 13) add = 7;
+    d.setDate(d.getDate() + add);
+    return add === 0 ? "hoje às 12h" : `qua ${ddmm(iso(d))} às 12h`;
+  }
+  function renderScout() {
+    const el = $("c-scout");
+    if (!el) return;
+    const s = C.scout;
+    if (!s || !s.ultima) { el.innerHTML = `<span><b>Varredura semanal</b> toda quarta às 12h: empregadores do Notion, portais e alertas do LinkedIn no Gmail.</span><span>Primeira ${nextScout()}, com o app do Claude aberto.</span>`; return; }
+    el.innerHTML = `<span><b>Varredura semanal</b> · última em ${ddmm(String(s.ultima).slice(0, 10))}: ${plural(Number(s.novas) || 0, "vaga nova", "vagas novas")}, ${plural(Number(s.empregadores) || 0, "empregador conferido", "empregadores conferidos")}${s.linkedin ? `, ${plural(Number(s.linkedin), "do LinkedIn", "do LinkedIn")}` : ""}.</span><span>Próxima ${nextScout()}.</span>${s.resumo ? `<span class="c-mini">${esc(s.resumo)}</span>` : ""}`;
   }
 
   // ----- currículo: editores -----
@@ -7193,20 +7508,34 @@ ${text.slice(0, 20000)}`, { modelTier: "quick" });
   }
   async function importCv(btn) {
     const text = $("c-import-text").value.trim(), msg = $("c-import-msg");
-    if (text.length < 120) { showMsg(msg, "Cole o texto completo do currículo."); return; }
+    if (text.length < 40) { showMsg(msg, "Descreva um pouco mais: o que fez, onde, quando e com que resultado."); return; }
+    const known = (C.cv.experiencias || []).map(e => `- ${e.cargo} | ${e.org} (${e.inicio || "?"} – ${e.atual ? "atual" : e.fim || "?"})`).join("\n") || "(nenhuma)";
     await withClaude(btn, msg, async sample => {
-      const out = await sample.json(`Converta o currículo abaixo para JSON, sem inventar nada. Responda somente com JSON neste formato:
-{"perfil": {"nome": string, "titulo": string, "resumo": string, "local": string, "email": string, "linkedin": string, "site": string}, "experiencias": [{"cargo": string, "org": string, "local": string, "tipo": "Emprego" | "Estágio" | "Voluntariado" | "Consultoria" | "Pesquisa" | "Bolsa", "inicio": "AAAA-MM", "fim": "AAAA-MM" ou "", "atual": boolean, "dedicacao": number, "realizacoes": [string]}], "educacao": [{"nivel": "Ensino médio" | "Técnico" | "Graduação" | "Especialização" | "Mestrado" | "Doutorado" | "Pós-doutorado", "curso": string, "instituicao": string, "inicio": "AAAA-MM" ou "", "fim": "AAAA-MM" ou "", "status": "Concluído" | "Em curso" | "Interrompido", "tese": string}], "idiomas": [{"idioma": string, "nivel": "Nativo" | "C2" | "C1" | "B2" | "B1" | "A2" | "A1" | "", "certificado": string}], "certificacoes": [{"nome": string, "instituicao": string, "data": "AAAA-MM" ou "", "link": string}], "habilidades": [string], "publicacoes": [{"titulo": string, "veiculo": string, "ano": string, "link": string, "tipo": string}]}
-- Use "" quando o dado não existir. "dedicacao": 100 para tempo integral, 50 para meio período; 100 se não informado.
-- Mantenha o idioma original das realizações. Não converta níveis de idioma que não estejam explícitos (deixe "").
-- Datas só com ano: use o mês 01 e não invente meses.
-CURRÍCULO:
+      const out = await sample.json(`Você é um redator de currículos para organizações internacionais. O TEXTO abaixo pode ser um currículo, um perfil do LinkedIn ou uma descrição livre, em linguagem informal, de experiências, projetos, cursos e habilidades. Converta-o para o formato do currículo.
+${RULE}
+Responda somente com JSON neste formato:
+{"perfil": {"nome": string, "titulo": string, "resumo": string, "local": string, "email": string, "linkedin": string, "site": string}, "experiencias": [{"cargo": string, "org": string, "local": string, "tipo": "Emprego" | "Estágio" | "Voluntariado" | "Consultoria" | "Pesquisa" | "Bolsa", "inicio": "AAAA-MM", "fim": "AAAA-MM" ou "", "atual": boolean, "dedicacao": number, "realizacoes": [string], "competencias": [string]}], "educacao": [{"nivel": "Ensino médio" | "Técnico" | "Graduação" | "Especialização" | "Mestrado" | "Doutorado" | "Pós-doutorado", "curso": string, "instituicao": string, "inicio": "AAAA-MM" ou "", "fim": "AAAA-MM" ou "", "status": "Concluído" | "Em curso" | "Interrompido", "tese": string}], "idiomas": [{"idioma": string, "nivel": "Nativo" | "C2" | "C1" | "B2" | "B1" | "A2" | "A1" | "", "certificado": string}], "certificacoes": [{"nome": string, "instituicao": string, "data": "AAAA-MM" ou "", "link": string}], "habilidades": [string], "publicacoes": [{"titulo": string, "veiculo": string, "ano": string, "link": string, "tipo": string}]}
+- Inclua só as seções que o TEXTO alimenta; deixe as outras vazias. No perfil, preencha só o que o texto disser.
+- Projetos entram em "experiencias": cargo = o seu papel no projeto, org = a organização (ou o nome do projeto, se não houver), tipo coerente (Pesquisa, Voluntariado, Consultoria…).
+- Se o texto falar de uma experiência que já está no currículo (lista JÁ NO CURRÍCULO), repita exatamente o mesmo cargo e a mesma org, para as realizações novas serem somadas a ela.
+- "realizacoes": frases de currículo em português, começando com verbo de ação no passado ou no presente (cargo atual), com o que fez e o resultado, uma ideia por item, até 25 palavras. Use números só quando estiverem no texto.
+- "competencias": de 1 a 4 chaves da lista COMPETÊNCIAS que a experiência demonstra.
+- Cursos e certificados vão em "certificacoes"; ferramentas, métodos e temas vão em "habilidades" (termos curtos).
+- Use "" quando o dado não existir. "dedicacao": 100 para tempo integral, 50 para meio período; 100 se não informado. Hoje é ${todayISO}: datas relativas ("desde março") viram AAAA-MM. Datas só com ano: mês 01. Não converta níveis de idioma que não estejam explícitos.
+
+COMPETÊNCIAS (chave — nome — grupo):
+${compCatalog()}
+
+JÁ NO CURRÍCULO (cargo | org):
+${known}
+
+TEXTO:
 ${text.slice(0, 40000)}`);
       if (!out || typeof out !== "object") throw { code: "invalid_json" };
       const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, o && o[k] != null ? o[k] : ""]));
       const parsed = {
         perfil: pick(out.perfil || {}, ["nome", "titulo", "resumo", "local", "email", "linkedin", "site"]),
-        experiencias: (out.experiencias || []).filter(e => e && (e.cargo || e.org)).map(e => Object.assign(pick(e, ["cargo", "org", "local", "tipo", "inicio", "fim"]), { id: uid(), atual: !!e.atual, dedicacao: Number(e.dedicacao) || 100, realizacoes: (e.realizacoes || []).map(String).filter(Boolean), competencias: [], conta: true, campo: false })),
+        experiencias: (out.experiencias || []).filter(e => e && (e.cargo || e.org)).map(e => Object.assign(pick(e, ["cargo", "org", "local", "tipo", "inicio", "fim"]), { id: uid(), atual: !!e.atual, dedicacao: Number(e.dedicacao) || 100, realizacoes: (e.realizacoes || []).map(String).filter(Boolean), competencias: (Array.isArray(e.competencias) ? e.competencias : []).map(String).filter(k => compBy(k)).slice(0, 6), conta: true, campo: false })),
         educacao: (out.educacao || []).filter(e => e && (e.curso || e.instituicao)).map(e => Object.assign(pick(e, ["nivel", "curso", "instituicao", "inicio", "fim", "status", "tese"]), { id: uid() })),
         idiomas: (out.idiomas || []).filter(l => l && l.idioma).map(l => Object.assign(pick(l, ["idioma", "nivel", "certificado"]), { id: uid() })),
         certificacoes: (out.certificacoes || []).filter(c => c && c.nome).map(c => Object.assign(pick(c, ["nome", "instituicao", "data", "link"]), { id: uid(), link: safeUrl(c.link), competencias: [] })),
@@ -7216,8 +7545,10 @@ ${text.slice(0, 40000)}`);
       C.importDraft = parsed;
       const n = k => (parsed[k] || []).length;
       $("c-import-out").innerHTML = `<div class="c-ai"><h5>O Claude encontrou</h5><p>${[parsed.perfil.nome ? "perfil de " + esc(parsed.perfil.nome) : "", plural(n("experiencias"), "experiência", "experiências"), plural(n("educacao"), "formação", "formações"), plural(n("idiomas"), "idioma", "idiomas"), plural(n("certificacoes"), "certificação", "certificações"), plural(n("publicacoes"), "publicação", "publicações"), plural(n("habilidades"), "habilidade", "habilidades")].filter(Boolean).join(", ")}.</p>
-        <ul>${parsed.experiencias.slice(0, 6).map(e => `<li>${esc(e.cargo)} · ${esc(e.org)} (${esc(ymLabel(e.inicio) || "?")} – ${e.atual ? "atual" : esc(ymLabel(e.fim) || "?")})</li>`).join("")}</ul>
-        <p>Mesclar acrescenta só o que ainda não está no currículo. Substituir apaga o currículo atual. Depois, marque as competências em cada experiência.</p>
+        ${parsed.experiencias.slice(0, 8).map(e => { const had = (C.cv.experiencias || []).some(x => normName(x.cargo + x.org) === normName(e.cargo + e.org)); return `<div class="c-q"><b>${esc(e.cargo)} · ${esc(e.org)} <span class="c-mini">(${esc(ymLabel(e.inicio) || "?")} – ${e.atual ? "atual" : esc(ymLabel(e.fim) || "?")})${had ? " · já existe: as realizações novas serão somadas" : " · nova"}</span></b>${e.realizacoes.length ? `<ul>${e.realizacoes.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}${e.competencias.length ? `<div class="c-tags">${e.competencias.map(k => `<span class="c-tag">${esc(compName(k))}</span>`).join("")}</div>` : ""}</div>`; }).join("")}
+        ${parsed.certificacoes.length ? `<h5>Cursos e certificações</h5><ul>${parsed.certificacoes.map(c => `<li>${esc(c.nome)}${c.instituicao ? " — " + esc(c.instituicao) : ""}${c.data ? ` (${esc(ymLabel(c.data))})` : ""}</li>`).join("")}</ul>` : ""}
+        ${parsed.habilidades.length ? `<h5>Habilidades</h5><div class="c-tags">${parsed.habilidades.map(h => `<span class="c-tag">${esc(h)}</span>`).join("")}</div>` : ""}
+        <p>Mesclar acrescenta ao currículo o que é novo e soma realizações e competências às experiências que já existem. Substituir apaga o currículo atual e deixa só isto.</p>
         <div class="c-actions"><button class="btn primary" data-import="merge">Mesclar</button><button class="btn" data-import="replace">Substituir</button><button class="btn ghost" data-import="discard">Descartar</button></div></div>`;
     });
   }
@@ -7231,6 +7562,13 @@ ${text.slice(0, 40000)}`);
       const cur = C.cv, key = { experiencias: e => normName(e.cargo + e.org), educacao: e => normName(e.curso + e.instituicao), idiomas: l => normName(l.idioma), certificacoes: c => normName(c.nome), publicacoes: p => normName(p.titulo) };
       next = Object.assign({}, cur, { perfil: Object.assign({}, d.perfil, Object.fromEntries(Object.entries(cur.perfil || {}).filter(([, v]) => v))), habilidades: [...new Set([...(cur.habilidades || []), ...d.habilidades])] });
       for (const [k, f] of Object.entries(key)) { const have = new Set((cur[k] || []).map(f)); next[k] = [...(cur[k] || []), ...(d[k] || []).filter(x => !have.has(f(x)))]; }
+      // experiência que já existe: soma realizações e competências novas em vez de ignorar
+      next.experiencias = next.experiencias.map(e => {
+        const m = (d.experiencias || []).find(x => normName(x.cargo + x.org) === normName(e.cargo + e.org));
+        if (!m || m.id === e.id) return e;
+        const seen = new Set((e.realizacoes || []).map(normName));
+        return Object.assign({}, e, { realizacoes: [...(e.realizacoes || []), ...m.realizacoes.filter(r => !seen.has(normName(r)))], competencias: [...new Set([...(e.competencias || []), ...m.competencias])] });
+      });
     }
     if (await saveCv(next)) { C.importDraft = null; $("c-import-out").innerHTML = ""; $("c-import-text").value = ""; toast(mode === "replace" ? "Currículo substituído" : "Itens novos adicionados ao currículo"); }
   }
@@ -7593,6 +7931,12 @@ ${answer.slice(0, 12000)}`, { cache: false });
     if ((el = q("[data-csub]"))) { C.sub = el.dataset.csub; render(); return; }
     if ((el = q("[data-jtask]"))) { const tk = C.jtasks.find(x => x.id === el.dataset.jtask); if (tk) toggleJTask(tk); return; }
     if ((el = q("[data-devtask]"))) { const tk = C.devtasks.find(x => x.id === el.dataset.devtask); if (tk) toggleDev(tk); return; }
+    if ((el = q("[data-plan-app]"))) { const a = appBy(el.dataset.planApp); if (a) planApp(a, el); return; }
+    if ((el = q("#cp-create"))) { createPlan(el); return; }
+    if ((el = q("[data-q-plan]"))) { const f = C.fila.find(x => x.id === el.dataset.qPlan); if (f && f.texto) planFrom({ text: f.texto, url: f.url, filaId: f.id, leadId: f.leadId || undefined, appId: C.apps.find(a => sameUrl(a.link, f.url))?.id }, el, $("ci-msg")); return; }
+    if ((el = q("[data-q-paste]"))) { const f = C.fila.find(x => x.id === el.dataset.qPaste); if (f) { $("ci-url").value = f.url || ""; const dt = document.querySelector(".c-intake-more"); if (dt) dt.open = true; $("ci-text").focus(); } return; }
+    if ((el = q("[data-q-del]"))) { markFila(el.dataset.qDel, { status: "descartado" }).then(ok => ok && toast("Link descartado da fila")); return; }
+    if ((el = q("[data-lead-plan]"))) { const l = C.leads.find(x => x.id === el.dataset.leadPlan); if (l) planLead(l, el); return; }
     if ((el = q("[data-app]")) && !q("form") && el.tagName !== "SELECT" && !el.dataset.gen) { openApp(el.dataset.app); return; }
     if ((el = q("#c-app-filter button"))) { C.appFilter = el.dataset.f; document.querySelectorAll("#c-app-filter button").forEach(b => b.setAttribute("aria-pressed", String(b === el))); renderBoard(); return; }
     if ((el = q("#c-src-filter button"))) { C.srcFilter = el.dataset.f; document.querySelectorAll("#c-src-filter button").forEach(b => b.setAttribute("aria-pressed", String(b === el))); renderSources(); return; }
@@ -7680,6 +8024,7 @@ ${answer.slice(0, 12000)}`, { cache: false });
       }).catch(err => showMsg(msg, writeErr(err))).finally(() => { btn.disabled = false; });
       return;
     }
+    if (f.id === "c-intake") { submitIntake(); return; }
     if (f.id === "cm-newapp") { submitNewApp(f); return; }
     if (f.id === "cm-lead") { submitLead(f); return; }
     if (f.id === "cm-cv") { submitCvItem(f); return; }
