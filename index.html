@@ -3105,7 +3105,7 @@ button.c-tag:hover { background: var(--car-soft); color: var(--car-ink); }
   }
 
   // ---------- extras do card de receitas: sobra do mês, receita no ano, maiores gastos, formas de pagamento ----------
-  const PAY_COLOR = { "Credit Card": "var(--n-purple)", "Debit Card": "var(--n-red)", "Pix": "var(--n-gray)", "Cash": "var(--n-brown)" };
+  const PAY_COLOR = { "Credit Card": "var(--n-gray)", "Debit Card": "var(--n-red)", "Pix": "#64b4a9", "Cash": "var(--n-brown)" };
   function renderIncExtra(A) {
     const box = $("inc-extra"), m = state.month, Y = state.year, ym = ymKey(Y, m);
     const inc = A.inc[m], exp = A.exp[m];
