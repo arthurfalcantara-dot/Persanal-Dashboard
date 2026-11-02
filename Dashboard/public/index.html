@@ -38,21 +38,18 @@
     </div>
   </main>
 
-  <!-- barra superior compacta (celular): aparece ao rolar, como nos apps do iOS -->
-  <header class="topbar glass" id="topbar" hidden>
-    <span class="tb-title" id="tb-title">Início</span>
-    <div class="tb-acts">
-      <button class="gbtn round" type="button" data-act="theme" aria-label="Tema claro/escuro" title="Tema claro/escuro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
-    </div>
-  </header>
+  <!-- iPhone: só um desfoque atrás da barra de status (hora/bateria), sem faixa de título -->
+  <div class="statusbar-blur" id="sb-blur" aria-hidden="true" hidden></div>
+  <!-- Configurações: engrenagem no topo (celular); rola junto com a página -->
+  <a class="gbtn round gear" id="gear" href="#config" aria-label="Configurações" title="Configurações" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></a>
 
   <div class="shell" id="app" hidden>
     <aside class="side glass" id="side">
       <div class="side-top"><span class="side-brand"><img src="/icons/icon-192.png" alt="" width="26" height="26">Painel</span></div>
       <nav class="tabs" aria-label="Pilares">
-      <button class="tab" data-tab="inicio" style="--c:var(--ink-2)" data-label="Início">
-        <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.8V19h12V9.8"/><path d="M10 19v-5h4v5"/></svg></span>
-        <span class="lbl">Início</span><span class="lbl-s">Início</span>
+      <button class="tab" data-tab="agenda" style="--c:var(--n-red)" data-label="Agenda">
+        <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M8 13.5h2M14 13.5h2M8 16.5h2"/></svg></span>
+        <span class="lbl">Agenda</span><span class="lbl-s">Agenda</span>
       </button>
       <button class="tab" data-tab="saude" style="--c:var(--n-green)" data-label="Saúde &amp; corpo">
         <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M7.5 12h2.5l1.5-2.5 2 4 1.5-1.5h1.5"/></svg></span>
@@ -70,13 +67,13 @@
         <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="7.5" width="17" height="11.5" rx="2.5"/><path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5"/><path d="M3.5 12.5h17"/><path d="M11 12.5v1.5h2v-1.5"/></svg></span>
         <span class="lbl">Carreira</span><span class="lbl-s">Carreira</span>
       </button>
-      <button class="tab" data-tab="agenda" style="--c:var(--n-red)" data-label="Agenda">
-        <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M8 13.5h2M14 13.5h2M8 16.5h2"/></svg></span>
-        <span class="lbl">Agenda</span><span class="lbl-s">Agenda</span>
-      </button>
       <button class="tab" data-tab="estudos" style="--c:var(--n-yellow)" data-label="Leitura &amp; estudos">
         <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 7c-2-1.6-4.7-2-8-1.5v12.5c3.3-.5 6 0 8 1.5 2-1.5 4.7-2 8-1.5V5.5c-3.3-.5-6-.1-8 1.5z"/><path d="M12 7v12.5"/></svg></span>
         <span class="lbl">Leitura &amp; estudos</span><span class="lbl-s">Estudos</span><span class="soon">em breve</span>
+      </button>
+      <button class="tab tab-config" data-tab="config" style="--c:var(--n-gray)" data-label="Configurações">
+        <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.2 6.5l2.6 1.5M17.2 16l2.6 1.5M4.2 17.5l2.6-1.5M17.2 8l2.6-1.5"/></svg></span>
+        <span class="lbl">Configurações</span><span class="lbl-s">Ajustes</span>
       </button>
       </nav>
       <div class="side-foot">
@@ -88,7 +85,7 @@
     <main id="main">
       <!-- INÍCIO -->
       <section id="view-inicio" class="view" style="display:flex;flex-direction:column;gap:20px">
-        <header class="page"><div class="title-row"><h1>Início</h1></div><p>Conexões do app e dados.</p></header>
+        <header class="page"><div class="title-row"><h1>Configurações</h1></div><p>Conexões, importação de dados, conta e tema.</p></header>
         <div class="ios-grid">
           <section class="card">
             <h3 class="sec">Conexões</h3>

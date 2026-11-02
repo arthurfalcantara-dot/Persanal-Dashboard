@@ -63,8 +63,12 @@ async function disconnect() {
 }
 
 // ---------- dados ----------
+const SPAN = { semana: 7, "3dias": 3, dia: 1 };
+const isGrid = () => !!SPAN[A.mode];
 function range() {
   if (A.mode === "lista") { const s = parseDay(A.day); return [s, addDays(s, 30)]; }
+  if (A.mode === "semana") { const d = parseDay(A.day), s = addDays(d, -d.getDay()); return [s, addDays(s, 7)]; }
+  if (isGrid()) { const s = parseDay(A.day); return [s, addDays(s, SPAN[A.mode])]; }
   const first = A.month, start = addDays(first, -first.getDay());
   return [start, addDays(start, 42)];
 }
@@ -128,7 +132,7 @@ function render() {
   const today = iso(new Date());
   root.innerHTML = `
     <div class="ag-bar">
-      <div class="seg" id="ag-mode"><button data-m="mes" aria-pressed="${A.mode === "mes"}">Mês</button><button data-m="lista" aria-pressed="${A.mode === "lista"}">Lista</button></div>
+      <div class="seg" id="ag-mode">${[["mes", "Mês"], ["semana", "Semana"], ["3dias", "3 dias"], ["dia", "Dia"], ["lista", "Lista"]].map(([k, l]) => `<button data-m="${k}" aria-pressed="${A.mode === k}">${l}</button>`).join("")}</div>
       <button class="gbtn small" id="ag-today" type="button">Hoje</button>
       <button class="gbtn small" id="ag-cals-b" type="button" aria-expanded="false">Agendas</button>
       ${A.loading ? `<span class="pill">Atualizando…</span>` : ""}
@@ -139,7 +143,7 @@ function render() {
       <p class="hint">${A.email ? `Conta: ${esc(A.email)} · ` : ""}<button class="linkbtn" id="ag-disc" type="button">Desconectar</button></p>
     </div>
     ${A.err ? `<p class="banner">${esc(A.err)}</p>` : ""}
-    ${A.mode === "mes" ? monthHtml(today) : listHtml(today)}
+    ${A.mode === "mes" ? monthHtml(today) : A.mode === "lista" ? listHtml(today) : gridHtml(today)}
     <button class="btn primary fab ag-fab" id="ag-add" aria-label="Novo evento" title="Novo evento"><i class="ic" data-i="plus"></i></button>`;
   bind();
 }
@@ -162,6 +166,48 @@ function monthHtml(today) {
       ${dayList(A.day)}
     </section>`;
 }
+// ---------- grade de horas (Semana / 3 dias / Dia), como no Calendário do iOS ----------
+const HOUR = 48; // px por hora
+const DOWS = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+function timed(day) {
+  const d0 = parseDay(day).getTime(), d1 = addDays(parseDay(day), 1).getTime();
+  const items = A.events.filter(e => !e.diaInteiro).map(e => ({ e, s: new Date(e.inicio).getTime(), f: new Date(e.fim).getTime() }))
+    .filter(x => x.s < d1 && x.f > d0)
+    .map(x => ({ e: x.e, s: Math.max(0, (x.s - d0) / 60000), f: Math.min(1440, (x.f - d0) / 60000) }));
+  // eventos que se sobrepõem dividem a largura: colunas por grupo de sobreposição
+  items.sort((a, b) => a.s - b.s || b.f - a.f);
+  let group = [], cols = [], end = -1;
+  const flush = () => { group.forEach(it => { it.n = cols.length; }); group = []; cols = []; end = -1; };
+  for (const it of items) {
+    if (group.length && it.s >= end) flush();
+    let c = cols.findIndex(f => f <= it.s);
+    if (c < 0) { c = cols.length; cols.push(it.f); } else cols[c] = it.f;
+    it.c = c; group.push(it); end = Math.max(end, it.f);
+  }
+  flush();
+  return items;
+}
+function gridHtml(today) {
+  const [s] = range(), n = SPAN[A.mode], days = Array.from({ length: n }, (_, i) => iso(addDays(s, i)));
+  const f = parseDay(days[0]), l = parseDay(days[n - 1]);
+  const title = f.getMonth() === l.getMonth() ? `${MES[f.getMonth()]} <span>${f.getFullYear()}</span>` : `${MES[f.getMonth()].slice(0, 3)} – ${MES[l.getMonth()].slice(0, 3)} <span>${l.getFullYear()}</span>`;
+  const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
+  const heads = days.map(k => { const d = parseDay(k); return `<button class="ag-gh${k === today ? " today" : ""}${k === A.day && n > 1 ? " sel" : ""}" data-gday="${k}"><span>${DOWS[d.getDay()]}</span><b>${d.getDate()}</b></button>`; }).join("");
+  const alls = days.map(k => `<div class="ag-ad">${dayEvents(k).filter(e => e.diaInteiro).map(e => `<button class="ag-chip ag-ev-open" data-ev="${esc(e.id)}" data-cal="${esc(e.cal)}" style="--c:${esc(calOf(e.cal).cor)}">${esc(e.titulo)}</button>`).join("")}${dayTasks(k).map(t => `<a class="ag-chip task" href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.nome)}</a>`).join("")}</div>`).join("");
+  const hasAll = days.some(k => dayEvents(k).some(e => e.diaInteiro) || dayTasks(k).length);
+  const hours = Array.from({ length: 24 }, (_, h) => `<span style="top:${h * HOUR}px">${h ? pad(h) + ":00" : ""}</span>`).join("");
+  const cols = days.map(k => `<div class="ag-col" data-col="${k}">${timed(k).map(it => {
+      const c = calOf(it.e.cal), h = Math.max((it.f - it.s) / 60 * HOUR, 22) - 2;
+      return `<button class="ag-blk ag-ev-open${h < 40 ? " short" : ""}" data-ev="${esc(it.e.id)}" data-cal="${esc(it.e.cal)}" style="--c:${esc(c.cor)};top:${(it.s / 60 * HOUR + 1).toFixed(1)}px;height:${h.toFixed(1)}px;left:calc(${(it.c / it.n * 100).toFixed(3)}% + 1px);width:calc(${(100 / it.n).toFixed(3)}% - 3px)"><b>${esc(it.e.titulo)}</b>${h >= 40 ? `<small>${hm(it.e.inicio)}${it.e.local ? " · " + esc(it.e.local) : ""}</small>` : ""}</button>`;
+    }).join("")}${k === today ? `<i class="ag-now" style="top:${(nowMin / 60 * HOUR).toFixed(1)}px"></i>` : ""}</div>`).join("");
+  return `<section class="card ag-gridcard" style="--n:${n}">
+      <div class="ag-mh"><button class="iconbtn" id="ag-prev" aria-label="Anterior">‹</button><h3>${title}</h3><button class="iconbtn" id="ag-next" aria-label="Próximo">›</button></div>
+      <div class="ag-gheads"><span></span>${heads}</div>
+      ${hasAll ? `<div class="ag-allday"><span class="lbl">dia inteiro</span>${alls}</div>` : ""}
+      <div class="ag-scroll" id="ag-scroll"><div class="ag-tg" style="height:${24 * HOUR}px"><div class="ag-hours">${hours}</div>${cols}</div></div>
+    </section>`;
+}
+
 function listHtml(today) {
   const s = parseDay(A.day); let h = "";
   for (let i = 0; i < 30; i++) {
@@ -191,7 +237,7 @@ function bind() {
   });
   $("ag-tasks").onchange = e => { A.showTasks = e.target.checked; lsSet(LS.tasks, A.showTasks); A.loadedRange = null; load(); };
   $("ag-disc").onclick = disconnect;
-  if ($("ag-prev")) {
+  if ($("ag-prev") && A.mode === "mes") {
     const move = k => { A.month = new Date(A.month.getFullYear(), A.month.getMonth() + k, 1); A.loadedRange = null; render(); load(); };
     $("ag-prev").onclick = () => move(-1); $("ag-next").onclick = () => move(1);
     document.querySelectorAll(".ag-d").forEach(b => b.onclick = () => {
@@ -200,8 +246,27 @@ function bind() {
     });
     swipe(document.querySelector(".ag-month"), k => $(k > 0 ? "ag-next" : "ag-prev").click());
   }
-  document.querySelectorAll(".ag-ev").forEach(b => b.onclick = () => openSheet(A.events.find(e => e.id === b.dataset.ev && e.cal === b.dataset.cal)));
+  document.querySelectorAll(".ag-ev, .ag-ev-open").forEach(b => b.onclick = ev => { ev.stopPropagation(); openSheet(A.events.find(e => e.id === b.dataset.ev && e.cal === b.dataset.cal)); });
+  if (isGrid()) bindGrid();
   $("ag-add").onclick = () => openSheet(null);
+}
+function bindGrid() {
+  const n = SPAN[A.mode];
+  const move = k => { A.day = iso(addDays(parseDay(A.day), k * n)); A.month = new Date(parseDay(A.day).getFullYear(), parseDay(A.day).getMonth(), 1); A.loadedRange = null; render(); load(); };
+  $("ag-prev").onclick = () => move(-1); $("ag-next").onclick = () => move(1);
+  swipe(document.querySelector(".ag-gridcard"), move);
+  // tocar no cabeçalho de um dia abre a visão Dia
+  document.querySelectorAll("[data-gday]").forEach(b => b.onclick = () => { A.day = b.dataset.gday; if (n > 1) { A.mode = "dia"; lsSet(LS.mode, A.mode); A.loadedRange = null; } render(); load(); });
+  // tocar num horário vazio cria um evento ali (arredonda para a meia hora)
+  document.querySelectorAll(".ag-col").forEach(c => c.onclick = e => {
+    if (e.target !== c) return;
+    const min = Math.max(0, Math.min(1410, Math.floor((e.clientY - c.getBoundingClientRect().top) / HOUR * 2) * 30));
+    openSheet(null, { day: c.dataset.col, hi: `${pad(Math.floor(min / 60))}:${pad(min % 60)}` });
+  });
+  // abre perto das 7h (ou mantém a rolagem de antes)
+  const sc = $("ag-scroll");
+  sc.scrollTop = A.gridScroll ?? 7 * HOUR - 8;
+  sc.addEventListener("scroll", () => { A.gridScroll = sc.scrollTop; }, { passive: true });
 }
 // deslizar o mês para os lados
 function swipe(el, fn) {
@@ -211,7 +276,7 @@ function swipe(el, fn) {
 }
 
 // ---------- criar / editar ----------
-function openSheet(ev) {
+function openSheet(ev, at) {
   A.editing = ev;
   const writable = A.cals.filter(c => c.escrita && !A.hidden.has(c.id));
   if (!ev && !writable.length) { toast("Nenhuma agenda com permissão de escrita visível."); return; }
@@ -220,7 +285,10 @@ function openSheet(ev) {
     titulo: ev.titulo, local: ev.local, notas: ev.notas, diaInteiro: ev.diaInteiro, cal: ev.cal,
     di: ev.inicio.slice(0, 10), hi: ev.diaInteiro ? "09:00" : hm(ev.inicio),
     df: ev.diaInteiro ? iso(addDays(parseDay(ev.fim), -1)) : iso(new Date(ev.fim)), hf: ev.diaInteiro ? "10:00" : hm(ev.fim),
-  } : { titulo: "", local: "", notas: "", diaInteiro: false, cal: (writable.find(c => c.principal) || writable[0]).id, di: day, hi: `${h}:00`, df: day, hf: `${pad(Math.min(23, +h + 1))}:00` };
+  } : (() => {
+    const di = at ? at.day : day, hi = at ? at.hi : `${h}:00`, [hh, mm] = hi.split(":").map(Number), endMin = Math.min(23 * 60 + 59, hh * 60 + mm + 60);
+    return { titulo: "", local: "", notas: "", diaInteiro: false, cal: (writable.find(c => c.principal) || writable[0]).id, di, hi, df: di, hf: `${pad(Math.floor(endMin / 60))}:${pad(endMin % 60)}` };
+  })();
   const canEdit = !ev || (calOf(ev.cal).escrita);
   const m = $("ag-sheet");
   m.innerHTML = `<form class="modal-box ag-form" id="ag-form">

@@ -21,29 +21,26 @@ document.querySelectorAll("[data-act=theme]").forEach(b => b.onclick = toggleThe
 document.querySelectorAll("[data-act=out]").forEach(b => b.onclick = () => auth.signOut());
 
 // ---------- navegação por abas (#hash) ----------
-const NAMES = { inicio: "Início", saude: "Saúde & corpo", financas: "Finanças", self: "Self Improvement", carreira: "Carreira", agenda: "Agenda", estudos: "Leitura & estudos" };
-const READY = { inicio: "view-inicio", saude: "view-saude", financas: "view-financas", self: "view-self", carreira: "view-carreira", agenda: "view-agenda" };
+const NAMES = { config: "Configurações", saude: "Saúde & corpo", financas: "Finanças", self: "Self Improvement", carreira: "Carreira", agenda: "Agenda", estudos: "Leitura & estudos" };
+const READY = { config: "view-inicio", saude: "view-saude", financas: "view-financas", self: "view-self", carreira: "view-carreira", agenda: "view-agenda" };
 function route() {
   const tab = currentTab();
   document.querySelectorAll(".tab").forEach(t => { if (t.dataset.tab === tab) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
   const vid = READY[tab] || "view-other";
   ["view-inicio", "view-saude", "view-financas", "view-self", "view-carreira", "view-agenda", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
   if (vid === "view-other") $("ph-title").textContent = NAMES[tab];
-  $("tb-title").textContent = NAMES[tab];
   document.title = NAMES[tab] + " · Painel";
   if (tab === "saude") loadTab("saude").then(() => window.dispatchEvent(new Event("painel:saude")));
   if (tab === "financas") loadTab("financas");
   if (tab === "agenda") loadTab("agenda").then(() => window.painelAgenda && window.painelAgenda.start());
   if (tab === "carreira") loadTab("carreira").then(() => window.dispatchEvent(new Event("painel:carreira")));
   if (tab === "self") loadTab("self").then(() => window.dispatchEvent(new Event("painel:self")));
-  scrollTo(0, 0); onScroll();
+  scrollTo(0, 0);
 }
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { if (currentTab() !== t.dataset.tab) location.hash = t.dataset.tab; else route(); }));
 addEventListener("hashchange", route);
 
 // barra superior compacta: aparece quando o título grande sai da tela (padrão do iOS)
-function onScroll() { $("topbar").classList.toggle("on", scrollY > 56); }
-addEventListener("scroll", onScroll, { passive: true });
 
 // ---------- ponte com o código das abas do artifact ----------
 // As abas vieram do painel no claude.ai e pedem o banco com window.claude.use("db").
@@ -59,7 +56,7 @@ window.claude = { use: async cap => {
   if (cap === "sample") { try { return (await health()).anthropic ? sample : null; } catch { return null; } }
   return null;
 } };
-const TAB_JS = { financas: "/financas.js?v=2", self: "/self.js?v=2", carreira: "/carreira.js?v=1", agenda: "/agenda.js?v=1", saude: "/saude.js?v=5" }, tabP = {};
+const TAB_JS = { financas: "/financas.js?v=2", self: "/self.js?v=2", carreira: "/carreira.js?v=1", agenda: "/agenda.js?v=2", saude: "/saude.js?v=5" }, tabP = {};
 function loadTab(name) {
   return tabP[name] || (tabP[name] = new Promise((ok, bad) => {
     const s = document.createElement("script"); if (name === "agenda") s.type = "module"; s.src = TAB_JS[name]; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
@@ -69,11 +66,12 @@ function loadTab(name) {
 // ---------- puxar para atualizar (com elástico e mola) ----------
 // O que cada aba faz ao atualizar. Devolve uma promessa: o indicador gira até ela terminar.
 // o hash pode trazer parâmetros depois de "&" (ex.: volta do Google em #agenda&g=…)
-function currentTab() { const t = (location.hash || "#inicio").slice(1).split("&")[0]; return NAMES[t] ? t : "inicio"; }
+const HOME = "agenda"; // o app abre na Agenda
+function currentTab() { let t = (location.hash || "").slice(1).split("&")[0]; if (t === "inicio") t = "config"; return NAMES[t] ? t : HOME; }
 async function refreshTab() {
   navigator.serviceWorker?.getRegistration?.().then(r => r && r.update()).catch(() => {});
   const tab = currentTab();
-  if (tab === "inicio") return Promise.all([checks(), workouts()]);
+  if (tab === "config") return Promise.all([checks(), workouts()]);
   if (tab === "saude") return db.reloadAll();
   if (tab === "agenda") return window.painelAgenda && window.painelAgenda.refresh();
   if (tab === "financas" || tab === "self" || tab === "carreira") {
@@ -119,7 +117,8 @@ const PTR = (() => {
     raf = requestAnimationFrame(step);
   }
   const atTop = () => (document.scrollingElement || document.documentElement).scrollTop <= 0;
-  const blocked = t => t.closest("input, textarea, select, .modal, .tabs, [contenteditable]") || !$("login").hidden;
+  const blocked = t => t.closest("input, textarea, select, .modal, .tabs, [contenteditable]") || !$("login").hidden
+    || ((sc => sc && sc.scrollTop > 0)(t.closest(".ag-scroll"))); // grade da Agenda rolada: o puxão é dela
 
   addEventListener("touchstart", e => {
     if (busy || e.touches.length !== 1 || !atTop() || blocked(e.target)) { startY = null; return; }
@@ -232,7 +231,7 @@ $("imp-file").onchange = async e => {
 // ---------- início do app ----------
 let started = false;
 function show(signedIn) {
-  $("login").hidden = signedIn; $("app").hidden = !signedIn; $("topbar").hidden = !signedIn;
+  $("login").hidden = signedIn; $("app").hidden = !signedIn; $("sb-blur").hidden = !signedIn; $("gear").hidden = !signedIn;
   if (signedIn) {
     $("c-user").textContent = auth.user ? `Conectado como ${auth.user.email}.` : "";
     route(); if (!started) { started = true; checks(); workouts(); }
