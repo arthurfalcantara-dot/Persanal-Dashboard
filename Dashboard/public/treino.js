@@ -214,13 +214,43 @@ function renderEx() {
   } else {
     body = lib && lib.st ? `<ol class="tr-how">${lib.st.map(x => `<li>${esc(x)}</li>`).join("")}</ol><p class="hint">Instruções do banco aberto de exercícios (em inglês).</p>` : `<p class="empty">Sem instruções para este exercício. ${P() && P().xdb().state !== 2 ? "Carregando o banco de exercícios…" : ""}</p>`;
   }
+  if (!MEDIA) mediaLoad(() => { if (T.exDetail === nome) renderEx(); });
+  const dm = tab !== "historico" ? demo(lib) : "";
   sheet(`<div class="tr-sh-h"><button class="iconbtn" data-act="close" aria-label="Voltar">‹</button><h3>${esc(nome)}</h3><span></span></div>
-    <div class="seg tr-tabs">${[["resumo", "Resumo"], ["historico", "Histórico"], ["como", "Como fazer"]].map(([k, l]) => `<button data-act="extab" data-t="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>${body}`, "ex");
+    ${dm}<div class="seg tr-tabs">${[["resumo", "Resumo"], ["historico", "Histórico"], ["como", "Como fazer"]].map(([k, l]) => `<button data-act="extab" data-t="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>${body}`, "ex");
+}
+// mídia dos exercícios (GIFs © Gym visual, servidos do repositório exercises-dataset; não copiados para cá)
+const MEDIA_BASE = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/";
+let MEDIA = null, mediaP = null;
+function mediaLoad(cb) {
+  if (!mediaP) mediaP = fetch("/exercicios-midia.json").then(r => r.ok ? r.json() : {}).catch(() => ({})).then(m => { MEDIA = m; });
+  if (cb) mediaP.then(cb);
+}
+function mediaUrl(id, gif) {
+  const f = MEDIA && id && MEDIA[id]; if (!f) return "";
+  return MEDIA_BASE + (gif ? "videos/" + f : "images/" + f.replace(/\.gif$/, ".jpg"));
+}
+function libQuiet(nome) {
+  const x = P() && P().xdb(); if (!x || x.state !== 2) return null;
+  const c = catalog().find(c => c.nome === nome), keys = [nome, c && c.hevy].filter(Boolean).map(s => s.toLowerCase());
+  const hit = x.list.find(e => keys.includes(e.n.toLowerCase()));
+  if (hit) return hit;
+  const id = P().matchFor ? P().matchFor(c || { nome }) : null;
+  return id ? x.byId[id] : null;
+}
+function thumb(id, nome) {
+  const u = mediaUrl(id, false), ini = esc(String(nome || "?").trim().charAt(0).toUpperCase());
+  return u ? `<span class="tr-thumb"><img src="${u}" alt="" loading="lazy" decoding="async" onerror="this.remove()"><i>${ini}</i></span>` : `<span class="tr-thumb"><i>${ini}</i></span>`;
+}
+function demo(lib) {
+  const u = lib && mediaUrl(lib.id, true);
+  if (!u) return "";
+  return `<figure class="tr-demo"><img src="${u}" alt="Demonstração: ${esc(lib.n)}" loading="lazy" decoding="async" onerror="this.closest('figure').remove()"><figcaption>© Gym visual · <a href="https://gymvisual.com/" target="_blank" rel="noopener">gymvisual.com</a></figcaption></figure>`;
 }
 function findLib(nome) {
   const x = P() && P().xdb(); if (!x || x.state !== 2) { P() && P().xdbLoad(() => { if (T.exDetail) renderEx(); }); return null; }
   const c = catalog().find(c => c.nome === nome), keys = [nome, c && c.hevy].filter(Boolean).map(s => s.toLowerCase());
-  return x.list.find(e => keys.includes(e.n.toLowerCase())) || null;
+  return libQuiet(nome);
 }
 function chart(pts) {
   const W = 340, H = 150, pl = 34, pb = 20, vs = pts.map(p => p.v), mn = Math.min(...vs), mx = Math.max(...vs), span = mx - mn || 1;
@@ -276,8 +306,15 @@ function liveStats() {
   for (const e of T.live.exercicios) for (const x of e.series) if (x.feito && x.tipo !== "warmup" && e.grupo !== "Cardio") { ser++; vol += (num(x.kg) || 0) * (num(x.reps) || 0); }
   return { vol, ser };
 }
+function fillThumbs() {
+  document.querySelectorAll("#tr-live .tr-exname[data-nome] > .tr-thumb:not(:has(img))").forEach(t => {
+    const nome = t.parentElement.dataset.nome, id = (libQuiet(nome) || {}).id;
+    if (mediaUrl(id, false)) t.outerHTML = thumb(id, nome);
+  });
+}
 function renderLive() {
   const L = T.live, el = $("tr-live"); if (!L) return;
+  if (!MEDIA || !(P() && P().xdb().state === 2)) { mediaLoad(() => P() && P().xdbLoad(fillThumbs)); }
   const modo = L.modo, st = liveStats();
   el.innerHTML = `<div class="tr-live-top">
       ${modo === "live" ? `<button class="iconbtn" data-act="minimize" aria-label="Minimizar">⌄</button><span class="tr-elapsed" id="tr-elapsed">${dur((Date.now() - L.inicio) / 1000)}</span>
@@ -314,7 +351,7 @@ function exBlock(e, i, modo) {
     </div>`;
   }).join("");
   return `<section class="tr-ex" data-i="${i}">
-    <div class="tr-ex-h"><button class="tr-exname" data-act="ex" data-nome="${esc(e.nome)}">${esc(e.nome)}</button><button class="iconbtn" data-act="ex-menu" data-i="${i}" aria-label="Opções do exercício">⋮</button></div>
+    <div class="tr-ex-h"><button class="tr-exname" data-act="ex" data-nome="${esc(e.nome)}">${thumb((libQuiet(e.nome) || {}).id, e.nome)}<span>${esc(e.nome)}</span></button><button class="iconbtn" data-act="ex-menu" data-i="${i}" aria-label="Opções do exercício">⋮</button></div>
     <div class="tr-pills">${modo !== "edit" ? `<button class="tr-pill" data-act="ex-rest" data-i="${i}"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/></svg>Descanso: ${e.descanso ? (e.descanso >= 60 ? `${Math.floor(e.descanso / 60)}min${e.descanso % 60 ? " " + (e.descanso % 60) + "s" : ""}` : e.descanso + "s") : "desligado"}</button>` : ""}<button class="tr-pill" data-act="ex-note" data-i="${i}"><svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5z"/><path d="M9 13h6M12 10v6"/></svg>${e.nota ? esc(e.nota.slice(0, 24)) : "Nota"}</button></div>
     <div class="tr-set tr-set-h"><span>Série</span><span>Anterior</span>${cardio ? "<span>Min</span><span>Km</span>" : "<span>Kg</span><span>Reps</span>"}<span>${modo === "rotina" ? "" : "RPE"}</span>${modo !== "rotina" ? "<span>✓</span>" : ""}</div>
     ${rows}
@@ -367,6 +404,7 @@ function openPicker(mode, i) {
     <div class="tr-chips" id="tr-pg">${["", ...(P() ? P().GROUPS : []), "Cardio"].map(g => `<button data-act="pick-g" data-g="${esc(g)}" aria-pressed="${!g}">${g || "Todos"}</button>`).join("")}</div>
     <div id="tr-plist"></div>`, "picker");
   P() && P().xdbLoad(pickList);
+  mediaLoad(pickList);
   pickList();
   setTimeout(() => $("tr-pq") && $("tr-pq").focus(), 120);
 }
@@ -377,8 +415,8 @@ function pickList() {
     .map(e => ({ e, n: exHist(e.nome).length })).sort((a, b) => b.n - a.n || a.e.nome.localeCompare(b.e.nome));
   const known = new Set(catalog().flatMap(e => [e.nome.toLowerCase(), String(e.hevy || "").toLowerCase()]));
   const x = P() && P().xdb(), lib = x && x.state === 2 ? x.list.filter(e => !known.has(e.n.toLowerCase()) && (!g || grupoDe(e) === g) && (!q || e.n.toLowerCase().includes(q))).slice(0, q ? 60 : 25) : [];
-  box.innerHTML = `${mine.length ? `<h4 class="tr-sub">Seus exercícios</h4><ul class="ios-list tr-pick">${mine.slice(0, 80).map(({ e, n }) => `<li data-act="pick" data-nome="${esc(e.nome)}"><span><b>${esc(e.nome)}</b><small class="hint">${esc(e.grupo)}${n ? ` · ${n} treinos` : ""}</small></span><span class="plus">+</span></li>`).join("")}</ul>` : ""}
-    ${lib.length ? `<h4 class="tr-sub">Biblioteca</h4><ul class="ios-list tr-pick">${lib.map(e => `<li data-act="pick-lib" data-id="${esc(e.id)}"><span><b>${esc(cap(e.n))}</b><small class="hint">${esc(grupoDe(e))} · ${esc(cap(e.eq))}</small></span><span class="plus">+</span></li>`).join("")}</ul>` : ""}
+  box.innerHTML = `${mine.length ? `<h4 class="tr-sub">Seus exercícios</h4><ul class="ios-list tr-pick">${mine.slice(0, 80).map(({ e, n }) => `<li data-act="pick" data-nome="${esc(e.nome)}">${thumb((libQuiet(e.nome) || {}).id, e.nome)}<span><b>${esc(e.nome)}</b><small class="hint">${esc(e.grupo)}${n ? ` · ${n} treinos` : ""}</small></span><span class="plus">+</span></li>`).join("")}</ul>` : ""}
+    ${lib.length ? `<h4 class="tr-sub">Biblioteca</h4><ul class="ios-list tr-pick">${lib.map(e => `<li data-act="pick-lib" data-id="${esc(e.id)}">${thumb(e.id, e.n)}<span><b>${esc(cap(e.n))}</b><small class="hint">${esc(grupoDe(e))} · ${esc(cap(e.eq))}</small></span><span class="plus">+</span></li>`).join("")}</ul>` : ""}
     ${!mine.length && !lib.length ? `<p class="empty">Nada encontrado. Toque em Criar para adicionar “${esc(T.pickQ || "")}”.</p>` : ""}`;
 }
 async function pickChosen(e) {
@@ -568,4 +606,4 @@ export function start() {
   }
   render();
 }
-window.painelTreino = { start, refresh: async () => { await db.reloadAll(); render(); } };
+window.painelTreino = { start, begin: sug => { if (T.live) { const m = $("tr-mini"); if (m && !m.hidden) m.click(); return; } const b = document.querySelector(`#treino-root [data-act="${sug ? "start-sug" : "start-empty"}"]`) || document.querySelector('#treino-root [data-act="start-empty"]'); if (b && !b.disabled) b.click(); }, refresh: async () => { await db.reloadAll(); render(); } };

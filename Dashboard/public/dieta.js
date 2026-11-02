@@ -437,4 +437,4 @@ export function start() {
   }
   render();
 }
-window.painelDieta = { start, goto: d => { D.day = d; render(); }, refresh: async () => { await db.reloadAll(); render(); } };
+window.painelDieta = { start, goto: d => { D.day = d; render(); }, add: (d, meal) => { if (d) D.day = d; render(); openAdd(meal); }, refresh: async () => { await db.reloadAll(); render(); } };

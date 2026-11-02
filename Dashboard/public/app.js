@@ -56,7 +56,7 @@ window.claude = { use: async cap => {
   if (cap === "sample") { try { return (await health()).anthropic ? sample : null; } catch { return null; } }
   return null;
 } };
-const TAB_JS = { financas: "/financas.js?v=3", self: "/self.js?v=2", carreira: "/carreira.js?v=1", agenda: "/calendario.js?v=1", saude: "/saude.js?v=5" }, tabP = {};
+const TAB_JS = { financas: "/financas.js?v=3", self: "/self.js?v=2", carreira: "/carreira.js?v=2", agenda: "/calendario.js?v=1", saude: "/saude.js?v=6" }, tabP = {};
 function loadTab(name) {
   return tabP[name] || (tabP[name] = new Promise((ok, bad) => {
     const s = document.createElement("script"); s.src = TAB_JS[name]; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
@@ -82,13 +82,19 @@ function saudeMode(m) {
   $("view-saude").dataset.mode = m;
   document.querySelectorAll("#saude-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
   $("treino-root").hidden = m !== "treino"; $("dieta-root").hidden = m !== "dieta";
-  if (m === "treino") import("/treino.js?v=3").then(x => x.start());
-  if (m === "dieta") import("/dieta.js?v=3").then(x => x.start());
+  if (m === "treino") import("/treino.js?v=4").then(x => x.start());
+  if (m === "dieta") import("/dieta.js?v=4").then(x => x.start());
   if (m === "painel") window.dispatchEvent(new Event("painel:saude"));
 }
 document.querySelectorAll("#saude-mode button").forEach(b => b.addEventListener("click", () => { saudeMode(b.dataset.mode); scrollTo(0, 0); }));
+// atalhos do Painel (Hoje) para Alimentação e Treino: data-go="dieta:add|dieta:dia|treino:comecar|treino:sugestao|treino:inicio"
+window.addEventListener("painel:go", e => {
+  const { go, dia, refeicao } = e.detail || {}, [mod, acao] = String(go || "").split(":");
+  if (mod === "dieta") { saudeMode("dieta"); scrollTo(0, 0); import("/dieta.js?v=4").then(() => { const D = window.painelDieta; if (!D) return; acao === "add" ? D.add(dia, refeicao) : D.goto(dia); }); }
+  if (mod === "treino") { saudeMode("treino"); scrollTo(0, 0); import("/treino.js?v=4").then(() => setTimeout(() => { const T = window.painelTreino; if (T && acao !== "inicio") T.begin(acao === "sugestao"); }, 60)); }
+});
 // treino em andamento continua acessível de qualquer aba (mini barra)
-try { if (localStorage.getItem("painel.treino.atual")) setTimeout(() => import("/treino.js?v=3").then(x => x.start && window.painelSaude ? x.start() : null), 1500); } catch {}
+try { if (localStorage.getItem("painel.treino.atual")) setTimeout(() => import("/treino.js?v=4").then(x => x.start && window.painelSaude ? x.start() : null), 1500); } catch {}
 
 // ---------- puxar para atualizar (com elástico e mola) ----------
 // O que cada aba faz ao atualizar. Devolve uma promessa: o indicador gira até ela terminar.

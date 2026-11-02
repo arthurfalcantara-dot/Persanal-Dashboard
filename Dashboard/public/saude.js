@@ -766,8 +766,19 @@ ${text}`;
   $("reg-close").onclick = closeReg;
   $("reg").addEventListener("click", e => { if (e.target === $("reg")) closeReg(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("reg").hidden) closeReg(); });
-  $("h-reg").onclick = () => openReg(); $("h-fab").onclick = () => openReg();
-  document.getElementById("view-saude").addEventListener("click", e => { const b = e.target.closest("[data-open]"); if (b) openReg(b.dataset.open); });
+  // Registrar: menu de ações (refeição e treino abrem as abas Alimentação e Treino; colar texto fica como opção secundária)
+  function go(goTo, extra) { window.dispatchEvent(new CustomEvent("painel:go", { detail: Object.assign({ go: goTo, dia: S.day && S.day <= todayISO ? S.day : todayISO }, extra) })); }
+  function regMenu() {
+    const m = $("tr-menu"); m.hidden = false;
+    const it = [["dieta:add", "flame", "Refeição", "buscar, escanear ou descrever alimentos"], ["treino:sugestao", "dumbbell", "Treino", "começar agora ou a sugestão do dia"], ["@peso", "scale", "Peso", "registro na balança"], ["@hevy", "file", "Colar texto", "importar de outro app ou anotação"]];
+    m.innerHTML = `<div class="tr-menu-box h-menu"><p class="hint">Registrar</p>${it.map(([k, ic, l, d]) => `<button data-k="${k}"><i class="ic" data-i="${ic}"></i><span><b>${l}</b><small>${d}</small></span></button>`).join("")}<button class="cancel" data-k="">Cancelar</button></div>`;
+    m.onclick = e => { const b = e.target.closest("button"); if (!b && e.target !== m) return; m.hidden = true; m.onclick = null; const k = b ? b.dataset.k : ""; if (!k) return; k[0] === "@" ? openReg(k.slice(1)) : go(k); };
+  }
+  $("h-reg").onclick = regMenu; $("h-fab").onclick = regMenu;
+  document.getElementById("view-saude").addEventListener("click", e => {
+    const g = e.target.closest("[data-go]"); if (g) { go(g.dataset.go, g.dataset.dia ? { dia: g.dataset.dia } : null); return; }
+    const b = e.target.closest("[data-open]"); if (b) openReg(b.dataset.open);
+  });
   $("ps-clear").onclick = () => { $("ps-text").value = ""; psRender(); };
   $("ps-save").onclick = async () => {
     if (!PS.parsed || !S.db) return;
@@ -1256,14 +1267,14 @@ ${text}`;
       + grp("carb", bigBar("Carboidratos", "var(--m-carb)", z.carb, t.carb, "g"), n && subBar("Fibras", "color-mix(in oklab, var(--m-carb) 55%, var(--n-green))", n.fibra || 0, 30, "g", cut ? "meta 30–60 g" : "meta 30–35 g"))
       + grp("gord", bigBar("Gorduras", "var(--m-gord)", z.gord, t.gord, "g"), n && subBar("Saturada", "color-mix(in oklab, var(--m-gord) 55%, var(--n-red))", n.gordSat || 0, satMax, "g", "máximo 10% das calorias"))
       + (n ? `<div class="mb-solo">${bigBar("Sódio", "var(--n-gray)", n.sodio || 0, 2300, "mg", "limite de referência 2.300 mg")}</div>` : "")
-      + (!n && !fut ? `<div class="cta">Nenhuma refeição registrada neste dia.<button class="btn" data-open="food"><i class="ic" data-i="plus"></i>Colar o dia do FoodNoms</button></div>` : "");
+      ;
     renderBalance(d, n, t, ss, plan, fut, isToday);
     renderDayTrain(d, ss, plan, fut, isToday);
     renderReady(d);
     renderTrainCard(d);
     // Refeições e qualidade
     if (!n) {
-      $("n-items").hidden = true; $("n-meals").innerHTML = `<p class="empty">${fut ? "Dia futuro." : "Sem refeições registradas."}</p>`;
+      $("n-items").hidden = true; $("n-meals").innerHTML = fut ? `<p class="empty">Dia futuro.</p>` : `<div class="h-empty"><i class="ic" data-i="flame"></i><b>Nenhuma refeição ${isToday ? "hoje" : "neste dia"}</b><span>Busque na TACO ou no Open Food Facts, escaneie o código de barras ou descreva o prato.</span><div class="h-acts"><button class="btn primary" data-go="dieta:add"><i class="ic" data-i="plus"></i>Adicionar alimento</button><button class="btn" data-go="dieta:dia">Abrir diário</button></div></div>`;
       $("n-quality").innerHTML = ""; return;
     }
     $("n-quality").innerHTML = "";
@@ -1389,13 +1400,13 @@ ${text}`;
           <div class="tkcal"><span>Gasto estimado do cardio</span><b>≈ ${n0(cK)} kcal</b></div></div></div>` : "";
       box.innerHTML = muscTopic + cardioTopic
         + `<div class="tkcal ttotal"><span>Gasto calórico total do treino</span><b>≈ ${n0(forceKcal + cK)} kcal</b></div>`
-        + (!fut ? `<button class="btn ghost" data-open="hevy" style="align-self:flex-start"><i class="ic" data-i="plus"></i>Adicionar outro treino</button>` : "");
+        + (!fut ? `<button class="btn ghost" data-go="treino:comecar" style="align-self:flex-start"><i class="ic" data-i="plus"></i>Adicionar outro treino</button>` : "");
     } else if (plan.forca || +plan.cardioMin) {
       pill.textContent = fut || isToday ? "Planejado" : "Não registrado"; pill.className = "pill" + (fut || isToday ? "" : " warn");
-      box.innerHTML = `<div class="cta">${fut ? "Treino previsto para este dia." : isToday ? "Ainda sem treino registrado hoje." : "Nenhum treino registrado neste dia."}${!fut ? `<button class="btn" data-open="hevy"><i class="ic" data-i="plus"></i>Colar treino do Hevy</button>` : ""}</div>`;
+      box.innerHTML = `<div class="h-empty"><i class="ic" data-i="dumbbell"></i><b>${fut ? "Treino previsto para este dia" : isToday ? "Ainda sem treino hoje" : "Nenhum treino registrado neste dia"}</b>${isToday ? `<span>A sugestão do dia segue o plano semanal; o treino vazio deixa montar na hora.</span><div class="h-acts"><button class="btn primary" data-go="treino:sugestao"><i class="ic" data-i="plus"></i>Começar treino do dia</button><button class="btn" data-go="treino:comecar">Treino vazio</button></div>` : !fut ? `<div class="h-acts"><button class="btn" data-go="treino:inicio">Abrir Treino</button></div>` : ""}</div>`;
     } else {
       pill.textContent = "Descanso"; pill.className = "pill";
-      box.innerHTML = `<div class="cta">Dia de descanso na agenda.${!fut ? `<button class="btn ghost" data-open="hevy"><i class="ic" data-i="plus"></i>Registrar treino mesmo assim</button>` : ""}</div>`;
+      box.innerHTML = `<div class="h-empty"><i class="ic" data-i="dumbbell"></i><b>Dia de descanso no plano</b>${isToday ? `<div class="h-acts"><button class="btn" data-go="treino:comecar"><i class="ic" data-i="plus"></i>Treinar mesmo assim</button></div>` : ""}</div>`;
     }
   }
   // card "Treino do dia": anatomia à esquerda. Visão principal = intensidade de cada músculo no treino do dia
@@ -1562,7 +1573,7 @@ ${text}`;
       const avgR = W.kSum / W.tSum, [lo, hi] = kcalBand(), obj = S.cfg.perfil?.objetivo;
       add(avgR > hi ? "bad" : avgR < lo ? "warn" : "good", "flame", `Calorias: média de <b>${pct(avgR)}</b> da meta (${n0(W.kSum / W.logged)} kcal/dia)${avgR > hi ? (obj === "Definição" ? " — acima do déficit planejado" : " — acima da faixa") : avgR < lo ? (obj === "Hipertrofia" ? " — abaixo do superávit planejado" : " — abaixo da faixa") : " — dentro da faixa do objetivo"}.`);
     }
-    if (W.missing) add("warn", "calendar", `<b>${W.missing} ${W.missing === 1 ? "dia" : "dias"}</b> sem alimentação registrada. <button class="btn-link" data-open="food">Colar agora</button>`);
+    if (W.missing) add("warn", "calendar", `<b>${W.missing} ${W.missing === 1 ? "dia" : "dias"}</b> sem alimentação registrada. <button class="btn-link" data-go="dieta:dia">Abrir diário</button>`);
     const big = ["Peito", "Costas", "Ombros", "Quadríceps", "Posterior"], none = big.filter(g => !(W.gsets[g] > 0)), low = GROUPS.filter(g => W.gsets[g] > 0 && W.gsets[g] < 10);
     if (W.elapsed >= 4 && none.length) add("warn", "body", `Sem séries esta semana: <b>${none.join(", ")}</b>.`);
     const okG = GROUPS.filter(g => W.gsets[g] >= 10 && W.gsets[g] <= 20);
@@ -1714,7 +1725,7 @@ ${text}`;
     add(lastS ? (daysBetween(lastS.data, todayISO) <= 3 ? "good" : "warn") : "warn", "dumbbell", lastS ? `Último treino registrado: <b>${ddmm(lastS.data)}</b> (${S.sess.length} sessões no total).` : "Nenhum treino registrado.");
     add(lastF ? (daysBetween(lastF, todayISO) <= 1 ? "good" : "warn") : "warn", "utensils", lastF ? `Última alimentação registrada: <b>${ddmm(lastF)}</b> (${ds.length} dias no total).` : "Nenhum dia de alimentação registrado.");
     const miss = [...Array(14)].map((_, i) => iso(addDays(today, -1 - i))).filter(d => !S.days[d]);
-    if (miss.length) add("warn", "calendar", `Dias sem alimentação nas últimas 2 semanas: ${miss.slice().reverse().map(ddmm).join(", ")}. <button class="btn-link" data-open="food">Colar um dia</button>`);
+    if (miss.length) add("warn", "calendar", `Dias sem alimentação nas últimas 2 semanas: ${miss.slice().reverse().map(ddmm).join(", ")}. <button class="btn-link" data-go="dieta:dia">Abrir diário</button>`);
     else add("good", "calendar", "Alimentação registrada em todos os dias das últimas 2 semanas.");
     add(ps.length >= 2 && daysBetween(ps[ps.length - 1].d, todayISO) <= 4 ? "good" : "warn", "scale", ps.length ? `Peso: ${ps.length} registro${ps.length > 1 ? "s" : ""}, o último em <b>${ddmm(ps[ps.length - 1].d)}</b>.` : "Nenhum peso registrado.");
     if (!S.cfg?.perfil?.pesoMeta) add("info", "target", "Defina o <b>peso meta</b> acima para ver a previsão de chegada em Progresso.");
@@ -1745,7 +1756,7 @@ ${text}`;
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { if (t.dataset.tab !== "saude") S.visible = false; }));
   bindPlano();
   // ponte para os módulos de Treino e Alimentação do app (mesmos dados e mesmas metas da Saúde)
-  window.painelSaude = {
+  window.painelSaude = { matchFor,
     state: () => S, GROUPS, dayTarget: d => (S.cfg ? dayTarget(d) : null),
     xdb: () => XDB, xdbLoad, musclesOf, exHistory: () => exHistory(),
     onChange: fn => { (S.subs || (S.subs = [])).push(fn); },

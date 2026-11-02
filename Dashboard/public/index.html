@@ -156,11 +156,11 @@
         <div class="kpis dtiles" id="d-kpis"></div>
         <!-- alimentação do dia: metas (macros) e qualidade lado a lado, refeições embaixo -->
         <section class="card">
-          <div class="card-head"><div><h3 data-i="flame">Alimentação do dia</h3></div></div>
+          <div class="card-head"><div><h3 data-i="flame">Alimentação do dia</h3></div><button class="btn ghost" data-go="dieta:dia">Diário ›</button></div>
           <div class="food-cols">
-            <div class="fcol"><h4 class="mini-h">Meta do dia</h4><div class="macrobars" id="n-bars"></div><div class="macrobars q-bars" id="n-quality"></div></div>
-            <div class="fcol"><div class="meals-head"><h4 class="mini-h">Refeições</h4><span class="hint">toque para ver os alimentos</span><span class="pill" id="n-items"></span></div>
+            <div class="fcol"><div class="meals-head"><h4 class="mini-h">Refeições</h4><span class="pill" id="n-items"></span><button class="btn small h-add" data-go="dieta:add"><i class="ic" data-i="plus"></i>Adicionar</button></div>
               <div class="meals" id="n-meals"></div></div>
+            <div class="fcol"><h4 class="mini-h">Meta do dia</h4><div class="macrobars" id="n-bars"></div><div class="macrobars q-bars" id="n-quality"></div></div>
           </div>
         </section>
         <!-- treino do dia + músculos prontos: anatomia à esquerda, o toggle troca a visualização -->
@@ -745,7 +745,7 @@
               <div id="c-leads" class="c-leads"></div>
             </div>
           </section>
-          <section class="card">
+          <section class="card c-sticky">
             <div class="card-head"><div><h3 data-i="target">Perfil de busca</h3><p class="hint">Os critérios que personalizam a busca: o Claude usa este perfil ao analisar vagas, e uma rotina de busca automática pode lê-lo depois.</p></div></div>
             <form id="c-busca" class="c-sec" autocomplete="off">
               <label class="field" for="cb-palavras">Palavras-chave

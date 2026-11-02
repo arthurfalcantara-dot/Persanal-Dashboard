@@ -544,38 +544,38 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 :root[data-theme="dark"] #dieta-root, :root[data-theme="dark"] #ft-sheet { --food: #ff7a45; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #dieta-root, :root:not([data-theme="light"]) #ft-sheet { --food: #ff7a45; } }
 .ft-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.ft-head h2 { font: 700 24px var(--display); margin: 0; } .ft-head small { color: var(--muted); }
+.ft-head h2 { font: 700 22px var(--display); margin: 0; } .ft-head small { color: var(--muted); }
 .ft-acts { display: flex; border-radius: 999px; padding: 3px; } .ft-acts button { border: 0; background: none; padding: 8px 14px; font: 600 14px var(--body); color: var(--ink); cursor: pointer; border-radius: 999px; }
 .ft-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .ft-week button { border: 0; background: none; border-radius: 16px; padding: 8px 0; display: grid; justify-items: center; gap: 2px; color: var(--ink); font: inherit; cursor: pointer; position: relative; }
-.ft-week span { font-size: 13px; color: var(--muted); } .ft-week b { font: 600 22px var(--display); }
+.ft-week span { font-size: 12px; color: var(--muted); } .ft-week b { font: 600 18px var(--display); }
 .ft-week .today b { color: var(--food); }
 .ft-week .sel { background: var(--food); box-shadow: 0 4px 14px color-mix(in srgb, var(--food) 40%, transparent); } .ft-week .sel span, .ft-week .sel b { color: #fff; }
 .ft-week .has::after { content: ""; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--muted); } .ft-week .sel::after { background: #fff; }
-.ft-h { display: flex; align-items: center; justify-content: space-between; } .ft-h h3 { font: 700 20px var(--display); margin: 0; } .ft-h .linkbtn, #dieta-root .linkbtn { color: var(--food); }
+.ft-h { display: flex; align-items: center; justify-content: space-between; } .ft-h h3 { font: 700 17px var(--display); margin: 0; } .ft-h .linkbtn, #dieta-root .linkbtn { color: var(--food); }
 .ft-goals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .ft-goal { background: var(--surface); border-radius: 22px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; box-shadow: var(--shadow); }
-.ft-goal div { display: grid; gap: 2px; min-width: 0; } .ft-goal b { font-size: 17px; } .ft-goal small { color: var(--muted); font-size: 14.5px; line-height: 1.25; }
+.ft-goal div { display: grid; gap: 2px; min-width: 0; } .ft-goal b { font-size: 15px; } .ft-goal small { color: var(--muted); font-size: 13px; line-height: 1.25; }
 .ft-ring { width: 46px; height: 46px; flex: none; } .ft-ring circle { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dasharray .5s cubic-bezier(.2,.9,.3,1); }
 .ft-meal { display: grid; gap: 8px; }
 .ft-meal-h { border: 0; background: none; text-align: left; display: grid; grid-template-columns: 1fr auto; padding: 8px 4px 0; color: var(--ink); cursor: pointer; font: inherit; }
-.ft-meal-h small { grid-column: 1; color: var(--muted); font-size: 14px; } .ft-meal-h b { grid-column: 1; font: 700 22px var(--display); letter-spacing: -.02em; }
-.ft-meal-h .chev { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-style: normal; color: var(--food); font-size: 26px; transition: transform .2s; } .ft-meal-h .chev.open { transform: rotate(90deg); }
+.ft-meal-h small { grid-column: 1; color: var(--muted); font-size: 12.5px; } .ft-meal-h b { grid-column: 1; font: 700 18px var(--display); letter-spacing: -.02em; }
+.ft-meal-h .chev { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-style: normal; color: var(--food); font-size: 22px; transition: transform .2s; } .ft-meal-h .chev.open { transform: rotate(90deg); }
 .ft-card { background: var(--surface); border-radius: 22px; overflow: hidden; box-shadow: var(--shadow); }
-.ft-item, .ft-sum { width: 100%; border: 0; background: none; text-align: left; display: grid; gap: 3px; padding: 14px 18px; border-bottom: .5px solid var(--line); color: var(--ink); font: inherit; cursor: pointer; }
-.ft-item b, .ft-sum b { font-size: 17px; } .ft-item small, .ft-sum span { color: var(--muted); font-size: 15px; }
+.ft-item, .ft-sum { width: 100%; border: 0; background: none; text-align: left; display: grid; gap: 3px; padding: 12px 16px; border-bottom: .5px solid var(--line); color: var(--ink); font: inherit; cursor: pointer; }
+.ft-item b, .ft-sum b { font-size: 15.5px; font-weight: 600; } .ft-item small, .ft-sum span { color: var(--muted); font-size: 13.5px; }
 .ft-sum span:not(.ft-chips):not(.ft-chips span) { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.ft-chips { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ft-chips { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .ft-chips .k { color: var(--n-red); } .ft-chips .k::before { content: "🔥"; font-size: 13px; margin-right: 2px; } .ft-chips .c { color: var(--n-blue); } .ft-chips .g { color: var(--n-green); } .ft-chips .p { color: var(--n-orange); } .ft-chips .f { color: var(--self); } .ft-chips .f::before { content: "💧"; font-size: 12px; margin-right: 2px; }
 .ft-addrow { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 6px 18px; }
-.ft-addrow button { border: 0; background: none; color: var(--food); font: 500 17px var(--body); padding: 10px 0; cursor: pointer; } .ft-addrow .dots { color: var(--muted); font-size: 20px; padding: 10px; }
+.ft-addrow button { border: 0; background: none; color: var(--food); font: 500 15.5px var(--body); padding: 9px 0; cursor: pointer; } .ft-addrow .dots { color: var(--muted); font-size: 20px; padding: 10px; }
 .ft-mtot { padding: 0 18px; }
 .ft-fab { position: fixed; z-index: 44; right: 18px; bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); width: 62px; height: 62px; border-radius: 50%; border: 0; background: var(--food); color: #fff; font-size: 34px; font-weight: 300; line-height: 1; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 10px 28px color-mix(in srgb, var(--food) 45%, transparent); }
 @media (min-width: 761px) { .ft-fab { right: 28px; bottom: 28px; } }
 .ft-fab:active { transform: scale(.94); }
 .ft-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .ft-tools .gbtn { font-size: 14px; }
 .ft-ok { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--food); color: #fff; font-size: 22px; cursor: pointer; box-shadow: 0 4px 14px color-mix(in srgb, var(--food) 40%, transparent); }
-.ft-summary { background: var(--surface); border-radius: 18px; padding: 14px 18px; display: grid; gap: 3px; } .ft-summary b { font-size: 17px; } .ft-summary small { color: var(--muted); font-size: 15px; }
+.ft-summary { background: var(--surface); border-radius: 18px; padding: 14px 18px; display: grid; gap: 3px; } .ft-summary b { font-size: 15.5px; } .ft-summary small { color: var(--muted); font-size: 13.5px; }
 .ft-impact .row i { font-style: normal; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--c); color: #fff; font-size: 12px; font-weight: 700; margin-right: 10px; }
 .ft-facts .row.sub > span:first-child { padding-left: 18px; color: var(--ink-2); }
 .ft-facts input { width: 110px; text-align: right; background: transparent !important; }
@@ -638,3 +638,28 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
   #view-calendario .cal-nav h2 { font-size: 20px; }
   #view-calendario .cal-tools .seg button { padding: 6px 11px; font-size: 13.5px; }
 }
+
+/* mídia dos exercícios (© Gym visual, servida do exercises-dataset) */
+.tr-exname { display: inline-flex; align-items: center; gap: 10px; }
+.tr-thumb { position: relative; flex: none; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: #fff; display: grid; place-items: center; box-shadow: inset 0 0 0 .5px var(--line); }
+.tr-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tr-thumb i { font: 700 15px var(--display); font-style: normal; color: var(--tint); }
+.tr-pick li { display: flex; align-items: center; gap: 12px; } .tr-pick li > span.tr-thumb { flex: none; } .tr-pick li > .tr-thumb + span { display: grid; gap: 1px; min-width: 0; flex: 1; }
+.tr-pick .plus { margin-left: auto; }
+.tr-demo { margin: 0 0 12px; background: #fff; border-radius: 18px; overflow: hidden; display: grid; justify-items: center; }
+.tr-demo img { width: 100%; max-width: 360px; aspect-ratio: 1; object-fit: contain; display: block; }
+.tr-demo figcaption { width: 100%; text-align: right; font-size: 11px; color: #8e8e93; padding: 4px 12px 8px; } .tr-demo a { color: inherit; }
+
+/* ---------- Saúde · Hoje: estados vazios com ações, menu Registrar ---------- */
+.h-empty { display: grid; justify-items: center; text-align: center; gap: 6px; padding: 22px 16px; border-radius: 18px; background: var(--fill); }
+.h-empty > .ic { width: 28px; height: 28px; color: var(--muted); }
+.h-empty b { font: 600 15.5px var(--display); color: var(--ink); }
+.h-empty span { color: var(--muted); font-size: 13.5px; max-width: 360px; line-height: 1.35; }
+.h-acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+.meals-head { display: flex; align-items: center; gap: 8px; } .meals-head .mini-h { margin: 0 !important; } .meals-head .h-add { margin-left: auto; }
+#view-saude .mb { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n v" "t t"; gap: 6px 10px; align-items: baseline; }
+#view-saude .mb > .n { grid-area: n; } #view-saude .mb > .v { grid-area: v; text-align: right; font-size: 13.5px; } #view-saude .mb > .track2 { grid-area: t; }
+.h-menu button { display: flex; align-items: center; gap: 14px; text-align: left; color: var(--ink); }
+.h-menu button .ic { width: 22px; height: 22px; color: var(--tint); flex: none; }
+.h-menu button span { display: grid; gap: 2px; } .h-menu button b { font-weight: 600; font-size: 16px; } .h-menu button small { color: var(--muted); font-size: 13px; }
+.h-menu button.cancel { justify-content: center; color: var(--tint); }

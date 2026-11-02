@@ -342,3 +342,23 @@ button.c-tag:hover { background: var(--car-soft); color: var(--car-ink); }
   #view-carreira .subtab { white-space: nowrap; flex: none; }
   #view-carreira .sub-tools .pill { max-width: 110px; }
 }
+
+/* ===== dimensões: bordas alinhadas nos dois lados ===== */
+#view-carreira { overflow-x: clip; }
+#view-carreira > .subtabs { align-self: stretch; display: flex; }
+#view-carreira > .subtabs .sub-tools { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+#view-carreira .card { min-width: 0; }
+#view-carreira .card-head { flex-wrap: wrap; row-gap: 10px; }
+#view-carreira .grid-2 { align-items: stretch; }
+#view-carreira .grid-2 > .card { height: 100%; box-sizing: border-box; }
+@media (min-width: 1001px) {
+  #view-carreira .grid-2 > .card.c-sticky { position: sticky; top: 16px; height: auto; align-self: start; }
+}
+@media (max-width: 640px) {
+  .c-head-actions { flex: 1 1 100%; justify-content: space-between; min-width: 0; }
+  .c-head-actions .seg { flex: 1 1 auto; min-width: 0; }
+  .c-head-actions .btn { flex: none; }
+  #view-carreira > .subtabs .subtab { flex: 1 1 auto; padding-inline: 10px; }
+  #view-carreira > .subtabs .sub-tools { display: none; } /* no celular, puxar para baixo atualiza */
+  #view-carreira .card { padding-inline: 16px; }
+}
