@@ -72,7 +72,7 @@ Na tela **Início**, as quatro verificações devem ficar verdes:
 ```
 npm install -g wrangler
 copy .dev.vars.example .dev.vars   (e preencha)
-wrangler pages dev
+wrangler pages dev public
 ```
 Abre em http://localhost:8788.
 
