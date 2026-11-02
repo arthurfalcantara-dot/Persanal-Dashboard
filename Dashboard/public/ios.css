@@ -18,7 +18,7 @@
   --line: rgba(60, 60, 67, .14); --line-strong: rgba(60, 60, 67, .29);
   --tint: #007aff;
   /* cores do sistema (as de texto usam a variante de alto contraste) */
-  --exp: #d6245a; --exp-soft: #ffe5ec; --inc: #248a3d; --inc-soft: #e3f6e8;
+  --exp: #d6245a; --exp-soft: #ffe5ec; --inc: #2f7a62; --inc-soft: #e4f1ea;
   --warn: #c93400; --warn-soft: #fff1e0; --bad: #d70015; --good: #248a3d;
   --n-default: #8e8e93; --n-gray: #8e8e93; --n-brown: #a2845e; --n-orange: #ff9500; --n-yellow: #d4a300;
   --n-green: #34c759; --n-blue: #007aff; --n-purple: #af52de; --n-pink: #ff2d55; --n-red: #ff3b30;
@@ -43,7 +43,7 @@
     --ink: #ffffff; --ink-2: rgba(235, 235, 245, .72); --muted: #8e8e93;
     --line: rgba(84, 84, 88, .55); --line-strong: rgba(84, 84, 88, .8);
     --tint: #0a84ff;
-    --exp: #ff375f; --exp-soft: #3a1520; --inc: #30d158; --inc-soft: #0f2e18;
+    --exp: #ff375f; --exp-soft: #3a1520; --inc: #5bbf97; --inc-soft: #1b2e27;
     --warn: #ff9f0a; --warn-soft: #3a2a10; --bad: #ff453a; --good: #30d158;
     --n-default: #98989d; --n-gray: #98989d; --n-brown: #ac8e68; --n-orange: #ff9f0a; --n-yellow: #ffd60a;
     --n-green: #30d158; --n-blue: #0a84ff; --n-purple: #bf5af2; --n-pink: #ff375f; --n-red: #ff453a;
@@ -60,7 +60,7 @@
   --ink: #ffffff; --ink-2: rgba(235, 235, 245, .72); --muted: #8e8e93;
   --line: rgba(84, 84, 88, .55); --line-strong: rgba(84, 84, 88, .8);
   --tint: #0a84ff;
-  --exp: #ff375f; --exp-soft: #3a1520; --inc: #30d158; --inc-soft: #0f2e18;
+  --exp: #ff375f; --exp-soft: #3a1520; --inc: #5bbf97; --inc-soft: #1b2e27;
   --warn: #ff9f0a; --warn-soft: #3a2a10; --bad: #ff453a; --good: #30d158;
   --n-default: #98989d; --n-gray: #98989d; --n-brown: #ac8e68; --n-orange: #ff9f0a; --n-yellow: #ffd60a;
   --n-green: #30d158; --n-blue: #0a84ff; --n-purple: #bf5af2; --n-pink: #ff375f; --n-red: #ff453a;
@@ -663,3 +663,8 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 .h-menu button .ic { width: 22px; height: 22px; color: var(--tint); flex: none; }
 .h-menu button span { display: grid; gap: 2px; } .h-menu button b { font-weight: 600; font-size: 16px; } .h-menu button small { color: var(--muted); font-size: 13px; }
 .h-menu button.cancel { justify-content: center; color: var(--tint); }
+
+/* Finanças: verde de receitas e da categoria Renda iguais ao painel do claude.ai */
+#view-financas { --n-green: #448361; }
+:root[data-theme="dark"] #view-financas { --n-green: #5aa57a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #view-financas { --n-green: #5aa57a; } }
