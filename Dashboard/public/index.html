@@ -17,6 +17,7 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="/painel.css">
 <link rel="stylesheet" href="/carreira.css">
+<link rel="stylesheet" href="/calendario.css">
 <link rel="stylesheet" href="/ios.css">
 </head>
 <body>
@@ -104,6 +105,10 @@
               <input type="file" id="imp-file" accept="application/json,.json" hidden>
             </div>
             <p class="msg" id="imp-msg" hidden></p>
+          </section>
+          <section class="card">
+            <h3 class="sec">Google Calendar</h3>
+            <div id="c-google"><p class="hint">Carregando…</p></div>
           </section>
           <section class="card">
             <h3 class="sec">Conta</h3>
@@ -947,12 +952,35 @@
     </section>
 
 
-      <!-- AGENDA (Google Calendar + tarefas com data do Notion) -->
-      <section id="view-agenda" class="view" style="display:none;flex-direction:column;gap:16px">
-        <header class="page"><div class="title-row"><h1>Agenda</h1></div><p>Google Calendar e tarefas com prazo do Notion.</p></header>
-        <div id="ag-root" style="display:flex;flex-direction:column;gap:16px"><section class="card"><p class="empty">Carregando…</p></section></div>
-        <div class="modal ag-sheet" id="ag-sheet" hidden></div>
-      </section>
+      <!-- AGENDA: calendário portado do painel do claude.ai (Notion + Google Calendar) -->
+    <section id="view-calendario" class="view" style="display:none;flex-direction:column;gap:16px">
+      <header class="page">
+        <div>
+          <h1>Agenda</h1>
+        </div>
+        <div class="status"><span id="cal-status" class="pill">Carregando…</span><span id="cal-gstatus" class="pill" hidden>Google</span><button class="btn" id="cal-refresh">Atualizar</button></div>
+      </header>
+      <div id="cal-banner" class="banner" hidden></div>
+      <div class="cal-bar">
+        <div class="cal-nav"><button class="iconbtn" id="cal-mgr-t" aria-controls="cal-mgr" aria-expanded="true" aria-label="Mostrar ou ocultar calendários" title="Calendários (C)"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 4.5v15" stroke="currentColor" stroke-width="1.8"/></svg></button><button class="iconbtn" id="cal-prev" aria-label="Anterior"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="btn" id="cal-today">Hoje</button><button class="iconbtn" id="cal-next" aria-label="Próximo"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><h2 id="cal-label"></h2></div>
+        <div class="cal-tools"><div class="seg" id="cal-views" role="group" aria-label="Visualização"><button data-v="month">Mês</button><button data-v="week">Semana</button><button data-v="day">Dia</button><button data-v="agenda">Agenda</button></div><span class="cal-zoom seg" role="group" aria-label="Altura das horas"><button data-calzoom="-1" title="Ver mais horas" aria-label="Ver mais horas">−</button><button data-calzoom="1" title="Horas maiores" aria-label="Horas maiores">+</button></span><button class="btn primary" id="cal-add">+ Novo</button></div>
+      </div>
+      <div class="cal-wrap" id="cal-wrap">
+        <div class="cal-mgr-bg" id="cal-mgr-bg" hidden></div>
+        <aside id="cal-mgr" class="cal-mgr" aria-label="Calendários">
+          <div class="cal-mgr-h"><b>Calendários</b><button type="button" class="iconbtn" id="cal-mgr-x" aria-label="Recolher calendários"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 4.5v15" stroke="currentColor" stroke-width="1.8"/></svg></button></div>
+          <div class="cal-mini" id="cal-mini"></div>
+          <input type="search" id="cal-mg-q" class="cal-mg-q" placeholder="Filtrar calendários" aria-label="Filtrar calendários" autocomplete="off">
+          <div id="cal-mg-list" class="cal-mg-list"></div>
+          <div class="cal-mg-foot"><button type="button" class="btn ghost" id="cal-mg-all">Mostrar todos</button><button type="button" class="btn ghost" id="cal-mg-reset">Restaurar cores</button></div>
+        </aside>
+        <div id="cal-body" class="cal-body"></div>
+        <aside id="cal-side" class="cal-side"></aside>
+      </div>
+      <p class="hint cal-help">Arraste um item para outro dia (ou outro horário, na semana) para mudar a data no Notion ou no Google Calendar; puxe a borda de baixo para mudar a duração. Clique num item para editar, num dia ou horário vazio para criar uma tarefa. Atalhos: ← → navegam, T volta para hoje, M, S e D trocam a visualização, C mostra ou recolhe a lista de calendários.</p>
+      <div class="modal cal-sheet" id="cal-sheet" hidden role="dialog" aria-modal="true"><div class="modal-box cal-sheet-box" id="cal-sheet-box"></div></div>
+    </section>
+
 
       <section id="view-other" class="view" style="display:none;flex-direction:column;gap:20px">
         <header class="page"><div class="title-row"><h1 id="ph-title"></h1></div><p>Esta aba entra numa próxima etapa da migração.</p></header>

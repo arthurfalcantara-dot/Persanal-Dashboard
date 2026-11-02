@@ -2,7 +2,7 @@
 // As abas vieram do artifact e chamam mcp.callTool("Notion", ferramenta, entrada). Aqui cada
 // ferramenta vira chamadas à API, e a resposta volta no mesmo formato "achatado" do conector:
 //   propriedades por nome; datas como "date:<Prop>:start"; caixas como "__YES__"/"__NO__".
-import { api, ApiError } from "/data.js";
+import { api, ApiError, db } from "/data.js";
 
 const norm = id => String(id || "").replace(/^collection:\/\//, "").trim();
 const dashed = id => { const h = norm(id).replace(/-/g, ""); return /^[0-9a-f]{32}$/i.test(h) ? `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}` : norm(id); };
@@ -31,6 +31,17 @@ const VIEWS = {
   "1e4b0f6321678167a4d2000c1ba1c1eb": { ds: "1e4b0f63-2167-8163-91ad-000b7c98b809" },  // Cross-Functional Competencies
   "371b0f632167805988e9000c3a5650a7": { ds: "74f0fa47-1869-4aaa-ba04-259ff23ebe30", sorts: [{ property: "Status", direction: "ascending" }] }, // Courses
   "7bd460664e634c1d90f319e38123df24": { ds: "10b844ac-1854-4e9d-bdd2-394643be5a8f" },  // Skill Development Monitor
+  // Calendário (bases que o Notion Calendar mostra)
+  "b97a482d5a9b4f579d509160c1cf9972": { ds: "2b518aab-6de5-427b-bc11-8e2275e8a803" },  // Oportunidades acadêmicas
+  "1d5b0f63216781aea182000c3ffe1358": { ds: "1d5b0f63-2167-81cf-a0f7-000ba782d68a", filter: { property: "Complete", checkbox: { equals: false } } }, // Project Tasks · Unchecked
+  "1d5b0f63216781b880e6000c25f726f6": { ds: "1d5b0f63-2167-81cf-a0f7-000ba782d68a", filter: { property: "Complete", checkbox: { equals: true } } },  // Project Tasks · Checked
+  "2afb0f63216783e3bb4208e9c50b274d": { ds: "046b0f63-2167-824c-9643-87474bd07efe" },  // Eventos Repositório INEU
+  "f5bb0f63216783b49f6b88b14154e6d9": { ds: "600b0f63-2167-82f7-911e-877a005b5147" },  // Tarefas Repositório INEU
+  "1bcb0f63216781bb9411000c938c5ae6": { ds: "1bcb0f63-2167-81f7-b2fe-000b91c0aa2e" },  // Assignments/Exams
+  "303b0f63216781659084000c02b72e3a": { ds: "303b0f63-2167-81ff-86ed-000bc4d61c7d", sorts: [{ property: "Due Date", direction: "ascending" }] }, // Student Tasks
+  "1bdb0f632167813885f8000cd1661c44": { ds: "1bdb0f63-2167-814c-84fd-000b7b2e5e4f", sorts: [{ property: "Due Date", direction: "ascending" }] }, // Student Readings
+  "1bcb0f632167810b80c6000ce6cf83b5": { ds: "1bcb0f63-2167-8150-a8a5-000bd0b37ee6" },  // Workouts
+  "3feb0f632167816c856e000c3217e3f3": { ds: "1bcb0f63-2167-818a-a3e0-000b84b54d0b", sorts: [{ property: "Date", direction: "descending" }] }, // Runs
 };
 const viewOf = url => { const m = String(url || "").match(/[?&]v=([0-9a-f]{32})/i); return m && VIEWS[m[1].toLowerCase()]; };
 
@@ -158,6 +169,9 @@ const TOOLS = {
     }
     return { payload: { pages } };
   },
+  // lixeira e restauração em lote: { page_ids: [...] }
+  async "notion-delete-pages"(input) { for (const id of input.page_ids || []) await api(`notion/pages/${dashed(String(id).match(/[0-9a-f]{32}/i)?.[0] || id)}`, { method: "PATCH", body: { in_trash: true } }); return { payload: { ok: true } }; },
+  async "notion-restore-pages"(input) { for (const id of input.page_ids || []) await api(`notion/pages/${dashed(String(id).match(/[0-9a-f]{32}/i)?.[0] || id)}`, { method: "PATCH", body: { in_trash: false } }); return { payload: { ok: true } }; },
   // mandar uma página para a lixeira: { page_id }
   async "notion-trash-page"(input) {
     const id = dashed(String(input.page_id || "").match(/[0-9a-f]{32}/i)?.[0] || input.page_id);
@@ -185,6 +199,36 @@ const WEB = {
   },
 };
 
+// ---------- Google Calendar (mesmas ferramentas do conector do claude.ai, pelo servidor do app) ----------
+const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo";
+async function gtoken() { const d = await db.doc("app/google").get(); if (!d.exists || !d.data().token) throw { code: "server_not_connected", message: "Conecte o Google Calendar em Configurações." }; return d.data().token; }
+const rfc = s => (/[zZ]|[+-]\d\d:\d\d$/.test(s) ? s : new Date(s).toISOString());
+function gBody(i) {
+  const b = {};
+  if (i.summary !== undefined) b.summary = i.summary; if (i.description !== undefined) b.description = i.description; if (i.location !== undefined) b.location = i.location;
+  if (i.startTime) {
+    if (i.allDay) { b.start = { date: i.startTime.slice(0, 10), dateTime: null }; b.end = { date: (i.endTime || i.startTime).slice(0, 10), dateTime: null }; }
+    else { b.start = { dateTime: i.startTime.slice(0, 19), timeZone: TZ, date: null }; b.end = { dateTime: (i.endTime || i.startTime).slice(0, 19), timeZone: TZ, date: null }; }
+  }
+  return b;
+}
+async function gcall(op, body) {
+  try { return await api(`google/${op}`, { method: "POST", body: Object.assign({ token: await gtoken() }, body) }); }
+  catch (e) {
+    if (e && e.code && !(e instanceof ApiError)) throw e;
+    if (e instanceof ApiError && e.code === "google_reauth") throw { code: "needs_reauth", message: e.message };
+    if (e instanceof ApiError && e.code === "not_configured") throw { code: "server_not_connected", message: e.message };
+    throw toMcpError(e);
+  }
+}
+const GTOOLS = {
+  async list_calendars() { const r = await gcall("calendars", {}); return { payload: { calendars: r.calendars.map(c => ({ id: c.id, summary: c.nome, accessRole: c.escrita ? "writer" : "reader", backgroundColor: c.cor, primary: c.principal })) } }; },
+  async list_events(i) { const r = await gcall("events-raw", { cal: i.calendarId, de: rfc(i.startTime), ate: rfc(i.endTime), pageToken: i.pageToken || null }); return { payload: r }; },
+  async create_event(i) { const r = await gcall("create-raw", { cal: i.calendarId, body: gBody(i) }); return { payload: { event: r.event } }; },
+  async update_event(i) { const r = await gcall("update-raw", { cal: i.calendarId, id: i.eventId, body: gBody(i) }); return { payload: { event: r.event } }; },
+  async delete_event(i) { await gcall("delete", { cal: i.calendarId, id: i.eventId }); return { payload: { ok: true } }; },
+};
+
 export const mcp = {
   async describeTool(server, tool) {
     if (tool === "web_fetch") return { name: tool, inputSchema: WEB.schema };
@@ -192,6 +236,7 @@ export const mcp = {
   },
   async callTool(server, tool, input /*, opts */) {
     if (tool === "web_fetch") { try { return await WEB.fetch(input || {}); } catch (e) { throw toMcpError(e); } }
+    if (server === "Google Calendar") { const g = GTOOLS[tool]; if (!g) throw { code: "tool_error", message: `${tool} não existe no app` }; return g(input || {}); }
     const fn = TOOLS[tool];
     if (!fn) throw { code: "tool_error", message: `${tool} ainda não existe no app` };
     try { return await fn(input || {}); }

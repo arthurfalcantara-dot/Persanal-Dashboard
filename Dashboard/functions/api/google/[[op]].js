@@ -162,6 +162,14 @@ export async function onRequest({ request, env, params, data }) {
       }));
       return json(200, { events: out, falhas: errs });
     }
+    // formato cru do Google (usado pelo calendário portado do painel antigo)
+    if (op === "events-raw") {
+      const q = new URLSearchParams({ timeMin: body.de, timeMax: body.ate, singleEvents: "true", orderBy: "startTime", maxResults: "250" }); if (body.pageToken) q.set("pageToken", body.pageToken);
+      const r = await gcal(env, rt, `/calendars/${calId(body.cal)}/events?${q}`);
+      return json(200, { events: r.items || [], accessRole: r.accessRole || null, nextPageToken: r.nextPageToken || null });
+    }
+    if (op === "create-raw") { const r = await gcal(env, rt, `/calendars/${calId(body.cal)}/events`, { method: "POST", body: JSON.stringify(body.body || {}) }); return json(200, { event: r }); }
+    if (op === "update-raw") { const r = await gcal(env, rt, `/calendars/${calId(body.cal)}/events/${evId(body.id)}`, { method: "PATCH", body: JSON.stringify(body.body || {}) }); return json(200, { event: r }); }
     if (op === "create") {
       const r = await gcal(env, rt, `/calendars/${calId(body.cal)}/events`, { method: "POST", body: JSON.stringify(toGoogle(body.evento || {})) });
       return json(200, { id: r.id, link: r.htmlLink });

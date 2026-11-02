@@ -619,3 +619,22 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 #ledger tr.editable { cursor: pointer; } #ledger tr.editable:hover td { background: var(--fill); }
 
 @media (max-width: 760px) { .side-top { display: none !important; } }
+
+/* ---------- Agenda (calendário do painel): maior, no estilo do app ---------- */
+#view-calendario .cal-body { border: 0; border-radius: var(--r-card); box-shadow: var(--shadow); }
+#view-calendario .cal-mgr, #view-calendario .cal-side > * { border-radius: 20px; }
+/* semana e dia ocupam a altura da tela (antes: cartão de 760 px) */
+#view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { max-height: none; height: max(480px, calc(100dvh - 190px)); touch-action: pan-y; }
+#view-calendario .cal-body { touch-action: pan-y; }
+.cal-zoom button { min-width: 34px; font-size: 18px; line-height: 1; }
+@media (max-width: 760px) {
+  #view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { height: max(420px, calc(100dvh - env(safe-area-inset-bottom, 0px) - 250px)); }
+  #view-calendario .cal-bar { gap: 8px; }
+  #view-calendario .cal-tools { width: 100%; display: flex; gap: 6px; flex-wrap: wrap; }
+  #view-calendario header.page .status { flex-wrap: wrap; }
+}
+@media (max-width: 760px) {
+  #view-calendario #cal-refresh { display: none; } /* no celular, puxar para atualizar */
+  #view-calendario .cal-nav h2 { font-size: 20px; }
+  #view-calendario .cal-tools .seg button { padding: 6px 11px; font-size: 13.5px; }
+}

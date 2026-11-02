@@ -22,17 +22,17 @@ document.querySelectorAll("[data-act=out]").forEach(b => b.onclick = () => auth.
 
 // ---------- navegação por abas (#hash) ----------
 const NAMES = { config: "Configurações", saude: "Saúde & corpo", financas: "Finanças", self: "Self Improvement", carreira: "Carreira", agenda: "Agenda", estudos: "Leitura & estudos" };
-const READY = { config: "view-inicio", saude: "view-saude", financas: "view-financas", self: "view-self", carreira: "view-carreira", agenda: "view-agenda" };
+const READY = { config: "view-inicio", saude: "view-saude", financas: "view-financas", self: "view-self", carreira: "view-carreira", agenda: "view-calendario" };
 function route() {
   const tab = currentTab();
   document.querySelectorAll(".tab").forEach(t => { if (t.dataset.tab === tab) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
   const vid = READY[tab] || "view-other";
-  ["view-inicio", "view-saude", "view-financas", "view-self", "view-carreira", "view-agenda", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
+  ["view-inicio", "view-saude", "view-financas", "view-self", "view-carreira", "view-calendario", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
   if (vid === "view-other") $("ph-title").textContent = NAMES[tab];
   document.title = NAMES[tab] + " · Painel";
   if (tab === "saude") loadTab("saude").then(() => { window.dispatchEvent(new Event("painel:saude")); saudeMode(); });
   if (tab === "financas") loadTab("financas");
-  if (tab === "agenda") loadTab("agenda").then(() => window.painelAgenda && window.painelAgenda.start());
+  if (tab === "agenda") loadTab("agenda").then(() => window.dispatchEvent(new Event("painel:calendario")));
   if (tab === "carreira") loadTab("carreira").then(() => window.dispatchEvent(new Event("painel:carreira")));
   if (tab === "self") loadTab("self").then(() => window.dispatchEvent(new Event("painel:self")));
   scrollTo(0, 0);
@@ -56,10 +56,10 @@ window.claude = { use: async cap => {
   if (cap === "sample") { try { return (await health()).anthropic ? sample : null; } catch { return null; } }
   return null;
 } };
-const TAB_JS = { financas: "/financas.js?v=3", self: "/self.js?v=2", carreira: "/carreira.js?v=1", agenda: "/agenda.js?v=2", saude: "/saude.js?v=5" }, tabP = {};
+const TAB_JS = { financas: "/financas.js?v=3", self: "/self.js?v=2", carreira: "/carreira.js?v=1", agenda: "/calendario.js?v=1", saude: "/saude.js?v=5" }, tabP = {};
 function loadTab(name) {
   return tabP[name] || (tabP[name] = new Promise((ok, bad) => {
-    const s = document.createElement("script"); if (name === "agenda") s.type = "module"; s.src = TAB_JS[name]; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
+    const s = document.createElement("script"); s.src = TAB_JS[name]; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
   }));
 }
 
@@ -100,7 +100,7 @@ async function refreshTab() {
   const tab = currentTab();
   if (tab === "config") return Promise.all([checks(), workouts()]);
   if (tab === "saude") { const m = $("view-saude").dataset.mode; if (m === "treino" && window.painelTreino) return window.painelTreino.refresh(); if (m === "dieta" && window.painelDieta) return window.painelDieta.refresh(); return db.reloadAll(); }
-  if (tab === "agenda") return window.painelAgenda && window.painelAgenda.refresh();
+  if (tab === "agenda") { const b = $("cal-refresh"); if (b) b.click(); return new Promise(r => setTimeout(r, 1500)); }
   if (tab === "financas" || tab === "self" || tab === "carreira") {
     const b = $({ financas: "refresh", self: "s-refresh", carreira: "c-refresh" }[tab]); if (!b || b.disabled) return;
     b.click(); const t0 = Date.now();
@@ -255,13 +255,32 @@ $("imp-file").onchange = async e => {
   } catch (err) { msg(el, "Não consegui importar: " + (err.message || err), "err"); }
 };
 
+// ---------- Google Calendar: conectar / desconectar (Configurações) ----------
+async function googleReturn() {
+  const h = location.hash; if (!/[&?](g|gerr)=/.test(h)) return;
+  const q = new URLSearchParams(h.slice(h.indexOf("&") + 1)); history.replaceState(null, "", "#agenda");
+  if (q.get("g")) { await db.doc("app/google").set({ token: q.get("g"), email: q.get("gemail") || "", conectadoEm: new Date().toISOString() }); toastApp("Google Calendar conectado"); }
+  else toastApp("Não conectei o Google Calendar: " + q.get("gerr"));
+  route();
+}
+async function googleCard() {
+  const el = $("c-google"); if (!el) return;
+  let d = null; try { d = await db.doc("app/google").get(); } catch {}
+  el.innerHTML = d && d.exists ? `<p class="hint">Conectado${d.data().email ? " como " + esc(d.data().email) : ""}.</p><div class="row-acts"><button class="gbtn" type="button" id="g-reconn">Reconectar</button><button class="gbtn danger" type="button" id="g-disc">Desconectar</button></div>`
+    : `<p class="hint">Conecte para ver e editar seus eventos na Agenda.</p><div class="row-acts"><button class="gbtn tint" type="button" id="g-conn">Conectar Google Calendar</button></div>`;
+  const go = async () => { try { location.href = (await api("google/auth-url")).url; } catch (e) { toastApp(e.message); } };
+  if ($("g-conn")) $("g-conn").onclick = go; if ($("g-reconn")) $("g-reconn").onclick = go;
+  if ($("g-disc")) $("g-disc").onclick = async () => { if (confirm("Desconectar o Google Calendar deste app?")) { await db.doc("app/google").delete(); googleCard(); } };
+}
+let toastAT; function toastApp(t) { const el = $("toast"); if (!el) return; el.textContent = t; el.hidden = false; clearTimeout(toastAT); toastAT = setTimeout(() => { el.hidden = true; }, 3200); }
+
 // ---------- início do app ----------
 let started = false;
 function show(signedIn) {
   $("login").hidden = signedIn; $("app").hidden = !signedIn; $("sb-blur").hidden = !signedIn; $("gear").hidden = !signedIn; $("side-open").hidden = !signedIn || !document.documentElement.classList.contains("side-closed");
   if (signedIn) {
     $("c-user").textContent = auth.user ? `Conectado como ${auth.user.email}.` : "";
-    route(); if (!started) { started = true; checks(); workouts(); }
+    route(); if (!started) { started = true; checks(); workouts(); googleReturn(); googleCard(); }
   }
 }
 (async () => {
