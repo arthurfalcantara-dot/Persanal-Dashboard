@@ -46,7 +46,7 @@ window.claude = { use: async cap => (cap === "db" && auth.user ? db : null) };
 let saudeP = null;
 function loadSaude() {
   return saudeP || (saudeP = new Promise((ok, bad) => {
-    const s = document.createElement("script"); s.src = "/saude.js?v=2"; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
+    const s = document.createElement("script"); s.src = "/saude.js?v=3"; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
   }));
 }
 

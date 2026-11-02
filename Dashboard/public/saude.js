@@ -410,7 +410,7 @@
     document.querySelectorAll("[data-hsub]").forEach(b => b.setAttribute("aria-selected", b.dataset.hsub === S.sub));
     document.querySelectorAll("[data-hpanel]").forEach(p => { p.style.display = p.dataset.hpanel === S.sub ? "flex" : "none"; });
     if (S.sub === "exercicios") { renderExBank(); renderBoard(exHistory()); return; }
-    if (!S.cfg && S.sub !== "plano") { if (S.loaded.cfg) setBanner("Ainda não há um plano salvo. Preencha Plano & dados para as metas aparecerem."); return; }
+    if (!S.cfg && S.sub !== "plano") { if (S.loaded.cfg) setBanner("Ainda não há dados de saúde neste app. Importe o arquivo do painel antigo em Início → Importar dados, ou preencha Plano & dados para começar do zero."); return; }
     ({ hoje: renderDay, semana: renderWeek, progresso: renderProgress, plano: renderPlano })[S.sub]();
   }
 
