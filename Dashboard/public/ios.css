@@ -711,3 +711,17 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 #dieta-root .ft-addrow button { font-size: 16px; }
 #dieta-root .ft-list li { font-size: 15px; }
 .ft-summary b { font-size: 16px; } .ft-summary small { font-size: 14.5px; }
+
+/* ---------- Alimentação: ritmo vertical (grade de 4 px) ---------- */
+#dieta-root { gap: 12px; padding-bottom: 96px; }                       /* folga para o botão + e a barra de abas */
+#dieta-root > .ft-week { margin-top: -2px; }
+#dieta-root > .ft-h { margin-top: 10px; margin-bottom: -4px; }        /* Metas: 22 px acima, 8 px até os cards */
+#dieta-root .ft-goals { gap: 6px; }
+#dieta-root .ft-goal { padding: 10px 12px 10px 14px; }
+#dieta-root > .ft-goals + .ft-meal { margin-top: 14px; }              /* metas → primeira refeição: 26 px */
+#dieta-root > .ft-meal + .ft-meal { margin-top: 14px; }               /* entre refeições: 26 px */
+#dieta-root .ft-meal { gap: 8px; }
+#dieta-root .ft-meal-h { padding: 0 4px; row-gap: 1px; }
+#dieta-root .ft-item, #dieta-root .ft-sum { padding: 11px 16px; gap: 3px; }
+#dieta-root .ft-addrow { padding: 3px 8px 3px 16px; }
+#dieta-root .ft-mtot { padding: 2px 16px 0; }
