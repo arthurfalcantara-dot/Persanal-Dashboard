@@ -1,0 +1,9 @@
+# Copie para .dev.vars para rodar localmente (wrangler pages dev). Nunca suba .dev.vars para o GitHub.
+SUPABASE_URL=https://SEU-PROJETO.supabase.co
+SUPABASE_ANON_KEY=cole-a-chave-anon-public
+ALLOWED_EMAILS=arthur.f.alcantara@gmail.com
+NOTION_TOKEN=ntn_cole-o-token-da-integracao
+# próximas etapas
+ANTHROPIC_API_KEY=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=

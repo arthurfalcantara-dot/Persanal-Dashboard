@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Painel da Vida</title>
+<meta name="description" content="Painel pessoal: saúde, finanças, carreira e calendário.">
+<meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
+<!-- iPhone: abrir em tela cheia quando instalado na Tela de Início -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Painel">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650;12..96,750&family=Instrument+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!-- tela de entrada -->
+  <main id="login" class="login" hidden>
+    <div class="login-box">
+      <div class="brand"><img src="/icons/icon-192.png" alt="" width="40" height="40"><h1>Painel da Vida</h1></div>
+      <form id="login-email">
+        <label class="field">E-mail<input id="l-email" type="email" autocomplete="email" required placeholder="voce@exemplo.com"></label>
+        <button class="btn primary" type="submit">Receber código</button>
+      </form>
+      <form id="login-code" hidden>
+        <p class="hint" id="l-sent"></p>
+        <label class="field">Código de 6 dígitos<input id="l-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" required></label>
+        <button class="btn primary" type="submit">Entrar</button>
+        <button class="btn ghost" type="button" id="l-back">Usar outro e-mail</button>
+      </form>
+      <p class="msg" id="l-msg" hidden></p>
+    </div>
+  </main>
+
+  <!-- app -->
+  <div id="app" class="app" hidden>
+    <nav class="side" aria-label="Seções">
+      <div class="side-brand"><img src="/icons/icon-192.png" alt="" width="28" height="28"><span>Painel</span></div>
+      <a href="#inicio" class="nav-i" data-tab="inicio"><span class="dot" style="--c:var(--ink)"></span><b>Início</b></a>
+      <a href="#saude" class="nav-i" data-tab="saude"><span class="dot" style="--c:var(--inc)"></span><b>Saúde</b></a>
+      <a href="#financas" class="nav-i" data-tab="financas"><span class="dot" style="--c:var(--exp)"></span><b>Finanças</b></a>
+      <a href="#self" class="nav-i" data-tab="self"><span class="dot" style="--c:var(--self)"></span><b>Self</b></a>
+      <a href="#carreira" class="nav-i" data-tab="carreira"><span class="dot" style="--c:var(--n-blue)"></span><b>Carreira</b></a>
+      <a href="#calendario" class="nav-i" data-tab="calendario"><span class="dot" style="--c:var(--n-orange)"></span><b>Agenda</b></a>
+      <div class="side-foot"><button class="btn ghost small" id="b-theme" type="button" title="Tema claro/escuro">Tema</button><button class="btn ghost small" id="b-out" type="button">Sair</button></div>
+    </nav>
+
+    <main class="main">
+      <section class="view" data-view="inicio">
+        <header class="vh"><h2>Início</h2><p class="hint">Teste da estrutura: login, servidor, Notion e banco.</p></header>
+        <div class="grid">
+          <article class="card">
+            <h3>Conexões</h3>
+            <ul class="checks" id="c-checks"><li>Verificando…</li></ul>
+            <div class="row-acts"><button class="btn small" type="button" data-act="theme">Tema claro/escuro</button><button class="btn small" type="button" data-act="out">Sair</button></div>
+          </article>
+          <article class="card wide">
+            <div class="card-h"><h3>Treinos recentes no Notion</h3><button class="btn small" id="b-reload" type="button">Atualizar</button></div>
+            <div id="c-workouts"><p class="hint">Carregando…</p></div>
+          </article>
+          <article class="card">
+            <h3>Banco (Supabase)</h3>
+            <p class="hint">Grava e lê um documento de teste.</p>
+            <button class="btn" id="b-db" type="button">Testar gravação</button>
+            <p class="msg" id="c-db" hidden></p>
+          </article>
+        </div>
+      </section>
+      <section class="view" data-view="placeholder" hidden>
+        <header class="vh"><h2 id="ph-title"></h2><p class="hint">Esta aba entra na próxima etapa da migração.</p></header>
+      </section>
+    </main>
+  </div>
+
+  <script src="/vendor/supabase-2.117.3.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
