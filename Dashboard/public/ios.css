@@ -1,0 +1,275 @@
+/* ==========================================================================
+   Camada iOS sobre o CSS do painel (painel.css).
+   - Tipografia: a fonte do sistema (SF Pro no iPhone e no Mac; Segoe UI no Windows).
+   - Cores: paleta de sistema do iOS (fundos agrupados, rótulos, separadores, cores de destaque).
+   - Vidro ("Liquid Glass"): SÓ nas barras (lateral, inferior, superior, segmentos) e nos botões.
+     Cartões e conteúdo continuam opacos, como nos apps da Apple.
+   O efeito é feito em CSS (backdrop-filter): o app é um PWA, então o módulo nativo
+   expo-glass-effect não se aplica aqui.
+   ========================================================================== */
+
+:root {
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+
+  /* fundos agrupados (Ajustes, Saúde, Fitness) */
+  --bg: #f2f2f7; --surface: #ffffff; --surface-2: #f2f2f7; --fill: rgba(120, 120, 128, .12);
+  --ink: #000000; --ink-2: rgba(60, 60, 67, .78); --muted: #8e8e93;
+  --line: rgba(60, 60, 67, .14); --line-strong: rgba(60, 60, 67, .29);
+  --tint: #007aff;
+  /* cores do sistema (as de texto usam a variante de alto contraste) */
+  --exp: #d6245a; --exp-soft: #ffe5ec; --inc: #248a3d; --inc-soft: #e3f6e8;
+  --warn: #c93400; --warn-soft: #fff1e0; --bad: #d70015; --good: #248a3d;
+  --n-default: #8e8e93; --n-gray: #8e8e93; --n-brown: #a2845e; --n-orange: #ff9500; --n-yellow: #d4a300;
+  --n-green: #34c759; --n-blue: #007aff; --n-purple: #af52de; --n-pink: #ff2d55; --n-red: #ff3b30;
+  --self: #32ade6;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px rgba(0, 0, 0, .06);
+
+  /* vidro */
+  --glass-bg: rgba(255, 255, 255, .58);
+  --glass-bg-strong: rgba(255, 255, 255, .72);
+  --glass-edge: rgba(255, 255, 255, .85);
+  --glass-rim: rgba(0, 0, 0, .06);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, .12), 0 1px 3px rgba(0, 0, 0, .06);
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 -1px 0 rgba(255, 255, 255, .25);
+  --glass-blur: blur(22px) saturate(180%);
+
+  --r-card: 22px; --r-ctl: 999px;
+  --tabbar-h: 62px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --surface-2: #2c2c2e; --fill: rgba(120, 120, 128, .24);
+    --ink: #ffffff; --ink-2: rgba(235, 235, 245, .72); --muted: #8e8e93;
+    --line: rgba(84, 84, 88, .55); --line-strong: rgba(84, 84, 88, .8);
+    --tint: #0a84ff;
+    --exp: #ff375f; --exp-soft: #3a1520; --inc: #30d158; --inc-soft: #0f2e18;
+    --warn: #ff9f0a; --warn-soft: #3a2a10; --bad: #ff453a; --good: #30d158;
+    --n-default: #98989d; --n-gray: #98989d; --n-brown: #ac8e68; --n-orange: #ff9f0a; --n-yellow: #ffd60a;
+    --n-green: #30d158; --n-blue: #0a84ff; --n-purple: #bf5af2; --n-pink: #ff375f; --n-red: #ff453a;
+    --self: #64d2ff;
+    --shadow: none;
+    --glass-bg: rgba(44, 44, 46, .55); --glass-bg-strong: rgba(44, 44, 46, .72);
+    --glass-edge: rgba(255, 255, 255, .16); --glass-rim: rgba(255, 255, 255, .06);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, .5);
+    --glass-hi: inset 0 1px 0 rgba(255, 255, 255, .18), inset 0 -1px 0 rgba(255, 255, 255, .04);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --surface-2: #2c2c2e; --fill: rgba(120, 120, 128, .24);
+  --ink: #ffffff; --ink-2: rgba(235, 235, 245, .72); --muted: #8e8e93;
+  --line: rgba(84, 84, 88, .55); --line-strong: rgba(84, 84, 88, .8);
+  --tint: #0a84ff;
+  --exp: #ff375f; --exp-soft: #3a1520; --inc: #30d158; --inc-soft: #0f2e18;
+  --warn: #ff9f0a; --warn-soft: #3a2a10; --bad: #ff453a; --good: #30d158;
+  --n-default: #98989d; --n-gray: #98989d; --n-brown: #ac8e68; --n-orange: #ff9f0a; --n-yellow: #ffd60a;
+  --n-green: #30d158; --n-blue: #0a84ff; --n-purple: #bf5af2; --n-pink: #ff375f; --n-red: #ff453a;
+  --self: #64d2ff;
+  --shadow: none;
+  --glass-bg: rgba(44, 44, 46, .55); --glass-bg-strong: rgba(44, 44, 46, .72);
+  --glass-edge: rgba(255, 255, 255, .16); --glass-rim: rgba(255, 255, 255, .06);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, .5);
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, .18), inset 0 -1px 0 rgba(255, 255, 255, .04);
+}
+
+/* ---------- base ---------- */
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+body { margin: 0; font: 15px/1.42 var(--body); letter-spacing: -.01em; -webkit-font-smoothing: antialiased; min-height: 100dvh; }
+:focus-visible { outline: 2px solid var(--tint); outline-offset: 2px; border-radius: 10px; }
+
+/* ---------- vidro: receita única, usada por barras e botões ---------- */
+.glass, .side, .topbar, .subtabs, .seg, .chipnav,
+.btn, .gbtn, .iconbtn, .theme-toggle, .fab, .modal-head .iconbtn {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: .5px solid var(--glass-edge);
+  box-shadow: var(--glass-hi), 0 0 0 .5px var(--glass-rim), var(--glass-shadow);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass, .side, .topbar, .subtabs, .seg, .chipnav, .btn, .gbtn, .iconbtn, .fab { background: var(--glass-bg-strong); }
+}
+
+/* ---------- botões (cápsulas de vidro) ---------- */
+.btn, .gbtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 36px; padding: 7px 16px; border-radius: var(--r-ctl);
+  font: 600 14.5px/1.1 var(--body); color: var(--ink); letter-spacing: -.01em; cursor: pointer;
+  box-shadow: var(--glass-hi), 0 0 0 .5px var(--glass-rim), 0 2px 10px rgba(0, 0, 0, .08);
+  transition: transform .18s cubic-bezier(.3, .7, .4, 1.4), filter .18s;
+}
+.btn:hover, .gbtn:hover { border-color: var(--glass-edge); filter: brightness(1.03); }
+.btn:active, .gbtn:active, .iconbtn:active, .fab:active { transform: scale(.96); }
+.btn.small, .gbtn.small { min-height: 30px; padding: 5px 12px; font-size: 13px; }
+.btn.big { min-height: 50px; font-size: 17px; width: 100%; }
+/* botão de destaque: vidro tingido com a cor de destaque */
+.btn.primary, .gbtn.tint {
+  background: color-mix(in srgb, var(--tint) 82%, transparent); color: #fff; border-color: rgba(255, 255, 255, .35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), inset 0 -1px 0 rgba(0, 0, 0, .08), 0 4px 16px color-mix(in srgb, var(--tint) 35%, transparent);
+}
+.btn.primary:hover { opacity: 1; }
+.btn.ghost { background: transparent; border-color: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; color: var(--tint); padding-inline: 10px; }
+.btn.ghost:hover { background: var(--fill); }
+.gbtn.danger { color: var(--bad); }
+.btn[disabled], .gbtn[disabled] { opacity: .45; }
+.iconbtn { width: 36px; height: 36px; border-radius: 50%; color: var(--ink); font-size: 18px; line-height: 1; }
+.iconbtn:hover { border-color: var(--glass-edge); color: var(--ink); }
+.gbtn.round { width: 38px; height: 38px; padding: 0; border-radius: 50%; }
+.gbtn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* botão flutuante "Registrar": círculo de vidro tingido */
+.fab {
+  background: color-mix(in srgb, var(--tint) 80%, transparent); color: #fff; border-color: rgba(255, 255, 255, .4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 10px 30px color-mix(in srgb, var(--tint) 40%, transparent), 0 2px 6px rgba(0, 0, 0, .15);
+  width: 58px; height: 58px;
+}
+.btn.fab { display: none; }  /* no computador, o Registrar fica na barra de segmentos */
+
+/* ---------- campos (opacos, estilo iOS) ---------- */
+select, .field input, input[type=date], input[type=text], input[type=email], input:not([type]), textarea, .navrow input[type=date] {
+  font: 16px var(--body); /* 16px: o iPhone não dá zoom ao tocar */
+  background: var(--fill); border: 0; border-radius: 10px; padding: 8px 12px; color: var(--ink);
+}
+textarea { line-height: 1.4; }
+.field { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+/* ---------- conteúdo: cartões opacos e grandes, como nos apps Saúde/Fitness ---------- */
+main { padding: 34px clamp(16px, 3vw, 40px) 80px; gap: 22px; }
+.card, .kpi { border: 0; border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow); }
+.card { padding: 18px 20px; }
+.card h3, h3.sec { font: 600 17px/1.25 var(--display); letter-spacing: -.02em; }
+.modal-box { border: 0; border-radius: 28px; background: var(--surface); }
+.modal { background: rgba(0, 0, 0, .35); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.banner { border-radius: 16px; }
+.pill { border-radius: 999px; background: var(--fill); }
+.chip { background: var(--fill); }
+
+/* títulos grandes (Large Title) */
+header.page h1 { font: 700 34px/1.12 var(--display); letter-spacing: .01em; margin: 0 0 4px; }
+header.page { flex-direction: column; align-items: flex-start; gap: 0; }
+header.page p { color: var(--muted); font-size: 15px; }
+
+/* segmentos (sub-abas e seletores): barra de vidro com o item ativo em cápsula */
+.subtabs {
+  border-bottom: 0; border-radius: var(--r-ctl); padding: 4px; gap: 2px; align-self: flex-start; max-width: 100%;
+  overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap;
+}
+.subtabs::-webkit-scrollbar { display: none; }
+#view-saude > .subtabs { margin-block: 0; }
+.subtab, #view-saude > .subtabs .subtab {
+  border: 0; margin: 0; padding: 7px 14px; border-radius: var(--r-ctl); white-space: nowrap; flex: none;
+  font: 600 14px var(--body); color: var(--ink-2);
+}
+.subtab[aria-selected="true"] { color: var(--ink); background: var(--surface); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); }
+:root[data-theme="dark"] .subtab[aria-selected="true"] { background: rgba(255, 255, 255, .16); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .subtab[aria-selected="true"] { background: rgba(255, 255, 255, .16); } }
+.sub-tools { padding: 0 2px 0 8px; }
+.sub-tools .btn { min-height: 32px; padding: 5px 14px; }
+.seg { border-radius: var(--r-ctl); padding: 3px; }
+.seg button { border-radius: var(--r-ctl); padding: 6px 14px; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--surface); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); }
+.chipnav { border-radius: var(--r-ctl); padding: 6px; top: calc(env(safe-area-inset-top, 0px) + 8px); }
+.chipnav a { border: 0; background: transparent; border-radius: var(--r-ctl); color: var(--ink-2); }
+.chipnav a:hover { background: var(--fill); }
+
+/* ---------- barra lateral (computador): painel de vidro flutuante ---------- */
+.shell { grid-template-columns: 236px minmax(0, 1fr); }
+.side {
+  margin: 12px 0 12px 12px; height: calc(100vh - 24px); top: 12px; border-radius: 26px; padding: 16px 10px;
+  gap: 18px;
+}
+.side-top { padding: 2px 8px; }
+.side-brand { display: flex; align-items: center; gap: 10px; font: 700 17px var(--display); letter-spacing: -.02em; }
+.side-brand img { border-radius: 7px; }
+.tabs { gap: 2px; }
+.tab { border-radius: 14px; padding: 7px 8px; color: var(--ink); font: 500 15px var(--body); }
+.tab .ico { width: 30px; height: 30px; border-radius: 9px; background: var(--c); color: #fff; }
+.tab .ico svg { stroke-width: 1.9; }
+.tab:hover { background: var(--fill); }
+.tab[aria-current="page"] { background: color-mix(in srgb, var(--surface) 75%, transparent); box-shadow: 0 1px 4px rgba(0, 0, 0, .08); font-weight: 600; }
+.tab[aria-current="page"] .ico { background: var(--c); color: #fff; }
+.side-foot { margin-top: auto; display: flex; gap: 6px; padding: 0 4px; flex-wrap: wrap; }
+.side-foot .gbtn { flex: 1; }
+.tab .lbl-s { display: none; }
+
+/* ---------- barra superior compacta (só no celular, ao rolar) ---------- */
+.topbar {
+  position: fixed; z-index: 40; left: 0; right: 0; top: 0;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) 16px 8px; min-height: calc(env(safe-area-inset-top, 0px) + 50px);
+  display: none; align-items: center; justify-content: center;
+  border: 0; border-bottom: .5px solid var(--line); border-radius: 0; box-shadow: none;
+  opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity .2s, transform .2s;
+}
+.topbar.on { opacity: 1; transform: none; pointer-events: auto; }
+.tb-title { font: 600 17px var(--display); letter-spacing: -.02em; }
+.tb-acts { position: absolute; right: 12px; bottom: 6px; display: flex; gap: 8px; }
+.tb-acts .gbtn.round { width: 34px; height: 34px; }
+
+/* ---------- celular: barra de abas inferior flutuante, de vidro ---------- */
+@media (max-width: 760px) {
+  body { font-size: 15px; }
+  .topbar { display: flex; }
+  .shell, .shell.collapsed { grid-template-columns: minmax(0, 1fr); }
+  main { padding: calc(env(safe-area-inset-top, 0px) + 18px) 16px calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 40px); }
+  .side, .shell.collapsed .side {
+    position: fixed; z-index: 45; top: auto; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    margin: 0; height: var(--tabbar-h); padding: 5px; border-radius: 999px; flex-direction: row; align-items: stretch; gap: 0;
+    border-bottom: .5px solid var(--glass-edge); overflow: visible;
+  }
+  .side-top, .side-foot { display: none; }
+  .tabs { flex-direction: row; flex: 1; gap: 0; overflow: visible; }
+  .tab, .shell.collapsed .tab {
+    flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: 1px; padding: 4px 2px; border-radius: 999px;
+    font: 600 10.5px/1.1 var(--body); color: var(--ink-2); letter-spacing: 0;
+  }
+  .tab .ico { width: 26px; height: 24px; background: none; color: var(--ink-2); border-radius: 0; }
+  .tab .ico svg { width: 23px; height: 23px; stroke-width: 1.8; }
+  .tab .lbl, .shell.collapsed .tab .lbl { display: none; }
+  .tab .lbl-s { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tabs { overflow: visible; }
+  .chipnav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; align-self: stretch; }
+  .chipnav::-webkit-scrollbar { display: none; }
+  .chipnav a { flex: none; }
+  .tab .soon, .tab[data-tab="estudos"] { display: none; }
+  .tab:hover { background: none; }
+  .tab[aria-current="page"], .shell.collapsed .tab[aria-current="page"] { background: var(--fill); box-shadow: none; color: var(--tint); }
+  .tab[aria-current="page"] .ico { background: none; color: var(--tint); }
+  .tab::after { display: none; }
+  header.page h1 { font-size: 34px; }
+  .btn.fab { display: grid; right: 18px; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 22px); }
+  .subtabs { align-self: stretch; }
+  .sub-tools #h-reg { display: none; } /* no celular, o botão flutuante faz o papel de Registrar */
+  .modal { place-items: end center; padding: 0; }
+  .modal-box { border-radius: 28px 28px 0 0; max-height: 92dvh; padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ---------- login ---------- */
+.login { min-height: 100dvh; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 24px) 20px 24px; background: var(--bg); }
+.login-box { width: min(400px, 100%); display: grid; gap: 22px; }
+.brand { text-align: center; display: grid; justify-items: center; gap: 10px; }
+.brand img { border-radius: 15px; box-shadow: 0 6px 20px rgba(0, 0, 0, .15); }
+.brand h1 { font: 700 30px/1.1 var(--display); margin: 4px 0 0; letter-spacing: .01em; }
+.brand p { margin: 0; color: var(--muted); }
+.group { display: grid; gap: 12px; }
+.row-field { display: flex; align-items: center; gap: 12px; background: var(--surface); border-radius: 14px; padding: 4px 4px 4px 16px; box-shadow: var(--shadow); }
+.row-field span { font-weight: 500; flex: none; width: 64px; }
+.row-field input { flex: 1; min-width: 0; background: transparent; border: 0; padding: 12px 8px; font-size: 17px; }
+.row-field input:focus { outline: none; }
+.msg { font-size: 14px; margin: 0; color: var(--ink-2); text-align: left; }
+.msg.err { color: var(--bad); } .msg.ok { color: var(--good); }
+.hint { color: var(--muted); font-size: 13.5px; margin: 2px 0 0; }
+
+/* ---------- Início ---------- */
+.ios-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+.card-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.row-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.checks, .ios-list { list-style: none; margin: 0; padding: 0; }
+.checks li, .ios-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: .5px solid var(--line); font-size: 15px; }
+.checks li { justify-content: flex-start; }
+.checks li:last-child, .ios-list li:last-child { border-bottom: 0; }
+.checks .s { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; flex: none; }
+.checks .s.ok { background: var(--n-green); } .checks .s.no { background: var(--n-gray); }
+
+@media (prefers-reduced-motion: reduce) { .btn, .gbtn, .topbar { transition: none; } }
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .side, .topbar, .subtabs, .seg, .chipnav, .btn, .gbtn, .iconbtn, .fab { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface); }
+}

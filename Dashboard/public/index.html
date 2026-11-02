@@ -5,76 +5,380 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Painel da Vida</title>
 <meta name="description" content="Painel pessoal: saúde, finanças, carreira e calendário.">
-<meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icons/icon-192.png" type="image/png">
-<!-- iPhone: abrir em tela cheia quando instalado na Tela de Início -->
+<!-- iPhone: tela cheia quando instalado na Tela de Início; o conteúdo passa por baixo da barra de status -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Painel">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650;12..96,750&family=Instrument+Sans:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/painel.css">
+<link rel="stylesheet" href="/ios.css">
 </head>
 <body>
   <!-- tela de entrada -->
   <main id="login" class="login" hidden>
     <div class="login-box">
-      <div class="brand"><img src="/icons/icon-192.png" alt="" width="40" height="40"><h1>Painel da Vida</h1></div>
-      <form id="login-email">
-        <label class="field">E-mail<input id="l-email" type="email" autocomplete="email" required placeholder="voce@exemplo.com"></label>
-        <button class="btn primary" type="submit">Receber código</button>
+      <div class="brand"><img src="/icons/icon-192.png" alt="" width="64" height="64"><h1>Painel da Vida</h1><p>Entre com o código enviado ao seu e-mail.</p></div>
+      <form id="login-email" class="group">
+        <label class="row-field"><span>E-mail</span><input id="l-email" type="email" autocomplete="email" required placeholder="voce@exemplo.com"></label>
+        <button class="btn primary big" type="submit">Receber código</button>
       </form>
-      <form id="login-code" hidden>
+      <form id="login-code" class="group" hidden>
         <p class="hint" id="l-sent"></p>
-        <label class="field">Código de 6 dígitos<input id="l-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" required></label>
-        <button class="btn primary" type="submit">Entrar</button>
+        <label class="row-field"><span>Código</span><input id="l-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" required placeholder="6 dígitos"></label>
+        <button class="btn primary big" type="submit">Entrar</button>
         <button class="btn ghost" type="button" id="l-back">Usar outro e-mail</button>
       </form>
       <p class="msg" id="l-msg" hidden></p>
     </div>
   </main>
 
-  <!-- app -->
-  <div id="app" class="app" hidden>
-    <nav class="side" aria-label="Seções">
-      <div class="side-brand"><img src="/icons/icon-192.png" alt="" width="28" height="28"><span>Painel</span></div>
-      <a href="#inicio" class="nav-i" data-tab="inicio"><span class="dot" style="--c:var(--ink)"></span><b>Início</b></a>
-      <a href="#saude" class="nav-i" data-tab="saude"><span class="dot" style="--c:var(--inc)"></span><b>Saúde</b></a>
-      <a href="#financas" class="nav-i" data-tab="financas"><span class="dot" style="--c:var(--exp)"></span><b>Finanças</b></a>
-      <a href="#self" class="nav-i" data-tab="self"><span class="dot" style="--c:var(--self)"></span><b>Self</b></a>
-      <a href="#carreira" class="nav-i" data-tab="carreira"><span class="dot" style="--c:var(--n-blue)"></span><b>Carreira</b></a>
-      <a href="#calendario" class="nav-i" data-tab="calendario"><span class="dot" style="--c:var(--n-orange)"></span><b>Agenda</b></a>
-      <div class="side-foot"><button class="btn ghost small" id="b-theme" type="button" title="Tema claro/escuro">Tema</button><button class="btn ghost small" id="b-out" type="button">Sair</button></div>
-    </nav>
+  <!-- barra superior compacta (celular): aparece ao rolar, como nos apps do iOS -->
+  <header class="topbar glass" id="topbar" hidden>
+    <span class="tb-title" id="tb-title">Início</span>
+    <div class="tb-acts">
+      <button class="gbtn round" type="button" data-act="theme" aria-label="Tema claro/escuro" title="Tema claro/escuro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
+    </div>
+  </header>
 
-    <main class="main">
-      <section class="view" data-view="inicio">
-        <header class="vh"><h2>Início</h2><p class="hint">Teste da estrutura: login, servidor, Notion e banco.</p></header>
-        <div class="grid">
-          <article class="card">
-            <h3>Conexões</h3>
+  <div class="shell" id="app" hidden>
+    <aside class="side glass" id="side">
+      <div class="side-top"><span class="side-brand"><img src="/icons/icon-192.png" alt="" width="26" height="26">Painel</span></div>
+      <nav class="tabs" aria-label="Pilares">
+      <button class="tab" data-tab="inicio" style="--c:var(--ink-2)" data-label="Início">
+        <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.8V19h12V9.8"/><path d="M10 19v-5h4v5"/></svg></span>
+        <span class="lbl">Início</span><span class="lbl-s">Início</span>
+      </button>
+      <button class="tab" data-tab="saude" style="--c:var(--n-green)" data-label="Saúde &amp; corpo">
+        <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M7.5 12h2.5l1.5-2.5 2 4 1.5-1.5h1.5"/></svg></span>
+        <span class="lbl">Saúde &amp; corpo</span><span class="lbl-s">Saúde</span>
+      </button>
+      <button class="tab" data-tab="financas" style="--c:var(--exp)" data-label="Finanças">
+        <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="6.5" width="17" height="12" rx="2.5"/><path d="M3.5 10h17"/><circle cx="16" cy="14.5" r="1.3"/><path d="M6.5 6.5l8-3 1 3"/></svg></span>
+        <span class="lbl">Finanças</span><span class="lbl-s">Finanças</span>
+      </button>
+      <button class="tab" data-tab="self" style="--c:var(--self)" data-label="Self Improvement">
+        <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="0.8"/><path d="M16.5 7.5l3-3M17 4.5h2.5V7"/></svg></span>
+        <span class="lbl">Self Improvement</span><span class="lbl-s">Self</span>
+      </button>
+      <button class="tab" data-tab="carreira" style="--c:var(--n-blue)" data-label="Carreira">
+        <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="7.5" width="17" height="11.5" rx="2.5"/><path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5"/><path d="M3.5 12.5h17"/><path d="M11 12.5v1.5h2v-1.5"/></svg></span>
+        <span class="lbl">Carreira</span><span class="lbl-s">Carreira</span>
+      </button>
+      <button class="tab" data-tab="estudos" style="--c:var(--n-yellow)" data-label="Leitura &amp; estudos">
+        <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 7c-2-1.6-4.7-2-8-1.5v12.5c3.3-.5 6 0 8 1.5 2-1.5 4.7-2 8-1.5V5.5c-3.3-.5-6-.1-8 1.5z"/><path d="M12 7v12.5"/></svg></span>
+        <span class="lbl">Leitura &amp; estudos</span><span class="lbl-s">Estudos</span><span class="soon">em breve</span>
+      </button>
+      </nav>
+      <div class="side-foot">
+        <button class="gbtn" type="button" data-act="theme">Tema</button>
+        <button class="gbtn" type="button" data-act="out">Sair</button>
+      </div>
+    </aside>
+
+    <main id="main">
+      <!-- INÍCIO -->
+      <section id="view-inicio" class="view" style="display:flex;flex-direction:column;gap:20px">
+        <header class="page"><div class="title-row"><h1>Início</h1></div><p>Conexões do app e dados.</p></header>
+        <div class="ios-grid">
+          <section class="card">
+            <h3 class="sec">Conexões</h3>
             <ul class="checks" id="c-checks"><li>Verificando…</li></ul>
-            <div class="row-acts"><button class="btn small" type="button" data-act="theme">Tema claro/escuro</button><button class="btn small" type="button" data-act="out">Sair</button></div>
-          </article>
-          <article class="card wide">
-            <div class="card-h"><h3>Treinos recentes no Notion</h3><button class="btn small" id="b-reload" type="button">Atualizar</button></div>
+          </section>
+          <section class="card">
+            <div class="card-h"><h3 class="sec">Treinos recentes no Notion</h3><button class="gbtn small" id="b-reload" type="button">Atualizar</button></div>
             <div id="c-workouts"><p class="hint">Carregando…</p></div>
-          </article>
-          <article class="card">
-            <h3>Banco (Supabase)</h3>
-            <p class="hint">Grava e lê um documento de teste.</p>
-            <button class="btn" id="b-db" type="button">Testar gravação</button>
+          </section>
+          <section class="card">
+            <h3 class="sec">Importar dados do painel antigo</h3>
+            <p class="hint">Escolha o arquivo <b>painel-saude-export.json</b>. Documentos com o mesmo caminho são substituídos; nada é apagado.</p>
+            <div class="row-acts">
+              <label class="gbtn tint" for="imp-file">Escolher arquivo</label>
+              <input type="file" id="imp-file" accept="application/json,.json" hidden>
+            </div>
+            <p class="msg" id="imp-msg" hidden></p>
+          </section>
+          <section class="card">
+            <h3 class="sec">Conta</h3>
+            <p class="hint" id="c-user"></p>
+            <div class="row-acts">
+              <button class="gbtn" type="button" id="b-db">Testar banco</button>
+              <button class="gbtn" type="button" data-act="theme">Tema claro/escuro</button>
+              <button class="gbtn danger" type="button" data-act="out">Sair</button>
+            </div>
             <p class="msg" id="c-db" hidden></p>
-          </article>
+          </section>
         </div>
       </section>
-      <section class="view" data-view="placeholder" hidden>
-        <header class="vh"><h2 id="ph-title"></h2><p class="hint">Esta aba entra na próxima etapa da migração.</p></header>
+
+      <!-- SAÚDE (portada do painel do claude.ai) -->
+    <section id="view-saude" style="display:none;flex-direction:column;gap:20px">
+      <header class="page">
+        <div class="title-row"><h1>Saúde &amp; corpo</h1></div>
+      </header>
+
+      <div class="subtabs" role="tablist" aria-label="Seções de saúde">
+        <button class="subtab" role="tab" data-hsub="hoje" aria-selected="true">Hoje</button>
+        <button class="subtab" role="tab" data-hsub="semana" aria-selected="false">Semana</button>
+        <button class="subtab" role="tab" data-hsub="progresso" aria-selected="false">Progresso</button>
+        <button class="subtab" role="tab" data-hsub="exercicios" aria-selected="false">Exercícios</button>
+        <button class="subtab" role="tab" data-hsub="plano" aria-selected="false">Plano &amp; dados</button>
+        <div class="sub-tools"><span id="h-status" class="pill" hidden>Carregando…</span><button class="btn primary" id="h-reg"><i class="ic" data-i="plus"></i>Registrar</button></div>
+      </div>
+      <div id="h-banner" class="banner" hidden></div>
+      <div class="bm-tip" id="bm-tip" hidden></div>
+
+      <!-- HOJE -->
+      <div class="hpanel" data-hpanel="hoje" style="display:flex;flex-direction:column;gap:18px">
+        <div class="navrow">
+          <span class="lbl" id="d-label" hidden></span>
+          <button class="iconbtn" id="d-prev" aria-label="Dia anterior">‹</button>
+          <input type="date" id="d-pick" aria-label="Escolher dia">
+          <button class="iconbtn" id="d-next" aria-label="Próximo dia">›</button>
+          <button class="btn ghost" id="d-today">Hoje</button>
+        </div>
+        <section class="card bal-card" id="d-bal"></section>
+        <div class="kpis dtiles" id="d-kpis"></div>
+        <!-- alimentação do dia: metas (macros) e qualidade lado a lado, refeições embaixo -->
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="flame">Alimentação do dia</h3></div></div>
+          <div class="food-cols">
+            <div class="fcol"><h4 class="mini-h">Meta do dia</h4><div class="macrobars" id="n-bars"></div><div class="macrobars q-bars" id="n-quality"></div></div>
+            <div class="fcol"><div class="meals-head"><h4 class="mini-h">Refeições</h4><span class="hint">toque para ver os alimentos</span><span class="pill" id="n-items"></span></div>
+              <div class="meals" id="n-meals"></div></div>
+          </div>
+        </section>
+        <!-- treino do dia + músculos prontos: anatomia à esquerda, o toggle troca a visualização -->
+        <section class="card" id="d-tcard" data-view="treino">
+          <div class="card-head">
+            <div><h3 data-i="dumbbell" id="d-t-title">Treino do dia</h3></div>
+            <div class="tv-head"><span class="pill" id="d-train-pill"></span><span class="pill" id="d-ready-pill" hidden></span><label class="switch" for="d-tv"><input type="checkbox" id="d-tv"><i></i>Músculos prontos</label></div>
+          </div>
+          <div class="tcard-body">
+            <div class="tmap"><div class="bodymap" id="dbody"><div class="bm-figs"><figure class="bm-fig"><canvas data-v="front" width="380" height="448"></canvas><figcaption>Tronco · frente</figcaption></figure><figure class="bm-fig"><canvas data-v="back" width="380" height="448"></canvas><figcaption>Tronco · costas</figcaption></figure><figure class="bm-fig"><canvas data-v="thigh" width="380" height="448"></canvas><figcaption>Coxas · frente</figcaption></figure><figure class="bm-fig"><canvas data-v="calf" width="380" height="448"></canvas><figcaption>Pernas · costas</figcaption></figure></div></div><div class="tv-lg" id="d-vol-lg"></div></div>
+            <div class="tside">
+              <div class="tpane" id="d-pane-train"><div class="dtrain" id="d-train"></div></div>
+              <div class="tpane" id="d-pane-ready" hidden><div id="d-sugg" class="sugg"></div><div id="d-ready" class="wb-status"></div></div>
+            </div>
+          </div>
+          <p class="hint tv-foot" id="d-ready-hint" hidden>Dias desde o último treino de cada grupo: azul = treinado no dia selecionado; cada dia de descanso clareia um tom; cinza = parado há mais de 7 dias. Com 48 h ou mais o músculo costuma estar recuperado.</p>
+        </section>
+      </div>
+
+      <!-- SEMANA -->
+      <div class="hpanel" data-hpanel="semana" style="display:none;flex-direction:column;gap:18px">
+        <div class="navrow">
+          <button class="iconbtn" id="w-prev" aria-label="Semana anterior">‹</button>
+          <span class="lbl" id="w-label"></span>
+          <button class="iconbtn" id="w-next" aria-label="Próxima semana">›</button>
+          <button class="btn ghost" id="w-today">Esta semana</button>
+        </div>
+        <section class="card bal-card" id="w-bal"></section>
+        <div class="kpis dtiles" id="w-kpis"></div>
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="calendar">Dia a dia</h3><p class="hint">Balanço, treino, cardio e alimentação de cada dia. Toque num dia para abri-lo.</p></div></div>
+          <div class="wk-days" id="w-days"></div>
+        </section>
+        <div class="mx-wrap" id="w-macros"></div>
+        <div class="grid-2 wide-left">
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="body">Músculos da semana</h3><p class="hint">Séries efetivas por músculo, sem aquecimento: o músculo principal do exercício conta 1 série e o secundário 0,4. 10–20 é a faixa comum para hipertrofia. Toque num músculo para destacá-lo.</p></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="seg" id="wb-mode" role="group" aria-label="Medida"><button data-m="sets" aria-pressed="true">Séries</button><button data-m="kg" aria-pressed="false">Volume (kg)</button></div><span class="pill" id="wb-pill"></span></div></div>
+            <div class="bodymap" id="wbody"><div class="bm-figs"><figure class="bm-fig"><canvas data-v="front" width="380" height="448"></canvas><figcaption>Tronco · frente</figcaption></figure><figure class="bm-fig"><canvas data-v="back" width="380" height="448"></canvas><figcaption>Tronco · costas</figcaption></figure><figure class="bm-fig"><canvas data-v="thigh" width="380" height="448"></canvas><figcaption>Coxas · frente</figcaption></figure><figure class="bm-fig"><canvas data-v="calf" width="380" height="448"></canvas><figcaption>Pernas · costas</figcaption></figure></div></div>
+            <div id="wb-status" class="wb-status" style="margin-top:14px"></div>
+            <h4 class="mini-h">Séries por grupo · vs semana anterior</h4>
+            <div id="w-groups" class="cats"></div>
+          </section>
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="star">Destaques da semana</h3><p class="hint">O que foi bem e o que pede atenção, comparado com a semana anterior.</p></div></div>
+            <ul class="insights" id="w-insights"></ul>
+          </section>
+        </div>
+      </div>
+
+      <!-- PROGRESSO -->
+      <div class="hpanel" data-hpanel="progresso" style="display:none;flex-direction:column;gap:18px">
+        <nav class="chipnav" aria-label="Seções do progresso">
+          <a href="#pg-peso"><i class="ic" data-i="scale"></i>Peso</a><a href="#pg-nutri"><i class="ic" data-i="flame"></i>Alimentação</a><a href="#pg-forca"><i class="ic" data-i="trend"></i>Força</a><a href="#pg-musc"><i class="ic" data-i="body"></i>Músculos</a><a href="#pg-cardio"><i class="ic" data-i="activity"></i>Cardio</a>
+        </nav>
+        <section class="card" id="pg-peso">
+          <div class="card-head"><div><h3 data-i="scale">Peso</h3><p class="hint" id="g-whint">Pontos = registros; linha = média de 7 dias; tracejado = meta e previsão no ritmo atual.</p></div><button class="btn" data-open="peso"><i class="ic" data-i="plus"></i>Registrar peso</button></div>
+          <div class="kpis" id="g-wkpis"></div>
+          <div class="chart" id="g-wchart"></div>
+        </section>
+        <section class="card" id="pg-nutri">
+          <div class="card-head">
+            <div><h3 data-i="flame">Alimentação</h3><p class="hint" id="n-trend-hint">Barras = consumido; traço = meta do dia. Clique numa barra para abrir o dia.</p></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><div class="seg" role="group" aria-label="Métrica"><button id="n-m-kcal" aria-pressed="true">Calorias</button><button id="n-m-prot" aria-pressed="false">Proteína</button></div><div class="seg" role="group" aria-label="Período"><button id="n-r-30" aria-pressed="true">30 dias</button><button id="n-r-90" aria-pressed="false">90 dias</button></div></div>
+          </div>
+          <div class="chart" id="n-trend"></div>
+          <div class="ledger-sum" id="n-trend-sum"></div>
+          <h4 class="mini-h">Médias por mês</h4>
+          <div class="table-wrap"><table class="ledger" id="g-months"></table></div>
+        </section>
+        <div class="kpis" id="t-kpis"></div>
+        <section class="card" id="pg-forca">
+          <div class="card-head">
+            <div><h3 data-i="trend">Progressão de carga</h3><p class="hint">Melhor série de cada sessão: carga máxima e 1RM estimado (Epley).</p></div>
+            <label class="field w-m" for="t-ex">Exercício<select id="t-ex"></select></label>
+          </div>
+          <div class="chart" id="t-prog"></div>
+          <div class="ledger-sum" id="t-prog-sum"></div>
+          <h4 class="mini-h">Principais exercícios · últimas 12 semanas</h4>
+          <div class="table-wrap"><table class="ledger lifts" id="g-lifts"></table></div>
+        </section>
+        <section class="card" id="pg-musc">
+          <div class="card-head"><div><h3 data-i="body">Músculos</h3><p class="hint">Séries por semana em cada grupo. Toque num músculo para ver a progressão do exercício mais feito dele.</p></div>
+            <div class="seg" id="bm-range"><button data-n="7" aria-pressed="true">7 dias</button><button data-n="28" aria-pressed="false">4 semanas</button><button data-n="84" aria-pressed="false">12 semanas</button></div></div>
+          <div class="bodymap" id="bodymap"><div class="bm-figs"><figure class="bm-fig"><canvas data-v="front" width="380" height="448"></canvas><figcaption>Tronco · frente</figcaption></figure><figure class="bm-fig"><canvas data-v="back" width="380" height="448"></canvas><figcaption>Tronco · costas</figcaption></figure><figure class="bm-fig"><canvas data-v="thigh" width="380" height="448"></canvas><figcaption>Coxas · frente</figcaption></figure><figure class="bm-fig"><canvas data-v="calf" width="380" height="448"></canvas><figcaption>Pernas · costas</figcaption></figure></div><div class="bm-side"><div class="bm-lg" id="bm-lg"></div><div class="bm-list" id="bm-list"></div></div></div>
+          <h4 class="mini-h">Volume por grupo · últimas 12 semanas</h4>
+          <div class="table-wrap vheat" id="g-vol"></div>
+        </section>
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="grid">Frequência</h3><p class="hint">Últimas 26 semanas. Cada quadrado é um dia; mais escuro = mais séries.</p></div><div class="legend"><span><i class="sw" style="--c:color-mix(in oklab, var(--n-green) 35%, var(--surface))"></i>leve</span><span><i class="sw" style="--c:var(--n-green)"></i>pesado</span><span><i class="sw" style="--c:var(--surface);box-shadow:inset 0 0 0 2px var(--n-blue)"></i>com cardio</span></div></div>
+          <div class="heat-wrap"><div class="heat-days"><span>seg</span><span></span><span>qua</span><span></span><span>sex</span><span></span><span>dom</span></div><div class="heat" id="t-heat"></div></div>
+        </section>
+        <section class="card" id="pg-cardio">
+          <div class="card-head"><div><h3 data-i="activity">Cardio</h3><p class="hint">Últimas 16 semanas. O traço marca o planejado na agenda. Gasto líquido estimado pelas equações do ACSM (caminhada e corrida) e pelo Compêndio de Atividades Físicas 2024 (outros aparelhos).</p></div></div>
+          <div class="kpis" id="c-kpis"></div>
+          <div class="chart" id="c-weeks"></div>
+          <details class="ps-more"><summary>Todas as sessões de cardio</summary><div class="table-wrap"><table class="ledger" id="c-table"></table></div></details>
+        </section>
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="star">Alimentos mais frequentes</h3><p class="hint">Nos 30 últimos dias registrados: quantas vezes apareceram e quanta proteína trazem em média.</p></div></div>
+          <div class="cats" id="n-foods"></div>
+        </section>
+      </div>
+
+      <!-- PLANO & DADOS -->
+      <!-- EXERCÍCIOS -->
+      <div class="hpanel" data-hpanel="exercicios" style="display:none;flex-direction:column;gap:18px">
+        <div class="grid-2 xb-grid">
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="body">Anatomia</h3><p class="hint">Cor = séries efetivas por semana, média das últimas 4 semanas. Toque num músculo para listar os exercícios que o trabalham.</p></div></div>
+            <div class="bodymap" id="xb-map"><div class="bm-figs"></div></div>
+            <div class="bm-lg xb-lg" id="xb-lg"></div>
+            <div class="chips" id="xb-mus" aria-label="Filtrar por músculo"></div>
+          </section>
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="book">Banco de exercícios</h3><p class="hint">Do <a href="https://github.com/hasaneyldrm/exercises-dataset" target="_blank" rel="noopener">exercises-dataset</a>, usado pelo <a href="https://github.com/alexpcosta/opengym" target="_blank" rel="noopener">OpenGym</a>. Os que você já registrou no Hevy aparecem primeiro.</p></div><span class="pill" id="xb-count"></span></div>
+            <div class="xb-tools">
+              <label class="field xb-q" for="xb-q">Buscar<input type="search" id="xb-q" placeholder="ex.: bench press, curl, squat" autocomplete="off"></label>
+              <label class="field" for="xb-bp">Região<select id="xb-bp"></select></label>
+              <label class="field" for="xb-eq">Equipamento<select id="xb-eq"></select></label>
+              <label class="switch" for="xb-mine"><input type="checkbox" id="xb-mine"><i></i>Só os que eu faço</label>
+              <button class="btn ghost" id="xb-clear">Limpar filtros</button>
+            </div>
+            <div class="xb-list" id="xb-list"></div>
+          </section>
+        </div>
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="book">Catálogo de exercícios</h3><p class="hint">Os seus exercícios por grupo muscular: nome em português e, abaixo, o nome no Hevy. Exercícios novos colados do Hevy entram aqui automaticamente. Toque num exercício para ver a evolução dele.</p></div><span class="pill" id="t-cat-count"></span></div>
+          <div class="board" id="t-board"></div>
+        </section>
+        <section class="card" id="xb-detail"></section>
+      </div>
+
+      <div class="hpanel" data-hpanel="plano" style="display:none;flex-direction:column;gap:18px">
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="user">Dados pessoais e objetivo</h3></div><span class="pill" id="p-saved"></span></div>
+          <div class="plan-grid">
+            <label class="field" for="p-peso">Peso (kg)<input id="p-peso" type="number" step="0.1"></label>
+            <label class="field" for="p-altura">Altura (cm)<input id="p-altura" type="number"></label>
+            <label class="field" for="p-idade">Idade<input id="p-idade" type="number"></label>
+            <label class="field" for="p-status">Status<select id="p-status"><option>Natural</option><option>Hormonizado</option></select></label>
+            <label class="field" for="p-meta">Peso meta (kg)<input id="p-meta" type="number" step="0.1" placeholder="ex.: 76"></label>
+            <label class="field" for="p-obj">Objetivo<select id="p-obj"><option value="Definição">Definição (cutting)</option><option value="Hipertrofia">Hipertrofia (bulking)</option><option value="Manutenção">Manutenção</option></select></label>
+            <label class="field" for="p-incl">Inclinação da esteira (%)<input id="p-incl" type="number" step="0.5" min="0.5" max="15" placeholder="10"></label>
+          </div>
+          <div class="plan-grid">
+            <div class="slider" style="--c:var(--m-kcal)"><div class="top"><label for="p-aj">Ajuste calórico</label><b id="p-aj-v"></b></div><input type="range" id="p-aj" step="10"></div>
+            <div class="slider" style="--c:var(--m-prot)"><div class="top"><label for="p-prot">Proteína (g/kg)</label><b id="p-prot-v"></b></div><input type="range" id="p-prot" step="0.1"></div>
+            <div class="slider" style="--c:var(--m-carb)"><div class="top"><label for="p-carb">Carboidratos (% cal.)</label><b id="p-carb-v"></b></div><input type="range" id="p-carb" step="1"></div>
+            <div class="slider" style="--c:var(--m-gord)"><div class="top"><label for="p-gord">Gorduras (% cal.)</label><b id="p-gord-v"></b></div><input type="range" id="p-gord" step="1"></div>
+          </div>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13.5px"><input type="checkbox" id="p-apl"> Aplicar o ajuste calórico também nas metas de cada dia</label>
+          <p class="hint tv-foot">Dia sem exercício pela equação de gasto total das DRIs de 2023 (National Academies, medida por água duplamente marcada; já inclui basal, digestão e movimento do dia); basal de referência por Ten Haaf. Treino de força por série de trabalho (João et al., 2021); caminhada e corrida pelas equações do ACSM, com a inclinação abaixo; bike, elíptico, remo e escada pelo Compêndio de Atividades Físicas 2024. Gastos de treino líquidos, sem o repouso.</p>
+        </section>
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="check">Resultado</h3><p class="hint" id="p-res-hint"></p></div><button class="btn primary" id="p-save">Salvar plano</button></div>
+          <div class="results" id="p-results"></div>
+          <p class="hint res-foot" id="p-reco"></p>
+        </section>
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="flame">Meta de calorias por tipo de dia</h3><p class="hint" id="p-goals-hint"></p></div></div>
+          <div class="goal-cards" id="p-goals"></div>
+          <div class="dist" id="p-dist"></div>
+        </section>
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="calendar">Agenda semanal de exercícios</h3></div></div>
+          <div class="navrow ag-nav">
+            <button class="iconbtn" id="ag-prev" aria-label="Semana anterior">‹</button>
+            <span class="lbl" id="ag-label"></span>
+            <button class="iconbtn" id="ag-next" aria-label="Próxima semana">›</button>
+            <button class="btn ghost" id="ag-today">Esta semana</button>
+          </div>
+          <div class="ag-info" id="ag-info"></div>
+          <div class="ag-days" id="p-sched"></div>
+          <p class="hint ag-foot">Cada semana pode ter a sua agenda. Uma mudança vale da semana escolhida em diante e não mexe nas semanas anteriores. Força soma o gasto pela média de séries dos seus últimos treinos; cardio, pelo tipo, a velocidade, os minutos e o peso.</p>
+        </section>
+        <!-- histórico integrado: cada linha é um dia, com treino, alimentação e peso lado a lado -->
+        <section class="card hx-card">
+          <div class="card-head"><div><h3 data-i="list">Histórico</h3><p class="hint">Cada linha é um dia. Toque no treino para ver as séries e na alimentação para abrir o dia. O último peso registrado é o usado nos cálculos.</p></div><div class="hx-tools"><span class="pill" id="hx-count"></span><button class="btn" data-open="peso"><i class="ic" data-i="plus"></i>Registrar peso</button></div></div>
+          <div class="hx-head"><span>Dia</span><span style="--c:var(--musc)">Treino</span><span style="--c:var(--m-kcal)">Alimentação</span><span style="--c:var(--ink-2)">Peso</span></div>
+          <div class="hx-list" id="hx-list"></div>
+          <button class="btn" id="hx-more" hidden>Mostrar mais</button>
+        </section>
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="info">Dados e importação</h3><p class="hint">O que já está no painel e o que está faltando.</p></div></div>
+          <ul class="health" id="h-health"></ul>
+          <details class="ps-more"><summary>Importar o histórico completo (CSV)</summary><div class="howto">
+              <ol>
+                <li>No <b>Hevy</b>: Perfil → Configurações → Exportar dados → <code>workout_data.csv</code>.</li>
+                <li>No <b>FoodNoms</b>: Ajustes → Exportar → Registro de alimentos → <code>Foodnoms Food Log.csv</code>.</li>
+                <li>Salve os dois em <code>Downloads</code> e peça ao Claude: <b>“atualize a aba Saúde”</b>.</li>
+              </ol>
+              <span id="h-fontes"></span>
+            </div></details>
+        </section>
+      </div>
+
+      <!-- REGISTRAR -->
+      <div class="modal" id="reg" hidden>
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="reg-title">
+          <div class="modal-head">
+            <h3 id="reg-title" style="margin:0;display:flex;gap:8px;align-items:center"><i class="ic" data-i="plus"></i>Registrar</h3>
+            <div class="seg" id="ps-kind"><button data-k="hevy" aria-pressed="true">Treino</button><button data-k="cardio" aria-pressed="false">Cardio</button><button data-k="food" aria-pressed="false">Alimentação</button><button data-k="peso" aria-pressed="false">Peso</button></div>
+            <button class="iconbtn" id="reg-close" aria-label="Fechar">✕</button>
+          </div>
+          <div id="reg-paste">
+            <p class="hint" id="ps-hint" style="margin:0 0 8px"></p>
+            <div class="ps-row"><label class="field" for="ps-date">Dia<input id="ps-date" type="date"></label></div>
+            <div class="paste">
+              <textarea id="ps-text" rows="8" placeholder="" spellcheck="true"></textarea>
+              <div id="ps-prev" class="ps-prev"><p class="empty">Escreva ou cole o texto para ver aqui o que será salvo.</p></div>
+            </div>
+            <div class="ps-actions"><button class="btn" id="ps-ai" hidden><i class="ic" data-i="star"></i>Analisar</button><button class="btn primary" id="ps-save" disabled>Salvar no painel</button><button class="btn ghost" id="ps-clear">Limpar</button><span class="hint" id="ps-msg"></span></div>
+          </div>
+          <div id="reg-peso" hidden>
+            <form class="inline-form" id="r-wform">
+              <label class="field w-s" for="r-wd">Data<input id="r-wd" type="date" required></label>
+              <label class="field w-s" for="r-wkg">Peso (kg)<input id="r-wkg" inputmode="decimal" placeholder="79,4" required></label>
+              <button class="btn primary" type="submit">Salvar peso</button>
+              <span class="hint" id="r-wmsg"></span>
+            </form>
+            <div id="r-wrecent" class="hint" style="margin-top:10px"></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn primary fab" id="h-fab" aria-label="Registrar" title="Registrar"><i class="ic" data-i="plus"></i><span class="fab-t">Registrar</span></button>
+    </section>
+
+      <section id="view-other" class="view" style="display:none;flex-direction:column;gap:20px">
+        <header class="page"><div class="title-row"><h1 id="ph-title"></h1></div><p>Esta aba entra numa próxima etapa da migração.</p></header>
       </section>
     </main>
   </div>

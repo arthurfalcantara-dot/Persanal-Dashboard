@@ -66,10 +66,29 @@ export const prop = {
 };
 
 // ---------- banco de documentos (Supabase, tabela docs) ----------
+// Mesma interface do banco do artifact: doc(p).get/set/update/delete/onSnapshot e
+// collection(p).limit(n).get/onSnapshot. Quem escreve avisa os próprios ouvintes na hora
+// (como no artifact); outros aparelhos chegam pelo Realtime do Supabase, se estiver ligado.
 const clean = v => JSON.parse(JSON.stringify(v ?? {}));
+const listeners = new Set();           // { kind: "doc"|"col", path, reload }
+const notify = path => {
+  const col = path.replace(/\/[^/]+$/, "");
+  listeners.forEach(l => { if ((l.kind === "doc" && l.path === path) || (l.kind === "col" && l.path === col)) l.reload(); });
+};
+function listen(kind, path, load) {
+  let alive = true, t = 0;
+  const reload = () => { clearTimeout(t); t = setTimeout(() => alive && load(), 60); };
+  const l = { kind, path, reload }; listeners.add(l);
+  load();
+  const filter = kind === "doc" ? `path=eq.${path}` : `collection=eq.${path}`;
+  const ch = sb.channel(`docs:${kind}:${path}:${Math.random().toString(36).slice(2)}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "docs", filter }, reload)
+    .subscribe();
+  return () => { alive = false; listeners.delete(l); sb.removeChannel(ch); };
+}
 function docRef(path) {
   return {
-    path,
+    path, id: path.split("/").pop(),
     async get() {
       const { data, error } = await sb.from("docs").select("data, updated_at").eq("path", path).maybeSingle();
       if (error) throw error;
@@ -77,35 +96,42 @@ function docRef(path) {
     },
     async set(value) {
       const { error } = await sb.from("docs").upsert({ path, data: clean(value) }, { onConflict: "user_id,path" });
-      if (error) throw error;
+      if (error) throw error; notify(path);
     },
     async update(patch) { // mescla no primeiro nível, como no artifact
       const cur = await this.get();
       await this.set(Object.assign({}, cur.exists ? cur.data() : {}, clean(patch)));
     },
-    async delete() { const { error } = await sb.from("docs").delete().eq("path", path); if (error) throw error; },
+    async delete() { const { error } = await sb.from("docs").delete().eq("path", path); if (error) throw error; notify(path); },
+    onSnapshot(fn, onErr) { return listen("doc", path, () => this.get().then(fn).catch(e => onErr && onErr(e))); },
   };
 }
-function collectionRef(path) {
+function collectionRef(path, max = 5000) {
   return {
     path,
     doc: id => docRef(`${path}/${id}`),
+    limit: n => collectionRef(path, n),
     async get() {
-      const { data, error } = await sb.from("docs").select("path, data, updated_at").eq("collection", path).limit(5000);
-      if (error) throw error;
-      const docs = data.map(r => ({ id: r.path.split("/").pop(), data: () => r.data, updatedAt: r.updated_at }));
+      const out = []; const step = 1000;
+      for (let from = 0; from < max; from += step) {
+        const { data, error } = await sb.from("docs").select("path, data, updated_at").eq("collection", path).order("path").range(from, Math.min(from + step, max) - 1);
+        if (error) throw error;
+        out.push(...data); if (data.length < step) break;
+      }
+      const docs = out.map(r => ({ id: r.path.split("/").pop(), data: () => r.data, updatedAt: r.updated_at }));
       return { docs, size: docs.length, empty: !docs.length };
     },
-    // mudanças em tempo real (outro aparelho gravou): relê a coleção e avisa
-    onSnapshot(fn, onErr) {
-      let alive = true;
-      const load = () => this.get().then(s => alive && fn(s)).catch(e => onErr && onErr(e));
-      load();
-      const ch = sb.channel(`docs:${path}:${Math.random().toString(36).slice(2)}`)
-        .on("postgres_changes", { event: "*", schema: "public", table: "docs", filter: `collection=eq.${path}` }, load)
-        .subscribe();
-      return () => { alive = false; sb.removeChannel(ch); };
-    },
+    onSnapshot(fn, onErr) { return listen("col", path, () => this.get().then(fn).catch(e => onErr && onErr(e))); },
   };
 }
-export const db = { doc: docRef, collection: collectionRef };
+// grava muitos documentos de uma vez (importação); em lotes de 200
+async function bulkSet(entries, onProgress) {
+  for (let i = 0; i < entries.length; i += 200) {
+    const rows = entries.slice(i, i + 200).map(([path, data]) => ({ path, data: clean(data) }));
+    const { error } = await sb.from("docs").upsert(rows, { onConflict: "user_id,path" });
+    if (error) throw error;
+    onProgress && onProgress(Math.min(i + 200, entries.length), entries.length);
+  }
+  new Set(entries.map(([p]) => p)).forEach(notify);
+}
+export const db = { doc: docRef, collection: p => collectionRef(p), bulkSet };
