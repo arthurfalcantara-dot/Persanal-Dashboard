@@ -698,7 +698,7 @@ ${text}`;
     const txt = $("ps-text").value.trim(), kind = PS.kind, ref = $("ps-date").value || todayISO;
     if (!txt) return;
     const box = $("ps-prev"), btn = $("ps-ai");
-    if (!S.sample) { box.innerHTML = `<p class="err">A análise de texto livre volta quando o Coach (Claude) for ligado ao app. Por enquanto, cole o texto do Hevy ou do FoodNoms.</p>`; return; }
+    if (!S.sample) { box.innerHTML = `<p class="err">A análise de texto livre usa o Claude, que precisa da chave ANTHROPIC_API_KEY no Cloudflare. Sem ela, cole o texto do Hevy ou do FoodNoms.</p>`; return; }
     PS.ctl?.abort(); PS.ctl = new AbortController();
     btn.disabled = true; $("ps-save").disabled = true; box.innerHTML = `<p class="empty">Analisando o texto…</p>`;
     try {
@@ -724,7 +724,7 @@ ${text}`;
     }
     ai.classList.add("primary");
     box.innerHTML = S.sample ? `<p class="empty">Texto livre. Toque em <b>Analisar</b> para o Claude interpretar${PS.kind === "food" ? " e estimar calorias e macros" : ""}; você confere aqui antes de salvar.</p>`
-      : `<p class="err">Não reconheci o formato do ${PS.kind === "food" ? "FoodNoms" : "Hevy"}. A análise de texto livre volta quando o Coach (Claude) for ligado ao app. Por enquanto, cole o texto do Hevy ou do FoodNoms.</p>`;
+      : `<p class="err">Não reconheci o formato do ${PS.kind === "food" ? "FoodNoms" : "Hevy"}. A análise de texto livre usa o Claude, que precisa da chave ANTHROPIC_API_KEY no Cloudflare. Sem ela, cole o texto do Hevy ou do FoodNoms.</p>`;
   }
   function psShow() {
     const box = $("ps-prev"), tag = PS.ai ? `<span class="ai-tag">interpretado pelo Claude · confira</span>` : "";

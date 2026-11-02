@@ -16,6 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Painel">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="/painel.css">
+<link rel="stylesheet" href="/carreira.css">
 <link rel="stylesheet" href="/ios.css">
 </head>
 <body>
@@ -95,7 +96,7 @@
           </section>
           <section class="card">
             <h3 class="sec">Importar dados do painel antigo</h3>
-            <p class="hint">Escolha o arquivo <b>painel-saude-export.json</b>. Documentos com o mesmo caminho são substituídos; nada é apagado.</p>
+            <p class="hint">Escolha um dos arquivos <b>painel-…-export.json</b> (Saúde, Finanças, Self, Carreira). Documentos com o mesmo caminho são substituídos; nada é apagado.</p>
             <div class="row-acts">
               <label class="gbtn tint" for="imp-file">Escolher arquivo</label>
               <input type="file" id="imp-file" accept="application/json,.json" hidden>
@@ -654,6 +655,289 @@
           <div class="card-head"><div><h3 data-i="tasks">Próximas tarefas</h3><p class="hint">Tarefas abertas das metas, atrasadas primeiro e depois as dos próximos 30 dias.</p></div></div>
           <div id="gl-tasks" class="tasklist"></div>
         </section>
+      </div>
+    </section>
+
+
+      <!-- CARREIRA (portada do painel do claude.ai) -->
+    <section id="view-carreira" style="display:none;flex-direction:column;gap:20px" data-ai="on">
+      <header class="page">
+        <div>
+          <div class="eyebrow">Meta no Notion · <a href="https://www.notion.so/130b0f63216781ae8739f44d38483b38" target="_blank" rel="noopener">Land First IR Job</a></div>
+          <h1>Carreira</h1>
+        </div>
+      </header>
+
+      <div class="subtabs" role="tablist" aria-label="Seções de carreira">
+        <button class="subtab" role="tab" id="ct-hunt" data-csub="hunt" aria-selected="true" aria-controls="cp-hunt">Job Hunt<span class="count" id="c-hunt-count"></span></button>
+        <button class="subtab" role="tab" id="ct-cv" data-csub="cv" aria-selected="false" aria-controls="cp-cv">Currículo</button>
+        <button class="subtab" role="tab" id="ct-skills" data-csub="skills" aria-selected="false" aria-controls="cp-skills">Skill Development</button>
+        <div class="sub-tools">
+          <span id="c-status" class="pill">Carregando…</span>
+          <button id="c-refresh" class="btn icon-btn" aria-label="Atualizar do Notion" title="Atualizar do Notion"><i class="ic" data-i="refresh"></i></button>
+        </div>
+      </div>
+      <div id="c-banner" class="banner" hidden></div>
+
+      <!-- ===== JOB HUNT ===== -->
+      <div class="c-panel" id="cp-hunt" role="tabpanel" aria-labelledby="ct-hunt">
+        <div class="kpis" id="c-hunt-kpis"></div>
+        <div class="grid-2 wide-left">
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="calendar">Próximos passos</h3><p class="hint">Prazos de vagas ainda não aplicadas e tarefas do Job Tasks, atrasados primeiro. Marque a tarefa para concluí-la no Notion.</p></div></div>
+            <div id="c-agenda" class="c-agenda"></div>
+          </section>
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="bars">Funil de candidaturas</h3><p class="hint">Vagas por etapa do Job Application Tracker.</p></div></div>
+            <div id="c-funnel" class="c-funnel"></div>
+          </section>
+        </div>
+        <section class="card c-ai-only" id="c-intake-card">
+          <div class="card-head"><div><h3 data-i="spark">Nova vaga por link</h3><p class="hint">Cole o link do anúncio. O Claude lê a vaga, identifica o contexto, as competências e as etapas do processo seletivo e transforma tudo em tarefas no Job Tasks, com datas contadas a partir do prazo. Você revisa antes de criar.</p></div></div>
+          <form id="c-intake" class="c-sec" autocomplete="off">
+            <div class="c-intake-row">
+              <label class="field" for="ci-url">Link da vaga<input id="ci-url" type="url" placeholder="https://www.linkedin.com/jobs/view/… ou careers.un.org/…"></label>
+              <button class="btn primary" type="submit" id="ci-go"><i class="ic" data-i="spark"></i>Ler e planejar</button>
+            </div>
+            <details class="c-intake-more"><summary>Colar o texto do anúncio (use se o link pedir login)</summary>
+              <textarea id="ci-text" class="c-ta" placeholder="Cole aqui o texto completo do anúncio."></textarea>
+            </details>
+            <p class="c-msg" id="ci-msg" hidden></p>
+          </form>
+          <div id="ci-queue" class="c-leads"></div>
+        </section>
+        <section class="card">
+          <div class="card-head">
+            <div><h3 data-i="briefcase">Candidaturas</h3><p class="hint">Abra uma vaga para ver as tarefas, medir a aderência ao seu currículo e gerar CV e carta adaptados com o Claude.</p></div>
+            <div class="c-head-actions">
+              <div class="seg" id="c-app-filter" role="group" aria-label="Filtrar candidaturas"><button data-f="ativas" aria-pressed="true">Em andamento</button><button data-f="todas" aria-pressed="false">Todas</button></div>
+              <button class="btn primary" id="c-new-app"><i class="ic" data-i="plus"></i>Nova candidatura</button>
+            </div>
+          </div>
+          <div id="c-board" class="c-board"></div>
+        </section>
+        <div class="grid-2 wide-left c-align-start">
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="radar">Radar de vagas</h3><p class="hint">Vagas encontradas que ainda não entraram no Notion. Cole um anúncio para o Claude extrair cargo, organização e prazo; depois leve ao tracker ou arquive.</p></div></div>
+            <div id="c-scout" class="c-scout"></div>
+            <div class="c-sec">
+              <label class="field" for="c-lead-text">Anúncio da vaga (texto e link)
+                <textarea id="c-lead-text" class="c-ta" placeholder="Cole aqui o texto do anúncio, incluindo o link, se tiver."></textarea>
+              </label>
+              <div class="c-actions">
+                <button class="btn c-ai-only" id="c-lead-ai"><i class="ic" data-i="spark"></i>Extrair com o Claude</button>
+                <button class="btn ghost" id="c-lead-manual">Preencher à mão</button>
+                <p class="c-msg" id="c-lead-msg" hidden></p>
+              </div>
+            </div>
+            <div class="c-sec">
+              <p class="c-label" id="c-leads-label">Caixa de entrada</p>
+              <div id="c-leads" class="c-leads"></div>
+            </div>
+          </section>
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="target">Perfil de busca</h3><p class="hint">Os critérios que personalizam a busca: o Claude usa este perfil ao analisar vagas, e uma rotina de busca automática pode lê-lo depois.</p></div></div>
+            <form id="c-busca" class="c-sec" autocomplete="off">
+              <label class="field" for="cb-palavras">Palavras-chave
+                <input id="cb-palavras" type="text" placeholder="peacebuilding, direitos humanos, monitoring and evaluation">
+              </label>
+              <div class="c-sec" style="gap:6px">
+                <p class="c-label">Áreas</p>
+                <div class="c-picks" id="cb-areas"></div>
+              </div>
+              <div class="c-sec" style="gap:6px">
+                <p class="c-label">Níveis e contratos</p>
+                <div class="c-picks" id="cb-niveis"></div>
+              </div>
+              <div class="c-fields">
+                <label class="field" for="cb-locais">Locais
+                  <input id="cb-locais" type="text" placeholder="Brasil, América Latina, Genebra">
+                </label>
+                <label class="field" for="cb-excluir">Evitar
+                  <input id="cb-excluir" type="text" placeholder="vendas, finanças corporativas">
+                </label>
+              </div>
+              <label class="c-check-row" for="cb-remoto"><input type="checkbox" id="cb-remoto"> Aceito trabalho remoto ou home-based</label>
+              <div class="c-actions">
+                <button class="btn" type="submit" id="cb-save">Salvar perfil</button>
+                <p class="c-msg ok" id="cb-msg" hidden></p>
+              </div>
+              <div class="c-sec" style="gap:6px">
+                <p class="c-label">Buscas prontas com estas palavras</p>
+                <div class="c-qlinks" id="cb-links"></div>
+              </div>
+            </form>
+          </section>
+        </div>
+        <section class="card">
+          <div class="card-head">
+            <div><h3 data-i="globe">Fontes e empregadores</h3><p class="hint">Portais listados nas suas páginas do Notion e os empregadores da base Employers. Marque cada fonte ao conferi-la; as que estão há mais tempo sem visita sobem para o topo.</p></div>
+            <div class="seg" id="c-src-filter" role="group" aria-label="Filtrar fontes"><button data-f="todas" aria-pressed="true">Todas</button><button data-f="portais" aria-pressed="false">Portais</button><button data-f="empregadores" aria-pressed="false">Empregadores</button></div>
+          </div>
+          <div id="c-sources" class="c-src"></div>
+        </section>
+      </div>
+
+      <!-- ===== CURRÍCULO ===== -->
+      <div class="c-panel" id="cp-cv" role="tabpanel" aria-labelledby="ct-cv" hidden>
+        <div class="grid-2">
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="check">Prontidão do currículo</h3><p class="hint">O que o currículo precisa ter para o Claude adaptá-lo bem a cada vaga.</p></div></div>
+            <div id="c-cv-ready" class="c-ready"></div>
+          </section>
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="scale">Elegibilidade no sistema ONU</h3><p class="hint">Anos exigidos por categoria segundo a tabela das suas notas da Mentoria Carreira Humanitária, cruzados com a formação e a experiência registradas aqui.</p></div></div>
+            <div id="c-elig"></div>
+          </section>
+        </div>
+        <section class="card c-ai-only">
+          <div class="card-head">
+            <div><h3 data-i="spark">Contar ao Claude</h3><p class="hint">Descreva com as suas palavras uma experiência, um projeto, um curso ou uma habilidade nova, ou cole um CV ou perfil do LinkedIn. O Claude escreve no formato do currículo (cargo, período, realizações com verbo de ação, competências) e você revisa antes de gravar.</p></div>
+          </div>
+          <label class="field" for="c-import-text">O que você fez
+            <textarea id="c-import-text" class="c-ta" placeholder="Ex.: Desde março de 2026 coordeno, no INCT-INEU, o monitoramento das posições dos EUA sobre o TPI. Montei o protocolo de coleta, treinei 3 bolsistas e já publicamos 2 sínteses. Também aprendi Power BI num curso da FGV em agosto."></textarea>
+          </label>
+          <div class="c-actions"><button class="btn" id="c-import-go"><i class="ic" data-i="spark"></i>Converter para o currículo</button><p class="c-msg" id="c-import-msg" hidden></p></div>
+          <div id="c-import-out"></div>
+        </section>
+        <div class="c-cv-grid">
+          <section class="card" id="c-cv-perfil"></section>
+          <section class="card" id="c-cv-exp"></section>
+          <section class="card" id="c-cv-edu"></section>
+          <section class="card" id="c-cv-lang"></section>
+          <section class="card" id="c-cv-cert"></section>
+          <section class="card" id="c-cv-pub"></section>
+        </div>
+        <section class="card">
+          <div class="card-head">
+            <div><h3 data-i="file">Como o Claude lê seu currículo</h3><p class="hint">É este texto que vai para o Claude quando ele analisa uma vaga ou escreve um CV adaptado. Também serve para colar em outra conversa.</p></div>
+            <button class="btn" id="c-cv-copy">Copiar</button>
+          </div>
+          <pre id="c-cv-md" class="c-md"></pre>
+        </section>
+      </div>
+
+      <!-- ===== SKILL DEVELOPMENT ===== -->
+      <div class="c-panel" id="cp-skills" role="tabpanel" aria-labelledby="ct-skills" hidden>
+        <div class="c-sknav">
+          <div class="seg" id="c-sk-seg" role="group" aria-label="Seções de competências">
+            <button data-v="mapa" aria-pressed="true">Mapa</button>
+            <button data-v="historias" aria-pressed="false">Histórias</button>
+            <button data-v="plano" aria-pressed="false">Plano</button>
+            <button data-v="metodo" aria-pressed="false">Método</button>
+          </div>
+          <p class="c-note" id="c-fw-note"></p>
+        </div>
+
+        <div id="c-sk-mapa" class="c-panel">
+          <div class="kpis" id="c-sk-kpis"></div>
+          <section class="card">
+            <div class="card-head">
+              <div><h3 data-i="layers">Matriz de competências</h3><p class="hint">Autoavaliação de 0 a 10 vem do campo Rating no Notion. Evidência é a nota da sua melhor história na escala NE–5 do ACNUR. Demanda conta as vagas analisadas que pedem a competência. Clique numa linha para ver definição, níveis, indicadores e perguntas.</p></div>
+            </div>
+            <div class="c-legend"><span><i class="pri"></i>Pedida por vaga em andamento e com evidência abaixo de 3</span><span>Evidência: ● nota da melhor história · — nenhuma história</span></div>
+            <div id="c-matrix" class="c-matrix"></div>
+          </section>
+          <div class="grid-2 c-align-start">
+            <section class="card">
+              <div class="card-head"><div><h3 data-i="flag">Prioridades</h3><p class="hint">Competências pedidas pelas vagas em andamento com evidência abaixo de 3 (Acceptable) vêm primeiro; depois as core sem nenhuma história.</p></div></div>
+              <div id="c-prio" class="c-prio"></div>
+            </section>
+            <section class="card">
+              <div class="card-head"><div><h3 data-i="chat">Treino de entrevista</h3><p class="hint">Responda a uma pergunta de entrevista por competências e receba a nota do Claude na escala NE–5, com os indicadores observados e os que faltaram.</p></div></div>
+              <div id="c-train-sum"></div>
+              <div class="c-actions"><button class="btn c-ai-only" id="c-train-go"><i class="ic" data-i="chat"></i>Treinar agora</button></div>
+            </section>
+          </div>
+        </div>
+
+        <div id="c-sk-historias" class="c-panel" hidden>
+          <section class="card">
+            <div class="card-head">
+              <div><h3 data-i="book">Banco de histórias</h3><p class="hint">Cada história segue a estrutura CAR (Contexto, Ação, Resultado) e é marcada com as competências que demonstra. É a evidência que o painel de entrevista procura.</p></div>
+              <div class="c-head-actions">
+                <select id="c-st-filter" aria-label="Filtrar por competência"><option value="">Todas as competências</option></select>
+                <button class="btn c-ai-only" id="c-st-suggest"><i class="ic" data-i="spark"></i>Sugerir do currículo</button>
+                <button class="btn primary" id="c-st-new"><i class="ic" data-i="plus"></i>Nova história</button>
+              </div>
+            </div>
+            <div id="c-st-suggest-out"></div>
+            <div id="c-stories" class="c-stories"></div>
+          </section>
+        </div>
+
+        <div id="c-sk-plano" class="c-panel" hidden>
+          <div class="grid-2 wide-left">
+            <section class="card">
+              <div class="card-head">
+                <div><h3 data-i="tasks">Ações de desenvolvimento</h3><p class="hint">Tarefas do Personal Improvement Tasks ligadas a competências ou à meta Land First IR Job. Marque para concluir no Notion; use o seletor para vincular uma tarefa a uma competência.</p></div>
+                <button class="btn primary" id="c-act-new"><i class="ic" data-i="plus"></i>Nova ação</button>
+              </div>
+              <div id="c-dev" class="tasklist"></div>
+            </section>
+            <div class="col-stack">
+              <section class="card">
+                <div class="card-head"><div><h3 data-i="alert">Competências sem plano</h3><p class="hint">Evidência abaixo de 3 e nenhuma ação ou curso aberto ligado a elas.</p></div></div>
+                <div id="c-noplan" class="c-prio"></div>
+              </section>
+              <section class="card">
+                <div class="card-head"><div><h3 data-i="gauge">Skill Development Monitor</h3><p class="hint">Habilidades técnicas da sua base no Land First IR Job.</p></div></div>
+                <div id="c-skillmon" class="c-items"></div>
+              </section>
+            </div>
+          </div>
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="school">Cursos</h3><p class="hint">Base Courses do Land First IR Job. Mude o status aqui para atualizar o Notion.</p></div></div>
+            <div id="c-courses" class="c-items"></div>
+          </section>
+        </div>
+
+        <div id="c-sk-metodo" class="c-panel" hidden>
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="info">Entrevista por competências</h3><p class="hint">O que os dois guias anexados à página da Mentoria dizem sobre o método, e o que isso pede de quem se candidata.</p></div></div>
+            <p class="c-note" style="font-size:14px;color:var(--ink-2);max-width:75ch">A premissa do método é que o comportamento passado prediz o desempenho futuro. O painel procura <b>exemplos concretos</b> de situações em que você demonstrou a competência exigida pelo posto, e não opiniões sobre si ou respostas hipotéticas (guia do ACNUR, "What is CBI").</p>
+            <div class="c-car3">
+              <div><b>Contexto</b>Uma situação específica do seu passado profissional, não uma descrição genérica do que você costuma fazer.</div>
+              <div><b>Ação</b>O que você fez e como: a evidência que o painel procura. Fale do seu papel, não só do time.</div>
+              <div><b>Resultado</b>O que foi alcançado (ou não) e o que você aprendeu e aplicou depois.</div>
+            </div>
+            <ol class="c-steps">
+              <li><b>Três a quatro competências por entrevista.</b> O ACNUR recomenda escolher de três a quatro competências da descrição do cargo para cerca de 60 minutos; o guia da ONU fala em até cinco. Prepare histórias para as competências que o anúncio destaca.</li>
+              <li><b>Perguntas positivas e negativas.</b> O painel mistura conquistas ("descreva um projeto bem-sucedido") e dificuldades ("conte quando você perdeu um prazo") para ver se você reflete sobre a própria responsabilidade em vez de culpar terceiros.</li>
+              <li><b>Sondagem em funil.</b> Depois da pergunta aberta vêm perguntas do tipo o quê, quando, onde, quem, como e por quê, até ficar claro o que você fez. Exemplos antigos, de fora do cargo atual, sem resultado ou ensaiados demais são sinais que o painel investiga.</li>
+              <li><b>Notas por indicador.</b> Cada competência recebe uma nota separada, apoiada nas suas palavras e comparada aos indicadores do quadro de competências, não aos outros candidatos.</li>
+            </ol>
+          </section>
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="gauge">Escalas de avaliação</h3><p class="hint">As duas escalas dos guias anexados. O painel usa a do ACNUR para dar nota às suas histórias e treinos, porque ela descreve quantos indicadores foram observados.</p></div></div>
+            <div class="table-wrap">
+              <table class="c-scale">
+                <thead><tr><th>Nota</th><th>ACNUR (Best Practice Interview Guide)</th><th>ONU (Competency-based Interviewing Guide)</th></tr></thead>
+                <tbody>
+                  <tr><td>NE</td><td>No evidence<small>O candidato não produziu evidência observável da competência.</small></td><td>No Evidence<small>Não conseguiu dar exemplos.</small></td></tr>
+                  <tr><td>1</td><td>Marginal<small>Pouquíssimos indicadores observados.</small></td><td>Marginal<small>Não atende à maior parte da definição.</small></td></tr>
+                  <tr><td>2</td><td>Poor<small>Poucos indicadores, parcialmente; muitos ausentes ou superados por comportamento negativo.</small></td><td>Less than Acceptable<small>Atende metade da definição.</small></td></tr>
+                  <tr><td>3</td><td>Acceptable<small>Alguma evidência positiva, com espaço para desenvolver; parte dos indicadores observada, outros omitidos.</small></td><td>Acceptable<small>Atende metade da definição (o guia repete o texto do nível 2).</small></td></tr>
+                  <tr><td>4</td><td>Good<small>Evidência clara e inequívoca; muitos indicadores observados por completo e outros em parte.</small></td><td>More than Acceptable<small>Atende mais da metade da definição.</small></td></tr>
+                  <tr><td>5</td><td>Outstanding<small>Vários exemplos de alto nível; a maioria dos indicadores observada por completo, sem omissões relevantes.</small></td><td>Superior<small>Atende a maior parte da definição.</small></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="layers">Sobre o modelo de competências da sua base</h3><p class="hint">De onde vêm as 21 competências e os 3 valores cadastrados no Notion.</p></div></div>
+            <ol class="c-steps">
+              <li><b>Valores, core e managerial</b> seguem o modelo do Secretariado da ONU de 1999 (<i>UN Competencies for the Future</i>), descrito no guia de entrevista do OHRM: valores Integrity, Professionalism e Respect for Diversity; oito core; seis managerial. A base acrescenta Managing Resources, que vem do quadro do ACNUR.</li>
+              <li><b>Cross-functional</b> vem do quadro do ACNUR (PAMS, 2008). No ACNUR, Planning and Organizing, Innovation and Creativity e Technological Awareness também são cross-functional, enquanto na base estão como core, seguindo o modelo da ONU.</li>
+              <li><b>Organizational Awareness</b> é core no ACNUR e não aparece na sua base. O painel mostra a definição dela no detalhe de Political Awareness, que é a mais próxima.</li>
+              <li><b>Atualização no Secretariado:</b> o boletim ST/SGB/2024/4 formaliza o <a class="c-link" href="https://hr.un.org/page/un-values-and-behaviours-framework-0" target="_blank" rel="noopener">UN Values and Behaviours Framework</a>, que substitui progressivamente o modelo de 1999: valores Inclusion, Integrity, Humility e Humanity; comportamentos Connect and Collaborate, Analyse and Plan, Deliver Results with Positive Impact, Learn and Develop e Adapt and Innovate. Vale conferir qual quadro cada anúncio usa.</li>
+            </ol>
+          </section>
+        </div>
+      </div>
+
+      <div class="modal" id="c-modal" hidden role="dialog" aria-modal="true" aria-labelledby="c-modal-title">
+        <div class="modal-box c-modal-box" id="c-modal-box"></div>
       </div>
     </section>
 

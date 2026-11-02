@@ -1,5 +1,6 @@
 import { init, auth, api, notion, prop, db, ApiError } from "/data.js";
 import { mcp } from "/mcp.js";
+import { sample } from "/ai.js";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -21,17 +22,18 @@ document.querySelectorAll("[data-act=out]").forEach(b => b.onclick = () => auth.
 
 // ---------- navegação por abas (#hash) ----------
 const NAMES = { inicio: "Início", saude: "Saúde & corpo", financas: "Finanças", self: "Self Improvement", carreira: "Carreira", estudos: "Leitura & estudos" };
-const READY = { inicio: "view-inicio", saude: "view-saude", financas: "view-financas", self: "view-self" };
+const READY = { inicio: "view-inicio", saude: "view-saude", financas: "view-financas", self: "view-self", carreira: "view-carreira" };
 function route() {
   const tab = NAMES[(location.hash || "#inicio").slice(1)] ? (location.hash || "#inicio").slice(1) : "inicio";
   document.querySelectorAll(".tab").forEach(t => { if (t.dataset.tab === tab) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
   const vid = READY[tab] || "view-other";
-  ["view-inicio", "view-saude", "view-financas", "view-self", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
+  ["view-inicio", "view-saude", "view-financas", "view-self", "view-carreira", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
   if (vid === "view-other") $("ph-title").textContent = NAMES[tab];
   $("tb-title").textContent = NAMES[tab];
   document.title = NAMES[tab] + " · Painel";
   if (tab === "saude") loadTab("saude").then(() => window.dispatchEvent(new Event("painel:saude")));
   if (tab === "financas") loadTab("financas");
+  if (tab === "carreira") loadTab("carreira").then(() => window.dispatchEvent(new Event("painel:carreira")));
   if (tab === "self") loadTab("self").then(() => window.dispatchEvent(new Event("painel:self")));
   scrollTo(0, 0); onScroll();
 }
@@ -46,8 +48,17 @@ addEventListener("scroll", onScroll, { passive: true });
 // As abas vieram do painel no claude.ai e pedem o banco com window.claude.use("db").
 // Aqui essa chamada devolve o banco do Supabase, com a mesma interface.
 // O conector do Notion ("mcp") vira chamadas à API do Notion pelo servidor do app (mcp.js).
-window.claude = { use: async cap => (!auth.user ? null : cap === "db" ? db : cap === "mcp" ? mcp : null) };
-const TAB_JS = { saude: "/saude.js?v=4", financas: "/financas.js?v=2", self: "/self.js?v=1" }, tabP = {};
+// O "sample" (Claude) só existe se o servidor tiver a chave da Anthropic (ANTHROPIC_API_KEY).
+let healthP = null;
+const health = () => healthP || (healthP = api("health").catch(e => { healthP = null; throw e; }));
+window.claude = { use: async cap => {
+  if (!auth.user) return null;
+  if (cap === "db") return db;
+  if (cap === "mcp") return mcp;
+  if (cap === "sample") { try { return (await health()).anthropic ? sample : null; } catch { return null; } }
+  return null;
+} };
+const TAB_JS = { financas: "/financas.js?v=2", self: "/self.js?v=2", carreira: "/carreira.js?v=1", saude: "/saude.js?v=5" }, tabP = {};
 function loadTab(name) {
   return tabP[name] || (tabP[name] = new Promise((ok, bad) => {
     const s = document.createElement("script"); s.src = TAB_JS[name]; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
@@ -62,8 +73,8 @@ async function refreshTab() {
   const tab = currentTab();
   if (tab === "inicio") return Promise.all([checks(), workouts()]);
   if (tab === "saude") return db.reloadAll();
-  if (tab === "financas" || tab === "self") {
-    const b = $(tab === "self" ? "s-refresh" : "refresh"); if (!b || b.disabled) return;
+  if (tab === "financas" || tab === "self" || tab === "carreira") {
+    const b = $({ financas: "refresh", self: "s-refresh", carreira: "c-refresh" }[tab]); if (!b || b.disabled) return;
     b.click(); const t0 = Date.now();
     await new Promise(r => setTimeout(r, 120));
     while (b.disabled && Date.now() - t0 < 30000) await new Promise(r => setTimeout(r, 150));
@@ -166,9 +177,9 @@ async function checks() {
   const box = $("c-checks");
   const row = (ok, label, note) => `<li><span class="s ${ok ? "ok" : "no"}">${ok ? "✓" : "✗"}</span><span>${esc(label)}${note ? ` <span class="hint">· ${esc(note)}</span>` : ""}</span></li>`;
   try {
-    const h = await api("health");
+    healthP = null; const h = await health();
     box.innerHTML = row(true, "Login", h.user) + row(true, "Servidor") + row(h.notion, "Notion", h.notion ? "token configurado" : "falta NOTION_TOKEN")
-      + row(h.anthropic, "Claude (Coach)", h.anthropic ? "chave configurada" : "próxima etapa")
+      + row(h.anthropic, "Claude", h.anthropic ? "chave configurada" : "falta ANTHROPIC_API_KEY")
       + row(h.google, "Google Calendar", h.google ? "configurado" : "próxima etapa");
   } catch (e) { box.innerHTML = row(false, "Servidor", e.message); }
 }

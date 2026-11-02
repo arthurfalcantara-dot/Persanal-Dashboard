@@ -22,20 +22,31 @@ const VIEWS = {
   "130b0f6321678177be8f000c08385fdc": { ds: "130b0f63-2167-8109-a7a8-000b63cf7957", sorts: [{ property: "ETA", direction: "ascending" }] }, // Tasks · Calendar
   "1bcb0f63216781258823000cbfbe682e": { ds: "1bcb0f63-2167-813d-a574-000bdfd166f9", filter: { property: "Archive", checkbox: { equals: false } } }, // Books · Active
   "1b9b0f6321678010a561000c70275d73": { ds: "1b9b0f63-2167-801f-b5ec-000b992d92ed" },  // Personal Tasks
+  // Carreira
+  "6342a2d6a24b45329c8fcac4d4e3905c": { ds: "f6caa859-7834-4a73-9649-68b0c59552ce" },  // Job Application Tracker
+  "378b0f6321678097816f000cd0e2767e": { ds: "1bab0f63-2167-801f-834c-000b29a34dcd" },  // Job Tasks · All
+  "1bcb0f632167800d981e000cbe159b21": { ds: "1bcb0f63-2167-80e3-ad8d-000b90a1901a" },  // Employers
+  "1bcb0f632167810d8380000c46f591a1": { ds: "1bcb0f63-2167-815f-b320-000b24fb1b97" },  // Core Competencies
+  "1e4b0f632167815197e4000c0f081ab5": { ds: "1e4b0f63-2167-81a4-bc4a-000bc15988c4" },  // Managerial Competencies
+  "1e4b0f6321678167a4d2000c1ba1c1eb": { ds: "1e4b0f63-2167-8163-91ad-000b7c98b809" },  // Cross-Functional Competencies
+  "371b0f632167805988e9000c3a5650a7": { ds: "74f0fa47-1869-4aaa-ba04-259ff23ebe30", sorts: [{ property: "Status", direction: "ascending" }] }, // Courses
+  "7bd460664e634c1d90f319e38123df24": { ds: "10b844ac-1854-4e9d-bdd2-394643be5a8f" },  // Skill Development Monitor
 };
 const viewOf = url => { const m = String(url || "").match(/[?&]v=([0-9a-f]{32})/i); return m && VIEWS[m[1].toLowerCase()]; };
 
 const text = a => (a || []).map(t => t.plain_text).join("");
 function flatten(page) {
   const out = { url: page.url, id: page.id };
-  for (const [name, p] of Object.entries(page.properties || {})) {
+  for (const [prop, p] of Object.entries(page.properties || {})) {
+    // como no conector: propriedades chamadas "url"/"id" ganham o prefixo userDefined: (não colidem com url/id da página)
+    const name = /^(url|id)$/i.test(prop) ? `userDefined:${prop}` : prop;
     switch (p.type) {
       case "title": case "rich_text": out[name] = text(p[p.type]); break;
       case "number": out[name] = p.number; break;
       case "select": case "status": out[name] = p[p.type] ? p[p.type].name : null; break;
       case "multi_select": out[name] = JSON.stringify(p.multi_select.map(o => o.name)); break;
       case "checkbox": out[name] = p.checkbox ? "__YES__" : "__NO__"; break;
-      case "date": if (p.date) { out[`date:${name}:start`] = p.date.start; out[`date:${name}:end`] = p.date.end; out[`date:${name}:is_datetime`] = p.date.start && p.date.start.length > 10 ? 1 : 0; } break;
+      case "date": if (p.date) { out[`date:${prop}:start`] = p.date.start; out[`date:${prop}:end`] = p.date.end; out[`date:${prop}:is_datetime`] = p.date.start && p.date.start.length > 10 ? 1 : 0; } break;
       case "url": case "email": case "phone_number": out[name] = p[p.type]; break;
       case "relation": out[name] = JSON.stringify((p.relation || []).map(r => `https://www.notion.so/${r.id.replace(/-/g, "")}`)); break;
       case "formula": { const f = p.formula || {}; out[name] = f.type === "date" ? (f.date && f.date.start) : f.type === "boolean" ? (f.boolean ? "__YES__" : "__NO__") : f[f.type]; break; }
@@ -72,7 +83,8 @@ async function schema(ds) {
 // propriedades "achatadas" (formato do conector) → formato da API, conforme o tipo de cada propriedade
 function unflatten(flat, props) {
   const out = {};
-  for (const [k, v] of Object.entries(flat || {})) {
+  for (const [k0, v] of Object.entries(flat || {})) {
+    const k = k0.replace(/^userDefined:/, "");
     const dm = k.match(/^date:(.+):(start|end|is_datetime)$/);
     if (dm) {
       if (dm[2] === "is_datetime") continue;
@@ -158,8 +170,22 @@ const TOOLS = {
   },
 };
 
+// leitura de página (substitui o conector "Parallel Search · web_fetch" do claude.ai): servidor do app em /api/fetch
+const WEB = {
+  schema: { type: "object", properties: { url: { type: "string" } }, required: ["url"] },
+  async fetch(input) {
+    const r = await api("fetch", { method: "POST", body: { url: input.url || input.urls?.[0] } });
+    return { content: [{ type: "text", text: `${r.title ? r.title + "\n\n" : ""}${r.text}` }] };
+  },
+};
+
 export const mcp = {
+  async describeTool(server, tool) {
+    if (tool === "web_fetch") return { name: tool, inputSchema: WEB.schema };
+    throw { code: "tool_error", message: `${tool} não existe no app` };
+  },
   async callTool(server, tool, input /*, opts */) {
+    if (tool === "web_fetch") { try { return await WEB.fetch(input || {}); } catch (e) { throw toMcpError(e); } }
     const fn = TOOLS[tool];
     if (!fn) throw { code: "tool_error", message: `${tool} ainda não existe no app` };
     try { return await fn(input || {}); }

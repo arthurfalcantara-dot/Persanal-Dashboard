@@ -27,11 +27,11 @@ export const auth = {
 
 // ---------- servidor (/api) ----------
 export class ApiError extends Error { constructor(status, body) { super((body && body.message) || `Erro ${status}`); this.status = status; this.code = body && (body.error || body.code); this.body = body; } }
-export async function api(path, { method = "GET", body } = {}) {
+export async function api(path, { method = "GET", body, signal } = {}) {
   if (!session) throw new ApiError(401, { error: "unauthenticated", message: "Faça login." });
   const r = await fetch(`/api/${path}`, {
     method, headers: { authorization: `Bearer ${session.access_token}`, ...(body ? { "content-type": "application/json" } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
+    body: body ? JSON.stringify(body) : undefined, signal,
   });
   const txt = await r.text(); let j = null; try { j = txt ? JSON.parse(txt) : null; } catch { j = { message: txt }; }
   if (!r.ok) throw new ApiError(r.status, j);
@@ -106,19 +106,23 @@ function docRef(path) {
     onSnapshot(fn, onErr) { return listen("doc", path, () => this.get().then(fn).catch(e => onErr && onErr(e))); },
   };
 }
-function collectionRef(path, max = 5000, wheres = []) {
+function collectionRef(path, max = 5000, wheres = [], order = null) {
   return {
     path,
     doc: id => docRef(`${path}/${id}`),
-    limit: n => collectionRef(path, n, wheres),
+    limit: n => collectionRef(path, n, wheres, order),
+    orderBy: (field, dir = "asc") => collectionRef(path, max, wheres, [field, dir]),
+    // documento novo com id gerado, como no artifact
+    async add(data) { const ref = docRef(`${path}/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`); await ref.set(data); return ref; },
     // filtro simples por campo do documento (só "==", que é o que as abas usam)
-    where: (field, op, value) => { if (op !== "==") throw new Error(`where com "${op}" não suportado`); return collectionRef(path, max, wheres.concat([[field, value]])); },
+    where: (field, op, value) => { if (op !== "==") throw new Error(`where com "${op}" não suportado`); return collectionRef(path, max, wheres.concat([[field, value]]), order); },
     async get() {
       const out = []; const step = 1000;
       for (let from = 0; from < max; from += step) {
         let q = sb.from("docs").select("path, data, updated_at").eq("collection", path);
         for (const [f, v] of wheres) q = q.eq(`data->>${f}`, String(v));
-        const { data, error } = await q.order("path").range(from, Math.min(from + step, max) - 1);
+        q = order ? q.order(`data->>${order[0]}`, { ascending: order[1] !== "desc" }) : q.order("path");
+        const { data, error } = await q.range(from, Math.min(from + step, max) - 1);
         if (error) throw error;
         out.push(...data); if (data.length < step) break;
       }
