@@ -291,3 +291,11 @@ html, body { overscroll-behavior-y: none; }   /* o elástico nativo daria dois "
 .ptr.busy .ptr-ball line { opacity: calc(.25 + .75 * (var(--i) + 1) / 8) !important; }
 @keyframes ptr-turn { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .ptr.busy .ptr-ball svg { animation-duration: 1.6s; } }
+
+/* Finanças no celular: nome da categoria e valor na primeira linha, barra embaixo (o nome não corta mais) */
+@media (max-width: 640px) {
+  .cat-row, .cats.budget .cat-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name amt" "track track"; row-gap: 6px; column-gap: 10px; padding-block: 8px; }
+  .cat-row > .name { grid-area: name; }
+  .cat-row > :nth-child(2) { grid-area: track; }
+  .cat-row > :last-child { grid-area: amt; }
+}

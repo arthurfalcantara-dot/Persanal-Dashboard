@@ -8,6 +8,7 @@ const ALLOW = [
   ["GET", new RegExp(`^data_sources/${ID}$`)],           // esquema de uma base
   ["GET", new RegExp(`^databases/${ID}$`)],              // base → suas fontes de dados
   ["GET", new RegExp(`^pages/${ID}$`)],                  // uma página
+  ["GET", new RegExp(`^pages/${ID}/properties/[^/]+$`)], // relação com mais de 25 itens
   ["PATCH", new RegExp(`^pages/${ID}$`)],                // atualizar propriedades / mandar para a lixeira
   ["POST", /^pages$/],                                   // criar página
   ["GET", new RegExp(`^blocks/${ID}/children$`)],        // conteúdo de uma página
@@ -18,11 +19,12 @@ const json = (status, body) => new Response(JSON.stringify(body), { status, head
 
 export async function onRequest({ request, env, params }) {
   if (!env.NOTION_TOKEN) return json(500, { error: "not_configured", message: "NOTION_TOKEN não está configurado." });
-  const path = [].concat(params.path || []).join("/");
   const method = request.method.toUpperCase();
+  const url = new URL(request.url);
+  // caminho cru (sem decodificar): ids de propriedade do Notion já vêm codificados, ex.: %3AxyZ
+  const path = url.pathname.replace(/^\/api\/notion\//, "");
   if (!ALLOW.some(([m, rx]) => m === method && rx.test(path))) return json(403, { error: "not_allowed", message: `${method} ${path} não está liberado na ponte do Notion.` });
 
-  const url = new URL(request.url);
   const init = {
     method,
     headers: { authorization: `Bearer ${env.NOTION_TOKEN}`, "notion-version": NOTION_VERSION, "content-type": "application/json" },

@@ -21,17 +21,18 @@ document.querySelectorAll("[data-act=out]").forEach(b => b.onclick = () => auth.
 
 // ---------- navegação por abas (#hash) ----------
 const NAMES = { inicio: "Início", saude: "Saúde & corpo", financas: "Finanças", self: "Self Improvement", carreira: "Carreira", estudos: "Leitura & estudos" };
-const READY = { inicio: "view-inicio", saude: "view-saude", financas: "view-financas" };
+const READY = { inicio: "view-inicio", saude: "view-saude", financas: "view-financas", self: "view-self" };
 function route() {
   const tab = NAMES[(location.hash || "#inicio").slice(1)] ? (location.hash || "#inicio").slice(1) : "inicio";
   document.querySelectorAll(".tab").forEach(t => { if (t.dataset.tab === tab) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
   const vid = READY[tab] || "view-other";
-  ["view-inicio", "view-saude", "view-financas", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
+  ["view-inicio", "view-saude", "view-financas", "view-self", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
   if (vid === "view-other") $("ph-title").textContent = NAMES[tab];
   $("tb-title").textContent = NAMES[tab];
   document.title = NAMES[tab] + " · Painel";
   if (tab === "saude") loadTab("saude").then(() => window.dispatchEvent(new Event("painel:saude")));
   if (tab === "financas") loadTab("financas");
+  if (tab === "self") loadTab("self").then(() => window.dispatchEvent(new Event("painel:self")));
   scrollTo(0, 0); onScroll();
 }
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { if (location.hash !== "#" + t.dataset.tab) location.hash = t.dataset.tab; else route(); }));
@@ -46,7 +47,7 @@ addEventListener("scroll", onScroll, { passive: true });
 // Aqui essa chamada devolve o banco do Supabase, com a mesma interface.
 // O conector do Notion ("mcp") vira chamadas à API do Notion pelo servidor do app (mcp.js).
 window.claude = { use: async cap => (!auth.user ? null : cap === "db" ? db : cap === "mcp" ? mcp : null) };
-const TAB_JS = { saude: "/saude.js?v=4", financas: "/financas.js?v=1" }, tabP = {};
+const TAB_JS = { saude: "/saude.js?v=4", financas: "/financas.js?v=2", self: "/self.js?v=1" }, tabP = {};
 function loadTab(name) {
   return tabP[name] || (tabP[name] = new Promise((ok, bad) => {
     const s = document.createElement("script"); s.src = TAB_JS[name]; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
@@ -61,8 +62,8 @@ async function refreshTab() {
   const tab = currentTab();
   if (tab === "inicio") return Promise.all([checks(), workouts()]);
   if (tab === "saude") return db.reloadAll();
-  if (tab === "financas") {
-    const b = $("refresh"); if (!b || b.disabled) return;
+  if (tab === "financas" || tab === "self") {
+    const b = $(tab === "self" ? "s-refresh" : "refresh"); if (!b || b.disabled) return;
     b.click(); const t0 = Date.now();
     await new Promise(r => setTimeout(r, 120));
     while (b.disabled && Date.now() - t0 < 30000) await new Promise(r => setTimeout(r, 150));

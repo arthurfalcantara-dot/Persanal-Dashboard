@@ -548,6 +548,116 @@
       </div>
     </section>
 
+      <!-- SELF IMPROVEMENT (portada do painel do claude.ai) -->
+    <section id="view-self" style="display:none;flex-direction:column;gap:20px">
+      <header class="page">
+        <div>
+          <h1>Hábitos, metas &amp; tarefas</h1>
+        </div>
+        <div class="status"><span id="s-status" class="pill">Carregando…</span><button class="btn" id="s-refresh">Atualizar</button></div>
+      </header>
+
+      <div class="subtabs" role="tablist" aria-label="Seções de self improvement">
+        <button class="subtab" role="tab" data-ssub="visao" aria-selected="true">Visão geral</button>
+        <button class="subtab" role="tab" data-ssub="habitos" aria-selected="false">Hábitos</button>
+        <button class="subtab" role="tab" data-ssub="metas" aria-selected="false">Metas</button>
+        <button class="subtab" role="tab" data-ssub="tarefas" aria-selected="false">Tarefas</button>
+      </div>
+      <div id="s-banner" class="banner" hidden></div>
+
+      <!-- VISÃO GERAL -->
+      <div class="spanel" data-spanel="visao" style="display:flex;flex-direction:column;gap:18px">
+        <div class="kpis" id="ov-kpis"></div>
+        <div class="wheel">
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="layers">Áreas</h3><p class="hint">Nota de 0 a 10 = taxa de cumprimento nos últimos 30 dias. Só hábitos diários entram nas áreas; hábitos periódicos têm cartão próprio.</p></div></div>
+            <div id="ov-areas" class="wheel-areas"></div>
+          </section>
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="target">Roda da vida</h3><p class="hint">Hábitos por área, tarefas pessoais e metas na mesma escala.</p></div></div>
+            <div id="ov-radar" class="radar"></div>
+          </section>
+        </div>
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="calendar">Hábitos periódicos</h3><p class="hint">Medidos pela própria cadência, nunca contra a meta dos diários.</p></div></div>
+          <div id="ov-per" class="per-list"></div>
+        </section>
+      </div>
+
+      <!-- TAREFAS -->
+      <div class="spanel" data-spanel="tarefas" style="display:none;flex-direction:column;gap:18px">
+        <div class="kpis" id="pt-kpis"></div>
+        <div class="grid-2 wide-left">
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="tasks">Em aberto</h3><p class="hint">Tarefas pessoais ainda não concluídas, atrasadas primeiro. Toque no quadrado para concluir no Notion.</p></div></div>
+            <div id="pt-open" class="tasklist"></div>
+          </section>
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="layers">Cumprimento por tarefa</h3><p class="hint">Tarefas recorrentes, últimos 90 dias. Só conta o que já venceu.</p></div></div>
+            <div id="pt-rates" class="rate-list"></div>
+          </section>
+        </div>
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="calendar">Cumprimento por mês</h3><p class="hint">Concluídas sobre vencidas em cada mês.</p></div></div>
+          <div id="pt-months" class="rate-list"></div>
+        </section>
+      </div>
+
+      <!-- HÁBITOS -->
+      <div class="spanel" data-spanel="habitos" style="display:none;flex-direction:column;gap:18px">
+        <div class="kpis" id="hb-kpis"></div>
+        <div class="grid-2 wide-left">
+          <section class="card">
+            <div class="card-head">
+              <div><h3 id="hb-day-title" data-i="sun">Hoje</h3><p class="hint">Toque para marcar como feito. Cada hábito aparece nos dias em que o modelo recorrente do Notion cria a página.</p></div>
+              <div class="navrow">
+                <button class="iconbtn" id="hb-prev" aria-label="Dia anterior">‹</button>
+                <button class="btn ghost" id="hb-today">Hoje</button>
+                <button class="iconbtn" id="hb-next" aria-label="Próximo dia">›</button>
+              </div>
+            </div>
+            <div id="hb-list" class="hb-list"></div>
+          </section>
+          <section class="card">
+            <div class="card-head"><div><h3 data-i="layers">Consistência por área</h3><p class="hint">Hábitos feitos sobre os programados nos últimos 30 dias, agrupados pela tag do Notion.</p></div></div>
+            <div id="hb-tags" class="cats"></div>
+          </section>
+        </div>
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="calendar">Hábitos periódicos</h3><p class="hint">Hábitos que não são diários, como manicure ou esfoliação. Medidos pela própria cadência e fora das metas dos diários.</p></div></div>
+          <div id="hb-per" class="per-list"></div>
+        </section>
+        <section class="card">
+          <div class="card-head">
+            <div><h3 data-i="calendar">Últimos dias</h3><p class="hint">Cada quadrado é um dia: cheio = feito, contorno = programado e não feito, ponto = não programado. Clique num hábito para ver o histórico dele no mapa abaixo.</p></div>
+            <div class="seg" id="hb-range"><button data-r="14" aria-pressed="true">14 dias</button><button data-r="30" aria-pressed="false">30 dias</button></div>
+          </div>
+          <div class="table-wrap"><table class="hgrid" id="hb-grid"></table></div>
+        </section>
+        <section class="card">
+          <div class="card-head">
+            <div><h3 id="hb-heat-title" data-i="grid">Mapa do ano</h3><p class="hint" id="hb-heat-hint"></p></div>
+            <button class="btn ghost" id="hb-heat-all" hidden>Ver todos os hábitos</button>
+          </div>
+          <div id="hb-heat"></div>
+        </section>
+      </div>
+
+      <!-- METAS -->
+      <div class="spanel" data-spanel="metas" style="display:none;flex-direction:column;gap:18px">
+        <div class="kpis" id="gl-kpis"></div>
+        <div class="controls">
+          <div class="seg" id="gl-filter"><button data-f="ativas" aria-pressed="true">Ativas</button><button data-f="todas" aria-pressed="false">Todas</button><button data-f="feitas" aria-pressed="false">Concluídas</button></div>
+        </div>
+        <div class="goalcards" id="gl-cards"></div>
+        <section class="card">
+          <div class="card-head"><div><h3 data-i="tasks">Próximas tarefas</h3><p class="hint">Tarefas abertas das metas, atrasadas primeiro e depois as dos próximos 30 dias.</p></div></div>
+          <div id="gl-tasks" class="tasklist"></div>
+        </section>
+      </div>
+    </section>
+
+
       <section id="view-other" class="view" style="display:none;flex-direction:column;gap:20px">
         <header class="page"><div class="title-row"><h1 id="ph-title"></h1></div><p>Esta aba entra numa próxima etapa da migração.</p></header>
       </section>

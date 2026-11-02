@@ -7,15 +7,23 @@ import { api, ApiError } from "/data.js";
 const norm = id => String(id || "").replace(/^collection:\/\//, "").trim();
 const dashed = id => { const h = norm(id).replace(/-/g, ""); return /^[0-9a-f]{32}$/i.test(h) ? `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}` : norm(id); };
 
-// views do Notion usadas pelas abas → fonte de dados + ordenação equivalente
-// (a API pública não consulta uma view; o painel ordena por data, do mais novo para o mais antigo)
+// views do Notion usadas pelas abas → fonte de dados + o mesmo filtro e ordenação da view
+// (a API pública não consulta uma view; os filtros abaixo foram copiados de cada view no Notion).
+// Chave: id da view (parâmetro ?v= do link).
 const VIEWS = {
-  "9e0b0f632167829ab437017a91bf14aa": { ds: "e11b0f63-2167-82a3-836e-873a42b99943", sort: "Date" },     // Finanças 2026
-  "3ecb0f6321678039b2c7ff3560567400": { ds: "3ecb0f63-2167-8076-9d99-000b7669f58a", sort: "Date" },     // 2025
-  "3ecb0f6321678089855cf57c60603b3b": { ds: "3ecb0f63-2167-8087-afab-000b953e235c", sort: "Date" },     // 2024
-  "3ecb0f6321678000b425e8231b52992a": { ds: "3ecb0f63-2167-805b-be25-000be942c5d2", sort: "Date" },     // 2023
+  // Finanças
+  "3e6b0f63216781168060000c8a352b20": { ds: "e11b0f63-2167-82a3-836e-873a42b99943", sorts: [{ property: "Date", direction: "descending" }] }, // 2026 · Painel (não editar)
+  "3ecb0f63216780178f46000c0c704a42": { ds: "3ecb0f63-2167-8076-9d99-000b7669f58a" },  // 2025
+  "3ecb0f632167806c81ca000cca15f0a7": { ds: "3ecb0f63-2167-8087-afab-000b953e235c" },  // 2024
+  "3ecb0f6321678024a6c4000cf12c2664": { ds: "3ecb0f63-2167-805b-be25-000be942c5d2" },  // 2023
+  // Self Improvement
+  "3ecb0f632167811a8975000cb9d08571": { ds: "3ecb0f63-2167-80a6-a3a1-000bb5a4b3cf", sorts: [{ property: "Date", direction: "descending" }] }, // Hábitos · Painel (não editar)
+  "130b0f63216781a0bc48000ca19ab18c": { ds: "130b0f63-2167-8188-8e26-000b32075145" },  // Goals · Timeline
+  "130b0f6321678177be8f000c08385fdc": { ds: "130b0f63-2167-8109-a7a8-000b63cf7957", sorts: [{ property: "ETA", direction: "ascending" }] }, // Tasks · Calendar
+  "1bcb0f63216781258823000cbfbe682e": { ds: "1bcb0f63-2167-813d-a574-000bdfd166f9", filter: { property: "Archive", checkbox: { equals: false } } }, // Books · Active
+  "1b9b0f6321678010a561000c70275d73": { ds: "1b9b0f63-2167-801f-b5ec-000b992d92ed" },  // Personal Tasks
 };
-const viewOf = url => { const m = String(url || "").match(/notion\.so\/(?:[^/?]*-)?([0-9a-f]{32})/i); return m && VIEWS[m[1].toLowerCase()]; };
+const viewOf = url => { const m = String(url || "").match(/[?&]v=([0-9a-f]{32})/i); return m && VIEWS[m[1].toLowerCase()]; };
 
 const text = a => (a || []).map(t => t.plain_text).join("");
 function flatten(page) {
@@ -38,6 +46,20 @@ function flatten(page) {
     }
   }
   return out;
+}
+
+// a API devolve no máximo 25 itens de uma relação dentro da página; o resto vem pelo endpoint da propriedade
+async function fullRelations(pages) {
+  for (const pg of pages) for (const p of Object.values(pg.properties || {})) {
+    if (p.type !== "relation" || !p.has_more) continue;
+    const all = []; let cursor = null;
+    do {
+      const r = await api(`notion/pages/${pg.id}/properties/${/%[0-9A-F]{2}/i.test(p.id) ? p.id : encodeURIComponent(p.id)}${cursor ? `?start_cursor=${encodeURIComponent(cursor)}` : ""}`);
+      for (const it of r.results || []) if (it.relation) all.push({ id: it.relation.id });
+      cursor = r.has_more ? r.next_cursor : null;
+    } while (cursor);
+    p.relation = all; p.has_more = false;
+  }
 }
 
 const schemas = new Map();
@@ -96,8 +118,10 @@ const TOOLS = {
     if (!ds) throw { code: "tool_error", message: "view do Notion sem fonte de dados conhecida no app" };
     const body = { page_size: Math.min(100, d.page_size || 100) };
     if (d.start_cursor) body.start_cursor = d.start_cursor;
-    if (v && v.sort) body.sorts = [{ property: v.sort, direction: "descending" }];
+    if (v && v.sorts) body.sorts = v.sorts;
+    if (v && v.filter) body.filter = v.filter;
     const r = await api(`notion/data_sources/${ds}/query`, { method: "POST", body });
+    await fullRelations(r.results);
     return { payload: { results: r.results.map(flatten), has_more: r.has_more, next_cursor: r.next_cursor } };
   },
   // esquema de uma base, no mesmo envelope de texto do conector (<data-source-state>{…}</data-source-state>)
