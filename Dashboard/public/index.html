@@ -123,6 +123,9 @@
         <div class="title-row"><h1>Saúde &amp; corpo</h1></div>
       </header>
 
+      <div class="seg saude-mode" id="saude-mode" role="tablist" aria-label="Modo da Saúde"><button data-mode="painel" aria-pressed="true">Painel</button><button data-mode="treino" aria-pressed="false">Treino</button><button data-mode="dieta" aria-pressed="false">Alimentação</button></div>
+      <div id="treino-root" class="saude-sub" hidden></div>
+      <div id="dieta-root" class="saude-sub" hidden></div>
       <div class="subtabs" role="tablist" aria-label="Seções de saúde">
         <button class="subtab" role="tab" data-hsub="hoje" aria-selected="true">Hoje</button>
         <button class="subtab" role="tab" data-hsub="semana" aria-selected="false">Semana</button>
@@ -957,6 +960,14 @@
   </div>
 
   <div id="toast" class="toast" hidden role="status"></div>
+  <!-- Treino: telas sobrepostas, treino ao vivo, mini barra, descanso, menus -->
+  <div class="tr-sheet" id="tr-sheet" hidden></div>
+  <div class="tr-live" id="tr-live" hidden></div>
+  <button class="tr-mini glass" id="tr-mini" hidden></button>
+  <div class="tr-rest glass" id="tr-rest" hidden></div>
+  <div class="tr-menu" id="tr-menu" hidden></div>
+  <!-- Alimentação: folhas -->
+  <div class="tr-sheet ft-sheet" id="ft-sheet" hidden></div>
   <!-- puxar para atualizar: indicador que desce com o dedo -->
   <div class="ptr" id="ptr" aria-hidden="true"><div class="ptr-ball glass"><svg viewBox="0 0 24 24" id="ptr-spin"></svg></div></div>
 

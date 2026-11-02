@@ -30,7 +30,7 @@ function route() {
   ["view-inicio", "view-saude", "view-financas", "view-self", "view-carreira", "view-agenda", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
   if (vid === "view-other") $("ph-title").textContent = NAMES[tab];
   document.title = NAMES[tab] + " · Painel";
-  if (tab === "saude") loadTab("saude").then(() => window.dispatchEvent(new Event("painel:saude")));
+  if (tab === "saude") loadTab("saude").then(() => { window.dispatchEvent(new Event("painel:saude")); saudeMode(); });
   if (tab === "financas") loadTab("financas");
   if (tab === "agenda") loadTab("agenda").then(() => window.painelAgenda && window.painelAgenda.start());
   if (tab === "carreira") loadTab("carreira").then(() => window.dispatchEvent(new Event("painel:carreira")));
@@ -63,6 +63,21 @@ function loadTab(name) {
   }));
 }
 
+// ---------- Saúde: Painel · Treino · Alimentação ----------
+const MODE_KEY = "painel.saude.modo";
+function saudeMode(m) {
+  if (m) { try { localStorage.setItem(MODE_KEY, m); } catch {} } else { try { m = localStorage.getItem(MODE_KEY) || "painel"; } catch { m = "painel"; } }
+  $("view-saude").dataset.mode = m;
+  document.querySelectorAll("#saude-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
+  $("treino-root").hidden = m !== "treino"; $("dieta-root").hidden = m !== "dieta";
+  if (m === "treino") import("/treino.js?v=2").then(x => x.start());
+  if (m === "dieta") import("/dieta.js?v=2").then(x => x.start());
+  if (m === "painel") window.dispatchEvent(new Event("painel:saude"));
+}
+document.querySelectorAll("#saude-mode button").forEach(b => b.addEventListener("click", () => { saudeMode(b.dataset.mode); scrollTo(0, 0); }));
+// treino em andamento continua acessível de qualquer aba (mini barra)
+try { if (localStorage.getItem("painel.treino.atual")) setTimeout(() => import("/treino.js?v=2").then(x => x.start && window.painelSaude ? x.start() : null), 1500); } catch {}
+
 // ---------- puxar para atualizar (com elástico e mola) ----------
 // O que cada aba faz ao atualizar. Devolve uma promessa: o indicador gira até ela terminar.
 // o hash pode trazer parâmetros depois de "&" (ex.: volta do Google em #agenda&g=…)
@@ -72,7 +87,7 @@ async function refreshTab() {
   navigator.serviceWorker?.getRegistration?.().then(r => r && r.update()).catch(() => {});
   const tab = currentTab();
   if (tab === "config") return Promise.all([checks(), workouts()]);
-  if (tab === "saude") return db.reloadAll();
+  if (tab === "saude") { const m = $("view-saude").dataset.mode; if (m === "treino" && window.painelTreino) return window.painelTreino.refresh(); if (m === "dieta" && window.painelDieta) return window.painelDieta.refresh(); return db.reloadAll(); }
   if (tab === "agenda") return window.painelAgenda && window.painelAgenda.refresh();
   if (tab === "financas" || tab === "self" || tab === "carreira") {
     const b = $({ financas: "refresh", self: "s-refresh", carreira: "c-refresh" }[tab]); if (!b || b.disabled) return;
@@ -117,7 +132,7 @@ const PTR = (() => {
     raf = requestAnimationFrame(step);
   }
   const atTop = () => (document.scrollingElement || document.documentElement).scrollTop <= 0;
-  const blocked = t => t.closest("input, textarea, select, .modal, .tabs, [contenteditable]") || !$("login").hidden
+  const blocked = t => t.closest("input, textarea, select, .modal, .tabs, [contenteditable], .tr-sheet, .tr-live, .ft-scan") || !$("login").hidden
     || ((sc => sc && sc.scrollTop > 0)(t.closest(".ag-scroll"))); // grade da Agenda rolada: o puxão é dela
 
   addEventListener("touchstart", e => {

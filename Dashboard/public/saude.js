@@ -282,8 +282,8 @@
   function setBanner(t) { const b = $("h-banner"); if (!t) { b.hidden = true; return; } b.innerHTML = "<strong>Atenção</strong><span>" + esc(t) + "</span>"; b.hidden = false; }
   function statusLine() {
     const ds = Object.keys(S.days).sort(), last = S.sess[0], parts = [];
-    if (last) parts.push("Hevy até " + ddmm(last.data));
-    if (ds.length) parts.push("FoodNoms até " + ddmm(ds[ds.length - 1]));
+    if (last) parts.push("Treinos até " + ddmm(last.data));
+    if (ds.length) parts.push("Alimentação até " + ddmm(ds[ds.length - 1]));
     const el = $("h-status");
     el.textContent = parts.length ? parts.join(" · ") : "Sem dados importados";
     el.className = "pill" + (parts.length ? " live" : " warn");
@@ -307,7 +307,7 @@
     }, fail);
   }
   let raf = 0;
-  function refresh() { if (raf) return; raf = setTimeout(() => { raf = 0; statusLine(); if (S.visible) render(); }, 0); }
+  function refresh() { if (raf) return; raf = setTimeout(() => { raf = 0; statusLine(); if (S.visible) render(); (S.subs || []).forEach(f => { try { f(); } catch {} }); }, 0); }
 
   // ---------------- helpers de UI ----------------
   function placeTip(tip, svg, W, xv, yv) {
@@ -1744,5 +1744,11 @@ ${text}`;
   window.addEventListener("painel:saude", () => { S.visible = true; render(); xdbLoad(() => { if (S.visible && (S.sub === "semana" || S.sub === "exercicios")) render(); }); });
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { if (t.dataset.tab !== "saude") S.visible = false; }));
   bindPlano();
+  // ponte para os módulos de Treino e Alimentação do app (mesmos dados e mesmas metas da Saúde)
+  window.painelSaude = {
+    state: () => S, GROUPS, dayTarget: d => (S.cfg ? dayTarget(d) : null),
+    xdb: () => XDB, xdbLoad, musclesOf, exHistory: () => exHistory(),
+    onChange: fn => { (S.subs || (S.subs = [])).push(fn); },
+  };
   init();
 })();
