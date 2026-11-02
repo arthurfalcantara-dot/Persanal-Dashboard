@@ -151,7 +151,8 @@ const PTR = (() => {
   }
   const atTop = () => (document.scrollingElement || document.documentElement).scrollTop <= 0;
   const blocked = t => t.closest("input, textarea, select, .modal, .tabs, [contenteditable], .tr-sheet, .tr-live, .ft-scan") || !$("login").hidden
-    || ((sc => sc && sc.scrollTop > 0)(t.closest(".ag-scroll"))); // grade da Agenda rolada: o puxão é dela
+    || t.closest(".cal-tev, .cal-ev[data-drag], .cal-tev [data-rz]") // arrastar itens da Agenda não pode virar "puxar para atualizar"
+    || ((sc => sc && sc.scrollTop > 0)(t.closest(".ag-scroll, .cal-body"))); // grade da Agenda rolada: o puxão é dela
 
   addEventListener("touchstart", e => {
     if (busy || e.touches.length !== 1 || !atTop() || blocked(e.target)) { startY = null; return; }

@@ -99,7 +99,9 @@ function unflatten(flat, props) {
     const dm = k.match(/^date:(.+):(start|end|is_datetime)$/);
     if (dm) {
       if (dm[2] === "is_datetime") continue;
+      if (dm[2] === "start" && !v) { out[dm[1]] = { date: null }; continue; } // apagar a data
       const d = out[dm[1]] = out[dm[1]] || { date: {} };
+      if (!d.date) continue;
       d.date[dm[2]] = v || null;
       continue;
     }
@@ -122,6 +124,10 @@ function unflatten(flat, props) {
 // erros no formato do conector (as abas tratam por e.code)
 function toMcpError(e) {
   if (e instanceof ApiError) {
+    // recusas do próprio Notion, com o que fazer para liberar
+    if (e.code === "restricted_resource") return { code: "tool_error", message: "a integração do Notion só tem permissão de leitura. Em notion.so/profile/integrations, abra a integração do painel → Capabilities e marque Read, Update e Insert content" };
+    if (e.code === "object_not_found") return { code: "tool_error", message: "a página ou base não está conectada à integração do painel. No Notion, abra a base → ••• → Connections e adicione a integração" };
+    if (e.code === "validation_error") return { code: "tool_error", message: e.message };
     const code = e.status === 401 || e.status === 403 && e.code !== "not_allowed" ? "needs_reauth"
       : e.status === 404 ? "consent_required"
       : e.status === 429 ? "rate_limited"

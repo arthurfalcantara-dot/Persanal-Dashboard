@@ -105,7 +105,7 @@
 .cal-ev.busy { opacity: .5; pointer-events: none; }
 .cal-ev.dragging { opacity: .4; }
 .cal-ev[data-drag] { cursor: grab; }
-.cal-body .cal-ev[data-drag], .cal-tev[data-move="1"] { user-select: none; -webkit-user-select: none; }
+.cal-body .cal-ev[data-drag], .cal-tev[data-move="1"] { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .cal-body .cal-adr .cal-ev[data-drag] { touch-action: none; }
 .cal-ghost { position: fixed; z-index: 1000; margin: 0; pointer-events: none; opacity: .94; box-shadow: var(--shadow); }
 .cal-ghost[data-t]:not([data-t=""])::after { content: attr(data-t); margin-left: auto; padding-left: 8px; font-size: 11px; font-weight: 650; color: var(--ink-2); white-space: nowrap; }
