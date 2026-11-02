@@ -668,3 +668,30 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 #view-financas { --n-green: #448361; }
 :root[data-theme="dark"] #view-financas { --n-green: #5aa57a; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #view-financas { --n-green: #5aa57a; } }
+
+/* ---------- Alimentação compacta (proporcional às fontes do Treino) ---------- */
+#dieta-root { gap: 10px; }
+#dieta-root .ft-head h2 { font-size: 20px; } #dieta-root .ft-head small { font-size: 13px; }
+#dieta-root .ft-acts { padding: 2px; } #dieta-root .ft-acts button { padding: 6px 12px; font-size: 13px; }
+#dieta-root .ft-week { gap: 2px; } #dieta-root .ft-week button { padding: 5px 0 7px; border-radius: 12px; gap: 0; }
+#dieta-root .ft-week span { font-size: 11px; } #dieta-root .ft-week b { font-size: 16px; }
+#dieta-root .ft-week .has::after { bottom: 2px; }
+#dieta-root .ft-h { margin-top: 2px; } #dieta-root .ft-h h3 { font-size: 16px; }
+#dieta-root .ft-goals { gap: 8px; }
+#dieta-root .ft-goal { padding: 9px 10px 9px 12px; border-radius: 16px; gap: 6px; }
+#dieta-root .ft-goal b { font-size: 14px; } #dieta-root .ft-goal small { font-size: 12px; }
+#dieta-root .ft-ring { width: 34px; height: 34px; }
+#dieta-root .ft-meal { gap: 5px; }
+#dieta-root .ft-meal-h { padding: 4px 4px 0; } #dieta-root .ft-meal-h b { font-size: 16px; } #dieta-root .ft-meal-h small { font-size: 12px; }
+#dieta-root .ft-meal-h .chev { font-size: 18px; }
+#dieta-root .ft-card { border-radius: 16px; }
+#dieta-root .ft-item, #dieta-root .ft-sum { padding: 9px 14px; gap: 2px; }
+#dieta-root .ft-item b, #dieta-root .ft-sum b { font-size: 14.5px; }
+#dieta-root .ft-item small, #dieta-root .ft-sum span { font-size: 12.5px; }
+#dieta-root .ft-chips { font-size: 12.5px; gap: 2px 8px; }
+#dieta-root .ft-addrow { padding: 2px 6px 2px 14px; }
+#dieta-root .ft-addrow button { font-size: 14.5px; padding: 8px 0; } #dieta-root .ft-addrow .dots { font-size: 17px; padding: 6px 8px; }
+#dieta-root .ft-mtot { padding: 0 14px; }
+.ft-fab { width: 54px; height: 54px; font-size: 30px; }
+#dieta-root .ft-list li { padding-block: 9px; }
+@media (min-width: 761px) { #dieta-root .ft-goals { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
