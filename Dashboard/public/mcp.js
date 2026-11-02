@@ -6,6 +6,8 @@ import { api, ApiError, db } from "/data.js";
 
 const norm = id => String(id || "").replace(/^collection:\/\//, "").trim();
 const dashed = id => { const h = norm(id).replace(/-/g, ""); return /^[0-9a-f]{32}$/i.test(h) ? `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}` : norm(id); };
+// id de página a partir de id, UUID ou link do Notion (último bloco isolado do caminho; ver calendario.js)
+const pid = v => { const s = String(v || "").split(/[?#]/)[0]; const uu = [...s.matchAll(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi)].pop(); if (uu) return uu[0]; const h = [...s.matchAll(/(?:^|[^0-9a-f])([0-9a-f]{32})(?![0-9a-f])/gi)].pop(); return h ? h[1] : String(v || ""); };
 
 // views do Notion usadas pelas abas → fonte de dados + o mesmo filtro e ordenação da view
 // (a API pública não consulta uma view; os filtros abaixo foram copiados de cada view no Notion).
@@ -114,7 +116,7 @@ function unflatten(flat, props) {
       case "multi_select": { let a = v; if (typeof v === "string") { try { a = JSON.parse(v); } catch { a = v.split(",").map(s => s.trim()).filter(Boolean); } } out[k] = { multi_select: [].concat(a || []).map(name => ({ name })) }; break; }
       case "checkbox": out[k] = { checkbox: v === true || v === "__YES__" }; break;
       case "url": case "email": case "phone_number": out[k] = { [p.type]: v || null }; break;
-      case "relation": { let a = v; if (typeof v === "string") { try { a = JSON.parse(v); } catch { a = [v]; } } out[k] = { relation: [].concat(a || []).map(u => ({ id: dashed(String(u).match(/[0-9a-f]{32}/i)?.[0] || u) })) }; break; }
+      case "relation": { let a = v; if (typeof v === "string") { try { a = JSON.parse(v); } catch { a = [v]; } } out[k] = { relation: [].concat(a || []).map(u => ({ id: dashed(pid(u)) })) }; break; }
       default: break;
     }
   }
@@ -176,18 +178,18 @@ const TOOLS = {
     return { payload: { pages } };
   },
   // lixeira e restauração em lote: { page_ids: [...] }
-  async "notion-delete-pages"(input) { for (const id of input.page_ids || []) await api(`notion/pages/${dashed(String(id).match(/[0-9a-f]{32}/i)?.[0] || id)}`, { method: "PATCH", body: { in_trash: true } }); return { payload: { ok: true } }; },
-  async "notion-restore-pages"(input) { for (const id of input.page_ids || []) await api(`notion/pages/${dashed(String(id).match(/[0-9a-f]{32}/i)?.[0] || id)}`, { method: "PATCH", body: { in_trash: false } }); return { payload: { ok: true } }; },
+  async "notion-delete-pages"(input) { for (const id of input.page_ids || []) await api(`notion/pages/${dashed(pid(id))}`, { method: "PATCH", body: { in_trash: true } }); return { payload: { ok: true } }; },
+  async "notion-restore-pages"(input) { for (const id of input.page_ids || []) await api(`notion/pages/${dashed(pid(id))}`, { method: "PATCH", body: { in_trash: false } }); return { payload: { ok: true } }; },
   // mandar uma página para a lixeira: { page_id }
   async "notion-trash-page"(input) {
-    const id = dashed(String(input.page_id || "").match(/[0-9a-f]{32}/i)?.[0] || input.page_id);
+    const id = dashed(pid(input.page_id));
     await api(`notion/pages/${id}`, { method: "PATCH", body: { in_trash: true } });
     return { payload: { ok: true } };
   },
   // atualizar propriedades: { page_id, command: "update_properties", properties: {…achatadas…} }
   async "notion-update-page"(input) {
     const d = input.data || input;
-    const id = dashed(String(d.page_id || "").match(/[0-9a-f]{32}|[0-9a-f-]{36}/i)?.[0] || d.page_id);
+    const id = dashed(pid(d.page_id));
     const page = await api(`notion/pages/${id}`);
     const parent = page.parent && (page.parent.data_source_id || page.parent.database_id);
     const sc = parent ? await schema(parent) : { properties: page.properties };

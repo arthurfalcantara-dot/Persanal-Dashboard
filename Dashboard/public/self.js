@@ -20,7 +20,9 @@
   const shift = (s, k) => iso(addDays(parseISO(s), k));
   const ddmm = s => `${s.slice(8, 10)}/${s.slice(5, 7)}`;
   const pct = v => Math.round(v * 100) + "%";
-  const pageId = u => { const m = String(u || "").replace(/-/g, "").match(/[0-9a-f]{32}/i); return m ? m[0].toLowerCase() : null; };
+  // id da página no link do Notion: o último bloco de 32 hex (ou UUID) do caminho, isolado. Pegar o primeiro bloco
+  // juntava letras a–f do fim do título ao id ("Decade-1a2b…" → id errado → o Notion responde "não encontrada").
+  const pageId = u => { const s = String(u || "").split(/[?#]/)[0]; const uu = [...s.matchAll(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi)].pop(); if (uu) return uu[0].replace(/-/g, "").toLowerCase(); const h = [...s.matchAll(/(?:^|[^0-9a-f])([0-9a-f]{32})(?![0-9a-f])/gi)].pop(); return h ? h[1].toLowerCase() : null; };
   const rel = v => { if (!v) return []; try { const a = JSON.parse(v); return (Array.isArray(a) ? a : [a]).map(pageId).filter(Boolean); } catch { return [pageId(v)].filter(Boolean); } };
   const DOW1 = ["D", "S", "T", "Q", "Q", "S", "S"];
   const DOW_N = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
