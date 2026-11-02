@@ -83,14 +83,14 @@ function saudeMode(m) {
   document.querySelectorAll("#saude-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
   $("treino-root").hidden = m !== "treino"; $("dieta-root").hidden = m !== "dieta";
   if (m === "treino") import("/treino.js?v=4").then(x => x.start());
-  if (m === "dieta") import("/dieta.js?v=4").then(x => x.start());
+  if (m === "dieta") import("/dieta.js?v=5").then(x => x.start());
   if (m === "painel") window.dispatchEvent(new Event("painel:saude"));
 }
 document.querySelectorAll("#saude-mode button").forEach(b => b.addEventListener("click", () => { saudeMode(b.dataset.mode); scrollTo(0, 0); }));
 // atalhos do Painel (Hoje) para Alimentação e Treino: data-go="dieta:add|dieta:dia|treino:comecar|treino:sugestao|treino:inicio"
 window.addEventListener("painel:go", e => {
   const { go, dia, refeicao } = e.detail || {}, [mod, acao] = String(go || "").split(":");
-  if (mod === "dieta") { saudeMode("dieta"); scrollTo(0, 0); import("/dieta.js?v=4").then(() => { const D = window.painelDieta; if (!D) return; acao === "add" ? D.add(dia, refeicao) : D.goto(dia); }); }
+  if (mod === "dieta") { saudeMode("dieta"); scrollTo(0, 0); import("/dieta.js?v=5").then(() => { const D = window.painelDieta; if (!D) return; acao === "add" ? D.add(dia, refeicao) : D.goto(dia); }); }
   if (mod === "treino") { saudeMode("treino"); scrollTo(0, 0); import("/treino.js?v=4").then(() => setTimeout(() => { const T = window.painelTreino; if (T && acao !== "inicio") T.begin(acao === "sugestao"); }, 60)); }
 });
 // treino em andamento continua acessível de qualquer aba (mini barra)
@@ -100,7 +100,7 @@ try { if (localStorage.getItem("painel.treino.atual")) setTimeout(() => import("
 // O que cada aba faz ao atualizar. Devolve uma promessa: o indicador gira até ela terminar.
 // o hash pode trazer parâmetros depois de "&" (ex.: volta do Google em #agenda&g=…)
 const HOME = "agenda"; // o app abre na Agenda
-function currentTab() { let t = (location.hash || "").slice(1).split("&")[0]; if (t === "inicio") t = "config"; return NAMES[t] ? t : HOME; }
+function currentTab() { let t = (location.hash || "").slice(1).split("&")[0]; if (t === "inicio") t = HOME; return NAMES[t] ? t : HOME; }
 async function refreshTab() {
   navigator.serviceWorker?.getRegistration?.().then(r => r && r.update()).catch(() => {});
   const tab = currentTab();
@@ -281,6 +281,11 @@ async function googleCard() {
 let toastAT; function toastApp(t) { const el = $("toast"); if (!el) return; el.textContent = t; el.hidden = false; clearTimeout(toastAT); toastAT = setTimeout(() => { el.hidden = true; }, 3200); }
 
 // ---------- início do app ----------
+// toda abertura do app (não um recarregar) começa na Agenda; o retorno do Google mantém seus parâmetros
+try {
+  const nav = performance.getEntriesByType("navigation")[0];
+  if ((!nav || nav.type !== "reload") && !/[&?](g|gerr)=/.test(location.hash) && currentTab() !== HOME) history.replaceState(null, "", "#" + HOME);
+} catch {}
 let started = false;
 function show(signedIn) {
   $("login").hidden = signedIn; $("app").hidden = !signedIn; $("sb-blur").hidden = !signedIn; $("gear").hidden = !signedIn; $("side-open").hidden = !signedIn || !document.documentElement.classList.contains("side-closed");

@@ -21,7 +21,7 @@ const MEALS = [["Café da manhã", "07:30"], ["Lanche", "10:30"], ["Almoço", "1
 const MEAL_ALIAS = { "Lanche da tarde": "Lanche", "Lanche da manhã": "Lanche", "Snack": "Lanche", "Breakfast": "Café da manhã", "Lunch": "Almoço", "Dinner": "Jantar" };
 const NUT = [["kcal", "Calorias", "kcal"], ["gord", "Gordura total", "g"], ["sat", "Saturada", "g", 1], ["trans", "Trans", "g", 1], ["poli", "Poli-insaturada", "g", 1], ["mono", "Monoinsaturada", "g", 1],
   ["col", "Colesterol", "mg"], ["carb", "Carboidratos", "g"], ["acucar", "Açúcares", "g", 1], ["fibra", "Fibra", "g"], ["prot", "Proteína", "g"], ["sodio", "Sódio", "mg"]];
-const MAC = [["prot", "Proteína", "P", "var(--n-orange)"], ["gord", "Gordura", "G", "var(--n-green)"], ["carb", "Carboidratos", "C", "var(--n-blue)"], ["kcal", "Calorias", "", "var(--n-red)"]];
+const MAC = [["prot", "Proteína", "P", "var(--m-prot)"], ["gord", "Gordura", "G", "var(--m-gord)"], ["carb", "Carboidratos", "C", "var(--m-carb)"], ["kcal", "Calorias", "K", "var(--m-kcal)"]];
 
 const D = { day: iso(new Date()), view: "diario", foods: [], open: new Set(), started: false, entry: null, libQ: "", taco: [] };
 const fold = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -198,7 +198,7 @@ function renderEntry() {
       <label class="row"><span>Porção</span><span class="dt"><input id="fe-q" inputmode="decimal" value="${E.qtd}" style="width:84px;text-align:center"><select id="fe-u">${units.map(u => `<option ${u === E.unid ? "selected" : ""}>${esc(u)}</option>`).join("")}</select></span></label>
       <label class="row"><span>Precisão</span><select id="fe-p"><option value="exato" ${E.precisao === "exato" ? "selected" : ""}>Exata</option><option value="estimado" ${E.precisao === "estimado" ? "selected" : ""}>Estimada</option></select></label>
     </div>
-    ${t ? `<h4 class="tr-sub">Impacto nas metas</h4><div class="group-ios ft-impact">${MAC.map(([k, l, s, c]) => `<div class="row"><span><i style="--c:${c}">${s || "🔥"}</i>${l}</span><span>+${f0(v[k] || 0)}${k === "kcal" ? " kcal" : " g"} (${t[k] ? Math.round((v[k] || 0) / t[k] * 100) : 0}%)</span></div>`).join("")}</div>` : ""}
+    ${t ? `<h4 class="tr-sub">Impacto nas metas</h4><div class="group-ios ft-impact">${MAC.map(([k, l, s, c]) => `<div class="row"><span><i style="--c:${c}">${s}</i>${l}</span><span>+${f0(v[k] || 0)}${k === "kcal" ? " kcal" : " g"} (${t[k] ? Math.round((v[k] || 0) / t[k] * 100) : 0}%)</span></div>`).join("")}</div>` : ""}
     <h4 class="tr-sub">Informação nutricional · por porção</h4>
     <div class="group-ios ft-facts">${NUT.map(([k, l, u, sub]) => `<div class="row${sub ? " sub" : ""}"><span>${l}</span><span>${v[k] == null ? "—" : f1(v[k]) + " " + u}</span></div>`).join("")}</div>
     ${f.fonte === "off" ? `<p class="hint ft-attr">Fonte: Open Food Facts (ODbL)${f.codigo ? " · " + esc(f.codigo) : ""}.</p>` : f.fonte === "taco" ? `<p class="hint ft-attr">Fonte: TACO, 4ª edição (NEPA/Unicamp). Valores por 100 g do alimento como descrito.</p>` : ""}

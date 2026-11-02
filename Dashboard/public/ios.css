@@ -566,7 +566,7 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 .ft-item b, .ft-sum b { font-size: 15.5px; font-weight: 600; } .ft-item small, .ft-sum span { color: var(--muted); font-size: 13.5px; }
 .ft-sum span:not(.ft-chips):not(.ft-chips span) { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .ft-chips { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.ft-chips .k { color: var(--n-red); } .ft-chips .k::before { content: "🔥"; font-size: 13px; margin-right: 2px; } .ft-chips .c { color: var(--n-blue); } .ft-chips .g { color: var(--n-green); } .ft-chips .p { color: var(--n-orange); } .ft-chips .f { color: var(--self); } .ft-chips .f::before { content: "💧"; font-size: 12px; margin-right: 2px; }
+.ft-chips .k { color: var(--m-kcal); } .ft-chips .c { color: var(--m-carb); } .ft-chips .g { color: var(--m-gord); } .ft-chips .p { color: var(--m-prot); } .ft-chips .f { color: var(--self); } .ft-chips .f::before { content: "💧"; font-size: 12px; margin-right: 2px; }
 .ft-addrow { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 6px 18px; }
 .ft-addrow button { border: 0; background: none; color: var(--food); font: 500 15.5px var(--body); padding: 9px 0; cursor: pointer; } .ft-addrow .dots { color: var(--muted); font-size: 20px; padding: 10px; }
 .ft-mtot { padding: 0 18px; }
@@ -624,11 +624,11 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 #view-calendario .cal-body { border: 0; border-radius: var(--r-card); box-shadow: var(--shadow); }
 #view-calendario .cal-mgr, #view-calendario .cal-side > * { border-radius: 20px; }
 /* semana e dia ocupam a altura da tela (antes: cartão de 760 px) */
-#view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { max-height: none; height: max(480px, calc(100dvh - 190px)); touch-action: pan-y; }
+#view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { max-height: none; height: max(620px, calc(100dvh - 60px)); touch-action: pan-y; }
 #view-calendario .cal-body { touch-action: pan-y; }
 .cal-zoom button { min-width: 34px; font-size: 18px; line-height: 1; }
 @media (max-width: 760px) {
-  #view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { height: max(420px, calc(100dvh - env(safe-area-inset-bottom, 0px) - 250px)); }
+  #view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { height: max(560px, calc(100dvh - env(safe-area-inset-bottom, 0px) - 120px)); }
   #view-calendario .cal-bar { gap: 8px; }
   #view-calendario .cal-tools { width: 100%; display: flex; gap: 6px; flex-wrap: wrap; }
   #view-calendario header.page .status { flex-wrap: wrap; }
@@ -677,7 +677,7 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 #dieta-root .ft-week span { font-size: 11px; } #dieta-root .ft-week b { font-size: 16px; }
 #dieta-root .ft-week .has::after { bottom: 2px; }
 #dieta-root .ft-h { margin-top: 2px; } #dieta-root .ft-h h3 { font-size: 16px; }
-#dieta-root .ft-goals { gap: 8px; }
+#dieta-root .ft-goals { gap: 5px; }
 #dieta-root .ft-goal { padding: 9px 10px 9px 12px; border-radius: 16px; gap: 6px; }
 #dieta-root .ft-goal b { font-size: 14px; } #dieta-root .ft-goal small { font-size: 12px; }
 #dieta-root .ft-ring { width: 34px; height: 34px; }

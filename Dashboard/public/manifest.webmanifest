@@ -3,7 +3,7 @@
   "short_name": "Painel",
   "description": "Painel pessoal: saúde, finanças, carreira e calendário.",
   "lang": "pt-BR",
-  "start_url": "/#inicio",
+  "start_url": "/#agenda",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],

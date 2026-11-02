@@ -281,10 +281,10 @@
   .cal-dows span { padding: 6px 3px; font-size: 10px; letter-spacing: .04em; }
   .cal-nav h2 { font-size: 18px; width: 100%; margin: 4px 0 0; order: 5; }
   .cal-nav { flex-wrap: wrap; }
-  .cal-wh, .cal-all { grid-template-columns: 46px repeat(var(--n), minmax(0, 1fr)); }
-  .cal-tg { grid-template-columns: 46px minmax(0, 1fr); }
-  .cal-axis { flex-basis: 46px; }
-  .cal-hr span { right: 5px; font-size: 10.5px; white-space: nowrap; }
+  .cal-wh, .cal-all { grid-template-columns: 54px repeat(var(--n), minmax(0, 1fr)); }
+  .cal-tg { grid-template-columns: 54px minmax(0, 1fr); }
+  .cal-axis { flex: 0 0 54px; min-width: 54px; }
+  .cal-hr span { left: 2px; right: 6px; text-align: right; font-size: 11px; white-space: nowrap; overflow: visible; }
   .cal-whd b { font-size: 16px; }
   .cal-ag-row { grid-template-columns: 38px minmax(0, 1fr); }
   .cal-ag-m { display: none; }
