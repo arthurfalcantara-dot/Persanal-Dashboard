@@ -58,6 +58,17 @@ O código já está no repositório `arthurfalcantara-dot/persanal-dashboard`, n
    - `NOTION_TOKEN`, como **Secret**.
 4. Faça o deploy. O endereço fica algo como `painel-da-vida.pages.dev`. Volte ao passo 2.5 e cadastre-o.
 
+### 5. Google Calendar (aba Agenda: leitura e escrita)
+1. Em [console.cloud.google.com](https://console.cloud.google.com), crie um projeto (ex.: `Painel`).
+2. **APIs e serviços → Biblioteca**: ative a **Google Calendar API**.
+3. **Google Auth Platform → Branding**: nome do app `Painel`, seu e-mail de suporte e de contato. Em **Público-alvo**: tipo **Externo**.
+4. **Público-alvo → Publicar app** (sair de "Em teste"). Em teste, o acesso expira a cada 7 dias. Como o app não é verificado pelo Google, no login aparece "O Google não verificou este app": toque em **Avançado → Acessar Painel (não seguro)**. É o seu próprio app.
+5. **Clientes → Criar cliente → Aplicativo da Web**. Em **URIs de redirecionamento autorizados**, ponha `https://SEU-ENDERECO.pages.dev/api/google/callback`.
+6. Copie o **ID do cliente** e a **chave secreta**. No Cloudflare, cadastre `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` (este como **Secret**) e refaça o deploy.
+7. No app, abra **Agenda → Conectar Google Calendar** e autorize.
+
+O app pede só eventos (`calendar.events`) e a lista de agendas (`calendar.calendarlist.readonly`). O acesso de longo prazo do Google fica cifrado com uma chave derivada de `GOOGLE_CLIENT_SECRET`; o navegador e o banco só guardam a versão cifrada. Para revogar: myaccount.google.com → Segurança → Apps de terceiros.
+
 ## Instalar
 - **iPhone:** abra o endereço no Safari → Compartilhar → **Adicionar à Tela de Início**.
 - **PC:** abra no Chrome ou no Edge → ícone de instalar na barra de endereço (ou menu → **Instalar app**).

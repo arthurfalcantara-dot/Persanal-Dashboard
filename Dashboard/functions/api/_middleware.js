@@ -11,6 +11,7 @@ export async function onRequest(ctx) {
   const { request, env, next, data } = ctx;
   const url = new URL(request.url);
   if (url.pathname === "/api/config") return next(); // configuração pública do login (URL e chave anônima do Supabase)
+  if (url.pathname === "/api/google/callback") return next(); // volta do Google: verificada pelo "state" assinado
 
   const auth = request.headers.get("authorization") || "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";

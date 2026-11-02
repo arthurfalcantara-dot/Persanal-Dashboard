@@ -21,23 +21,24 @@ document.querySelectorAll("[data-act=theme]").forEach(b => b.onclick = toggleThe
 document.querySelectorAll("[data-act=out]").forEach(b => b.onclick = () => auth.signOut());
 
 // ---------- navegação por abas (#hash) ----------
-const NAMES = { inicio: "Início", saude: "Saúde & corpo", financas: "Finanças", self: "Self Improvement", carreira: "Carreira", estudos: "Leitura & estudos" };
-const READY = { inicio: "view-inicio", saude: "view-saude", financas: "view-financas", self: "view-self", carreira: "view-carreira" };
+const NAMES = { inicio: "Início", saude: "Saúde & corpo", financas: "Finanças", self: "Self Improvement", carreira: "Carreira", agenda: "Agenda", estudos: "Leitura & estudos" };
+const READY = { inicio: "view-inicio", saude: "view-saude", financas: "view-financas", self: "view-self", carreira: "view-carreira", agenda: "view-agenda" };
 function route() {
-  const tab = NAMES[(location.hash || "#inicio").slice(1)] ? (location.hash || "#inicio").slice(1) : "inicio";
+  const tab = currentTab();
   document.querySelectorAll(".tab").forEach(t => { if (t.dataset.tab === tab) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
   const vid = READY[tab] || "view-other";
-  ["view-inicio", "view-saude", "view-financas", "view-self", "view-carreira", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
+  ["view-inicio", "view-saude", "view-financas", "view-self", "view-carreira", "view-agenda", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
   if (vid === "view-other") $("ph-title").textContent = NAMES[tab];
   $("tb-title").textContent = NAMES[tab];
   document.title = NAMES[tab] + " · Painel";
   if (tab === "saude") loadTab("saude").then(() => window.dispatchEvent(new Event("painel:saude")));
   if (tab === "financas") loadTab("financas");
+  if (tab === "agenda") loadTab("agenda").then(() => window.painelAgenda && window.painelAgenda.start());
   if (tab === "carreira") loadTab("carreira").then(() => window.dispatchEvent(new Event("painel:carreira")));
   if (tab === "self") loadTab("self").then(() => window.dispatchEvent(new Event("painel:self")));
   scrollTo(0, 0); onScroll();
 }
-document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { if (location.hash !== "#" + t.dataset.tab) location.hash = t.dataset.tab; else route(); }));
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { if (currentTab() !== t.dataset.tab) location.hash = t.dataset.tab; else route(); }));
 addEventListener("hashchange", route);
 
 // barra superior compacta: aparece quando o título grande sai da tela (padrão do iOS)
@@ -58,21 +59,23 @@ window.claude = { use: async cap => {
   if (cap === "sample") { try { return (await health()).anthropic ? sample : null; } catch { return null; } }
   return null;
 } };
-const TAB_JS = { financas: "/financas.js?v=2", self: "/self.js?v=2", carreira: "/carreira.js?v=1", saude: "/saude.js?v=5" }, tabP = {};
+const TAB_JS = { financas: "/financas.js?v=2", self: "/self.js?v=2", carreira: "/carreira.js?v=1", agenda: "/agenda.js?v=1", saude: "/saude.js?v=5" }, tabP = {};
 function loadTab(name) {
   return tabP[name] || (tabP[name] = new Promise((ok, bad) => {
-    const s = document.createElement("script"); s.src = TAB_JS[name]; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
+    const s = document.createElement("script"); if (name === "agenda") s.type = "module"; s.src = TAB_JS[name]; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
   }));
 }
 
 // ---------- puxar para atualizar (com elástico e mola) ----------
 // O que cada aba faz ao atualizar. Devolve uma promessa: o indicador gira até ela terminar.
-function currentTab() { return NAMES[(location.hash || "#inicio").slice(1)] ? (location.hash || "#inicio").slice(1) : "inicio"; }
+// o hash pode trazer parâmetros depois de "&" (ex.: volta do Google em #agenda&g=…)
+function currentTab() { const t = (location.hash || "#inicio").slice(1).split("&")[0]; return NAMES[t] ? t : "inicio"; }
 async function refreshTab() {
   navigator.serviceWorker?.getRegistration?.().then(r => r && r.update()).catch(() => {});
   const tab = currentTab();
   if (tab === "inicio") return Promise.all([checks(), workouts()]);
   if (tab === "saude") return db.reloadAll();
+  if (tab === "agenda") return window.painelAgenda && window.painelAgenda.refresh();
   if (tab === "financas" || tab === "self" || tab === "carreira") {
     const b = $({ financas: "refresh", self: "s-refresh", carreira: "c-refresh" }[tab]); if (!b || b.disabled) return;
     b.click(); const t0 = Date.now();
@@ -180,7 +183,7 @@ async function checks() {
     healthP = null; const h = await health();
     box.innerHTML = row(true, "Login", h.user) + row(true, "Servidor") + row(h.notion, "Notion", h.notion ? "token configurado" : "falta NOTION_TOKEN")
       + row(h.anthropic, "Claude", h.anthropic ? "chave configurada" : "falta ANTHROPIC_API_KEY")
-      + row(h.google, "Google Calendar", h.google ? "configurado" : "próxima etapa");
+      + row(h.google, "Google Calendar", h.google ? "configurado no servidor" : "falta GOOGLE_CLIENT_ID / SECRET");
   } catch (e) { box.innerHTML = row(false, "Servidor", e.message); }
 }
 async function workouts() {
