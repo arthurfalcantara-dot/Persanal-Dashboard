@@ -938,17 +938,20 @@
     $("ledger-sum").innerHTML = `<span><b>${rows.length}</b> lançamentos</span><span>Receitas <b style="color:var(--inc)">${fmt(inc)}</b></span><span>Despesas <b>${fmt(exp)}</b></span><span>Saldo <b style="color:${inc - exp < 0 ? "var(--bad)" : "var(--good)"}">${fmt(inc - exp)}</b></span>`;
     if (!rows.length) { $("ledger").innerHTML = `<tbody><tr><td class="empty">${state.rows.length ? "Nenhum lançamento com esses filtros." : "Aguardando dados do Notion…"}</td></tr></tbody>`; $("ledger-more").hidden = true; return; }
     const shown = rows.slice(0, L.limit);
+    state.ledRows = [];
     let h = `<thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Subcategoria</th><th>Pagamento</th><th>Origem</th><th class="val">Valor</th><th></th></tr></thead><tbody>`;
     let lastDay = "";
     for (const r of shown) {
       if (L.period === "year" && r.d.slice(0, 7) !== lastDay.slice(0, 7)) { const mi = +r.d.slice(5, 7) - 1; h += `<tr class="day"><td colspan="8">${MONTHS[mi]} ${state.year}</td></tr>`; }
       lastDay = r.d;
+      state.ledRows.push(r);
       const isInc = r.cat === "Renda", fut = r.d > todayISO;
       const ok = r.sub && PARENT[r.sub] === r.cat;
       const subTag = r.sub ? `<span class="tag" style="--c:${ok ? subColor(r.cat, r.sub, TAX[r.cat] || [r.sub]) : "var(--warn)"}">${esc(r.sub)}</span>` : `<span class="chip warn">sem subcategoria</span>`;
-      h += `<tr class="${fut ? "future" : ""}"><td class="d">${r.d.slice(8, 10)}/${r.d.slice(5, 7)}${fut ? " · agendado" : ""}</td><td>${esc(r.name)}</td><td>${r.cat ? `<span class="tag${CAT_KEY[r.cat] ? " has-ci" : ""}" style="--c:${catColor(r.cat)}">${CAT_KEY[r.cat] ? catMark(r.cat) : ""}${esc(catName(r.cat))}</span>` : `<span class="chip warn">sem categoria</span>`}</td><td>${subTag}</td><td class="origin">${esc(PAY[r.pay] || r.pay || "")}</td><td class="origin">${esc(r.origem)}</td><td class="val ${isInc ? "inc" : "exp"}">${isInc ? "+ " : "− "}${fmt(r.a)}</td><td>${r.url ? `<a class="open" href="${esc(r.url)}" target="_blank" rel="noopener">Notion ↗</a>` : ""}</td></tr>`;
+      h += `<tr class="${fut ? "future" : ""}${r.url ? " editable" : ""}" data-k="${state.ledRows.length - 1}"><td class="d">${r.d.slice(8, 10)}/${r.d.slice(5, 7)}${fut ? " · agendado" : ""}</td><td>${esc(r.name)}</td><td>${r.cat ? `<span class="tag${CAT_KEY[r.cat] ? " has-ci" : ""}" style="--c:${catColor(r.cat)}">${CAT_KEY[r.cat] ? catMark(r.cat) : ""}${esc(catName(r.cat))}</span>` : `<span class="chip warn">sem categoria</span>`}</td><td>${subTag}</td><td class="origin">${esc(PAY[r.pay] || r.pay || "")}</td><td class="origin">${esc(r.origem)}</td><td class="val ${isInc ? "inc" : "exp"}">${isInc ? "+ " : "− "}${fmt(r.a)}</td><td>${r.url ? `<a class="open" href="${esc(r.url)}" target="_blank" rel="noopener">Notion ↗</a>` : ""}</td></tr>`;
     }
     $("ledger").innerHTML = h + "</tbody>";
+    $("ledger").onclick = e => { if (e.target.closest("a")) return; const tr = e.target.closest("tr.editable"); if (tr) editRow(state.ledRows[+tr.dataset.k]); };
     $("ledger-more").hidden = rows.length <= L.limit;
     $("ledger-more").textContent = `Mostrar mais (${rows.length - L.limit} restantes)`;
   }
@@ -993,6 +996,68 @@
       if (e && (e.code === "server_unavailable" || e.code === "upstream_error" || e.code === "cancelled")) fail("O Notion não confirmou a gravação. Clique em Atualizar e confira no extrato antes de tentar de novo, para não duplicar.");
       else fail(errorCopy(e));
     } finally { btn.disabled = false; btn.textContent = "Adicionar ao Notion"; }
+  }
+
+  // ---------- editar / apagar lançamento (Notion + cópia dos meses revisados) ----------
+  const srcOf = () => HIST[state.year] ? "h" + state.year : "main";
+  async function snapPatch(src, url, novo) {
+    // a cópia dos meses revisados guarda os lançamentos em linhas compactas; tira a antiga e põe a nova no mês certo
+    const db = await dbWait; if (!db) return;
+    try {
+      const q = await db.collection(SNAP).where("src", "==", src).limit(200).get(), docs = {};
+      for (const d of q.docs) { const x = d.data(); if (!x.meta && Array.isArray(x.rows)) docs[x.mes] = { id: d.id, x, dirty: false }; }
+      let found = false;
+      for (const m of Object.values(docs)) { const i = m.x.rows.findIndex(a => a[5] === url); if (i >= 0) { m.x.rows.splice(i, 1); m.dirty = true; found = true; } }
+      if (!found) return; // lançamento não estava na cópia (mês ainda não revisado)
+      if (novo) { const mes = novo.d.slice(0, 7); const m = docs[mes] || (docs[mes] = { id: `${src}-${mes}`, x: { src, mes, rows: [] } }); m.x.rows.push(pack(novo)); m.dirty = true; }
+      for (const m of Object.values(docs)) if (m.dirty) await db.doc(`${SNAP}/${m.id}`).set(m.x);
+    } catch { /* sem permissão: a próxima leitura completa corrige */ }
+  }
+  function persistRows() { if (HIST[state.year]) { try { localStorage.setItem(HIST_KEY(state.year), JSON.stringify(state.hist[state.year])); } catch {} } else writeCache(); }
+  function editRow(r) {
+    const box = document.createElement("div"); box.className = "tr-sheet"; box.id = "fin-edit";
+    const cats = Object.keys(TAX), isInc = r.cat === "Renda";
+    const subsOf = c => (TAX[c] || []);
+    box.innerHTML = `<div class="tr-sheet-box"><div class="ft-sh-h"><button class="btn ghost" data-x="cancel">Cancelar</button><h3>Editar lançamento</h3><button class="btn ghost strong" data-x="save">Salvar</button></div>
+      <div class="group-ios"><input id="fx-n" value="${esc(r.name)}" placeholder="Descrição">
+        <label class="row"><span>Valor (R$)</span><input id="fx-a" inputmode="decimal" value="${String(r.a).replace(".", ",")}" style="text-align:right;width:140px;background:transparent"></label>
+        <label class="row"><span>Data</span><input type="date" id="fx-d" value="${r.d}"></label></div>
+      <div class="group-ios"><label class="row"><span>Categoria</span><select id="fx-c">${cats.map(c => `<option value="${esc(c)}" ${c === r.cat ? "selected" : ""}>${esc(catName(c))}</option>`).join("")}${r.cat && !cats.includes(r.cat) ? `<option selected>${esc(r.cat)}</option>` : ""}</select></label>
+        <label class="row"><span>Subcategoria</span><select id="fx-s"></select></label>
+        ${HIST[state.year] ? "" : `<label class="row"><span>Pagamento</span><select id="fx-p"><option value="">—</option>${Object.entries(PAY).map(([k, l]) => `<option value="${k}" ${k === r.pay ? "selected" : ""}>${l}</option>`).join("")}</select></label>`}</div>
+      <p class="hint">${isInc ? "Receita" : "Despesa"} · origem ${esc(r.origem || "")}. A mudança vai para o Notion${r.d <= (revisadoAte() || "") ? " e para a cópia dos meses revisados" : ""}.</p>
+      <button class="gbtn big danger" data-x="del">Apagar lançamento</button><p class="msg" id="fx-msg" hidden></p></div>`;
+    document.body.appendChild(box); document.documentElement.classList.add("tr-noscroll");
+    const fillSubs = () => { const c = $("fx-c").value, subs = subsOf(c); $("fx-s").innerHTML = subs.map(x => `<option ${x === r.sub ? "selected" : ""}>${esc(x)}</option>`).join("") + (r.sub && !subs.includes(r.sub) && c === r.cat ? `<option selected>${esc(r.sub)}</option>` : ""); };
+    fillSubs(); $("fx-c").onchange = fillSubs;
+    const close = () => { box.remove(); document.documentElement.classList.remove("tr-noscroll"); };
+    const say = (t, err) => { const m = $("fx-msg"); m.textContent = t; m.hidden = !t; m.className = "msg" + (err ? " err" : ""); };
+    box.onclick = async e => {
+      const b = e.target.closest("[data-x]"); if (!b) { if (e.target === box) close(); return; }
+      const mcp = state.mcp || await window.claude?.use?.("mcp");
+      if (b.dataset.x === "cancel") return close();
+      if (!mcp) return say("Entre no app para editar no Notion.", true);
+      if (b.dataset.x === "del") {
+        if (!confirm(`Apagar “${r.name}” (${fmt(r.a)}) do Notion? Ele vai para a lixeira do Notion.`)) return;
+        b.disabled = true; say("Apagando…");
+        try {
+          await mcp.callTool(NOTION, "notion-trash-page", { page_id: r.url });
+          for (const arr of [state.main, state.rows, ...(Object.values(state.hist).map(h => h.rows))]) { const i = (arr || []).indexOf(r); if (i >= 0) arr.splice(i, 1); }
+          await snapPatch(srcOf(), r.url, null); persistRows(); close(); toast("Lançamento apagado"); render();
+        } catch (err) { b.disabled = false; say(errorCopy(err), true); }
+        return;
+      }
+      const name = $("fx-n").value.trim(), a = parseMoney($("fx-a").value), d = $("fx-d").value, cat = $("fx-c").value, sub = $("fx-s").value, pay = $("fx-p") ? $("fx-p").value : r.pay;
+      if (!name || !d || !isFinite(a) || a <= 0) return say("Preencha descrição, data e um valor maior que zero.", true);
+      const props = { Name: name, "date:Date:start": d, "date:Date:is_datetime": 0, Amount: Math.round(a * 100) / 100, Category: cat, Subcategory: sub };
+      if ($("fx-p")) props["Payment Method"] = pay || null;
+      b.disabled = true; say("Salvando no Notion…");
+      try {
+        await mcp.callTool(NOTION, "notion-update-page", { page_id: r.url, command: "update_properties", properties: props });
+        Object.assign(r, { name, d, a: props.Amount, cat, sub, pay });
+        await snapPatch(srcOf(), r.url, r); persistRows(); close(); toast("Lançamento atualizado"); render();
+      } catch (err) { b.disabled = false; say(errorCopy(err), true); }
+    };
   }
 
   // ---------- eventos ----------

@@ -590,3 +590,32 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 
 /* em folhas e no treino ao vivo, os blocos não encolhem (a folha rola) */
 .tr-sheet-box > *, .ft-sheet-box > *, .tr-live-body > * { flex-shrink: 0; }
+
+/* Treino: plano da semana e sugestão do dia */
+.tr-plan { gap: 10px; }
+.tr-pweek { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.tr-pd { display: grid; justify-items: center; gap: 1px; padding: 8px 0; border-radius: 14px; background: var(--fill); }
+.tr-pd span { font-size: 12px; color: var(--muted); } .tr-pd b { font: 700 15px var(--display); } .tr-pd small { font-size: 11.5px; color: var(--n-green); min-height: 14px; }
+.tr-pd.today { background: var(--tint); } .tr-pd.today span, .tr-pd.today b, .tr-pd.today small { color: #fff; }
+.tr-pd.miss small::after { content: "•"; color: var(--n-red); }
+.tr-sug { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: .5px solid var(--line); }
+.tr-sug div { display: grid; gap: 2px; min-width: 0; } .tr-sug b { font-size: 16px; } .tr-sug span { color: var(--ink-2); font-size: 14.5px; }
+.tr-sug.done span { color: var(--n-green); font-weight: 600; } .tr-sug-t { margin: 0; font-weight: 600; }
+
+/* computador: barra lateral recolhível; fechada, o conteúdo usa toda a largura */
+.side-top { display: flex; align-items: center; justify-content: space-between; }
+.side-x { width: 32px; height: 32px; } .side-x svg, .side-open svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.side-open { display: none; }
+@media (min-width: 761px) {
+  .shell { transition: grid-template-columns .25s cubic-bezier(.2,.9,.3,1); }
+  html.side-closed .shell { grid-template-columns: 0 minmax(0, 1fr); max-width: none; }
+  html.side-closed .side { opacity: 0; pointer-events: none; transform: translateX(-24px); margin: 12px 0; padding-inline: 0; overflow: hidden; }
+  .side { transition: opacity .2s, transform .25s; }
+  html.side-closed .side-open:not([hidden]) { display: grid; place-items: center; position: fixed; z-index: 50; top: 16px; left: 16px; width: 40px; height: 40px; color: var(--ink); }
+  html.side-closed main { padding-left: 72px; padding-right: 32px; }
+  .shell { max-width: none; }
+}
+@media (max-width: 760px) { .side-x { display: none; } }
+#ledger tr.editable { cursor: pointer; } #ledger tr.editable:hover td { background: var(--fill); }
+
+@media (max-width: 760px) { .side-top { display: none !important; } }

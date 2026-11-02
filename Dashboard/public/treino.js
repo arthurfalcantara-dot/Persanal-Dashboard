@@ -91,6 +91,7 @@ function homeHtml(live) {
       ${live ? `<button class="btn primary big" data-act="open-live">Voltar ao treino em andamento · ${esc(T.live.titulo)}</button>`
         : `<button class="btn primary big" data-act="start-empty"><i class="ic" data-i="plus"></i>Começar treino vazio</button>`}
     </section>
+    ${planHtml(live)}
     <div class="tr-h"><h3 class="sec">Rotinas</h3><button class="gbtn small" data-act="new-routine">Nova rotina</button></div>
     ${rs.length ? rs.map(r => `<section class="card tr-rout">
         <div class="tr-rout-h"><b>${esc(r.data.nome)}</b><button class="iconbtn" data-act="routine-menu" data-id="${esc(r.id)}" aria-label="Opções">⋯</button></div>
@@ -100,6 +101,46 @@ function homeHtml(live) {
     <div class="tr-h"><h3 class="sec">Últimos treinos</h3><button class="linkbtn" data-act="go-feed">Ver todos</button></div>
     ${sessions().slice(0, 3).map(cardHtml).join("") || `<section class="card"><p class="empty">Sem treinos registrados.</p></section>`}`;
 }
+// ---------------- plano da semana (Plano & dados da Saúde) ----------------
+const DOW3 = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const cardioNome = t => { const x = String(t || "").split(" (")[0]; return /corrida/i.test(x) ? "Corrida" : /esteira/i.test(x) ? "Esteira inclinada" : x || "Cardio"; };
+function planOf(day) { const t = P() && P().dayTarget(day); return t ? t.plan || null : null; }
+function doneOn(day) { const ss = (S().byDate || {})[day] || []; return { forca: ss.some(s => s.forca), cardio: ss.some(s => s.cardio && (s.cardio.min || s.cardio.km)) }; }
+// força: a rotina usada há mais tempo (rodízio); sem rotinas, o treino de força do mesmo dia da semana passada
+function suggestForca(today) {
+  if (T.rotinas.length) return { tipo: "rotina", r: T.rotinas.slice().sort((a, b) => (a.data.usadaEm || "").localeCompare(b.data.usadaEm || ""))[0] };
+  const wd = new Date(today + "T12:00").getDay();
+  const s = sessions().find(x => x.forca && x.data < today && new Date(x.data + "T12:00").getDay() === wd) || sessions().find(x => x.forca && x.data < today);
+  return s ? { tipo: "sessao", s } : null;
+}
+function planHtml(live) {
+  if (!P() || !P().state().cfg) return `<section class="card tr-plan"><p class="hint">Preencha o Plano em Painel → Plano & dados para ver a sugestão de treino do dia.</p></section>`;
+  const today = iso(new Date()), d0 = new Date(), mon = new Date(d0); mon.setDate(d0.getDate() - ((d0.getDay() + 6) % 7));
+  const days = Array.from({ length: 7 }, (_, i) => { const x = new Date(mon); x.setDate(mon.getDate() + i); return iso(x); });
+  const strip = days.map(k => {
+    const p = planOf(k) || {}, dn = doneOn(k), dw = new Date(k + "T12:00").getDay();
+    const want = p.forca || +p.cardioMin > 0, ok = (!p.forca || dn.forca) && (!(+p.cardioMin > 0) || dn.cardio) && want;
+    return `<div class="tr-pd${k === today ? " today" : ""}${k < today && want && !ok ? " miss" : ""}"><span>${DOW3[dw]}</span><b>${p.forca ? "F" : ""}${p.forca && +p.cardioMin ? "+" : ""}${+p.cardioMin ? "C" : ""}${!want ? "–" : ""}</b><small>${ok ? "✓" : +p.cardioMin ? p.cardioMin + "′" : ""}</small></div>`;
+  }).join("");
+  const p = planOf(today) || {}, dn = doneOn(today), sug = p.forca ? suggestForca(today) : null;
+  let body = "";
+  if (!p.forca && !(+p.cardioMin > 0)) body = `<p class="tr-sug-t">Descanso no plano de hoje.</p><p class="hint">Se quiser treinar mesmo assim, comece um treino vazio ou uma rotina.</p>`;
+  else {
+    if (p.forca) body += dn.forca ? `<div class="tr-sug done"><b>Força</b><span>feito hoje ✓</span></div>`
+      : `<div class="tr-sug"><div><b>Força</b><span>${sug ? (sug.tipo === "rotina" ? `Rotina sugerida: ${esc(sug.r.data.nome)}` : `Repetir: ${esc(sug.s.titulo || "Treino")} de ${new Date(sug.s.data + "T12:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })}`) : "Monte o treino ou crie uma rotina"}</span>
+        ${sug ? `<small class="hint">${esc((sug.tipo === "rotina" ? sug.r.data.exercicios : sug.s.exercicios).filter(e => e.grupo !== "Cardio").map(e => e.nome).slice(0, 4).join(", "))}</small>` : ""}</div>
+        <button class="btn primary small" data-act="start-sug" ${live ? "disabled" : ""}>Começar</button></div>`;
+    if (+p.cardioMin > 0) body += dn.cardio ? `<div class="tr-sug done"><b>Cardio</b><span>feito hoje ✓</span></div>`
+      : `<div class="tr-sug"><div><b>Cardio · ${p.cardioMin} min</b><span>${esc(p.cardioTipo || "")}</span></div><button class="btn small" data-act="start-cardio" ${live ? "disabled" : ""}>Começar</button></div>`;
+  }
+  T.sug = { forca: sug, cardio: p };
+  return `<section class="card tr-plan">
+    <div class="tr-h" style="margin:0"><h3 class="sec">Plano da semana</h3><button class="linkbtn" data-act="edit-plan">Editar plano</button></div>
+    <div class="tr-pweek">${strip}</div>
+    <h4 class="tr-sub">Sugestão para hoje</h4>${body}
+  </section>`;
+}
+
 function rel(d) {
   const t = new Date(); t.setHours(0, 0, 0, 0);
   const x = new Date(d.slice(0, 10) + "T12:00"); const days = Math.round((t - x) / 864e5);
@@ -205,7 +246,7 @@ function exFrom(e, prevSets) {
   const last = exHist(e.nome)[0], ps = last ? last.e.series : [];
   const series = (prevSets && prevSets.length ? prevSets : ps.length ? ps : [{}, {}, {}]).map((x, i) => {
     const p = ps[i] || null;
-    return Object.assign(blankSet(p ? { kg: p.kg, reps: p.reps, seg: p.seg, km: p.km } : null), { tipo: x.tipo || "normal", kg: prevSets ? (x.kg ?? "") : "", reps: prevSets ? (x.reps ?? "") : "" });
+    return Object.assign(blankSet(p ? { kg: p.kg, reps: p.reps, seg: p.seg, km: p.km } : null), { tipo: x.tipo || "normal", kg: prevSets ? (x.kg ?? "") : "", reps: prevSets ? (x.reps ?? "") : "", seg: prevSets ? (x.seg ?? "") : "", km: prevSets ? (x.km ?? "") : "" });
   });
   return { nome: e.nome, grupo: e.grupo, hevy: e.hevy || null, nota: "", descanso: e.descanso ?? 90, series };
 }
@@ -429,6 +470,11 @@ function onClick(e) {
   const at = () => { const row = b.closest("[data-i]"); return row ? { i: +row.dataset.i, j: row.dataset.j != null ? +row.dataset.j : null } : { i: +b.dataset.i }; };
   switch (act) {
     case "start-empty": startLive(null); break;
+    case "start-sug": { const g = T.sug && T.sug.forca; if (!g) { startLive(null); break; }
+      if (g.tipo === "rotina") startLive(Object.assign({ id: g.r.id }, g.r.data)); else startLive(sessionToRoutine(g.s)); break; }
+    case "start-cardio": { const p = T.sug.cardio, nome = cardioNome(p.cardioTipo);
+      startLive({ nome: "Cardio", exercicios: [{ nome, grupo: "Cardio", hevy: nome, descanso: 0, series: [{ tipo: "normal", seg: +p.cardioMin }] }] }); break; }
+    case "edit-plan": document.querySelector('#saude-mode [data-mode="painel"]')?.click(); setTimeout(() => document.querySelector('[data-hsub="plano"]')?.click(), 50); break;
     case "open-live": openLive(); break;
     case "go-feed": T.view = "historico"; render(); break;
     case "feed-more": T.feedLimit = (T.feedLimit || 20) + 20; render(); break;

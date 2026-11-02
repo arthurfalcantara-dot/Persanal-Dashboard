@@ -56,12 +56,24 @@ window.claude = { use: async cap => {
   if (cap === "sample") { try { return (await health()).anthropic ? sample : null; } catch { return null; } }
   return null;
 } };
-const TAB_JS = { financas: "/financas.js?v=2", self: "/self.js?v=2", carreira: "/carreira.js?v=1", agenda: "/agenda.js?v=2", saude: "/saude.js?v=5" }, tabP = {};
+const TAB_JS = { financas: "/financas.js?v=3", self: "/self.js?v=2", carreira: "/carreira.js?v=1", agenda: "/agenda.js?v=2", saude: "/saude.js?v=5" }, tabP = {};
 function loadTab(name) {
   return tabP[name] || (tabP[name] = new Promise((ok, bad) => {
     const s = document.createElement("script"); if (name === "agenda") s.type = "module"; s.src = TAB_JS[name]; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
   }));
 }
+
+// ---------- computador: barra lateral recolhível (o conteúdo ocupa a tela toda) ----------
+const SIDE_KEY = "painel.side.fechada";
+function setSide(closed) {
+  document.documentElement.classList.toggle("side-closed", closed);
+  $("side-open").hidden = !closed || $("app").hidden;
+  try { localStorage.setItem(SIDE_KEY, closed ? "1" : "0"); } catch {}
+  setTimeout(() => dispatchEvent(new Event("resize")), 260); // gráficos se redesenham na largura nova
+}
+$("side-close").onclick = () => setSide(true);
+$("side-open").onclick = () => setSide(false);
+try { if (localStorage.getItem(SIDE_KEY) === "1") document.documentElement.classList.add("side-closed"); } catch {}
 
 // ---------- Saúde: Painel · Treino · Alimentação ----------
 const MODE_KEY = "painel.saude.modo";
@@ -70,13 +82,13 @@ function saudeMode(m) {
   $("view-saude").dataset.mode = m;
   document.querySelectorAll("#saude-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
   $("treino-root").hidden = m !== "treino"; $("dieta-root").hidden = m !== "dieta";
-  if (m === "treino") import("/treino.js?v=2").then(x => x.start());
-  if (m === "dieta") import("/dieta.js?v=2").then(x => x.start());
+  if (m === "treino") import("/treino.js?v=3").then(x => x.start());
+  if (m === "dieta") import("/dieta.js?v=3").then(x => x.start());
   if (m === "painel") window.dispatchEvent(new Event("painel:saude"));
 }
 document.querySelectorAll("#saude-mode button").forEach(b => b.addEventListener("click", () => { saudeMode(b.dataset.mode); scrollTo(0, 0); }));
 // treino em andamento continua acessível de qualquer aba (mini barra)
-try { if (localStorage.getItem("painel.treino.atual")) setTimeout(() => import("/treino.js?v=2").then(x => x.start && window.painelSaude ? x.start() : null), 1500); } catch {}
+try { if (localStorage.getItem("painel.treino.atual")) setTimeout(() => import("/treino.js?v=3").then(x => x.start && window.painelSaude ? x.start() : null), 1500); } catch {}
 
 // ---------- puxar para atualizar (com elástico e mola) ----------
 // O que cada aba faz ao atualizar. Devolve uma promessa: o indicador gira até ela terminar.
@@ -246,7 +258,7 @@ $("imp-file").onchange = async e => {
 // ---------- início do app ----------
 let started = false;
 function show(signedIn) {
-  $("login").hidden = signedIn; $("app").hidden = !signedIn; $("sb-blur").hidden = !signedIn; $("gear").hidden = !signedIn;
+  $("login").hidden = signedIn; $("app").hidden = !signedIn; $("sb-blur").hidden = !signedIn; $("gear").hidden = !signedIn; $("side-open").hidden = !signedIn || !document.documentElement.classList.contains("side-closed");
   if (signedIn) {
     $("c-user").textContent = auth.user ? `Conectado como ${auth.user.email}.` : "";
     route(); if (!started) { started = true; checks(); workouts(); }

@@ -23,7 +23,14 @@ const NUT = [["kcal", "Calorias", "kcal"], ["gord", "Gordura total", "g"], ["sat
   ["col", "Colesterol", "mg"], ["carb", "Carboidratos", "g"], ["acucar", "Açúcares", "g", 1], ["fibra", "Fibra", "g"], ["prot", "Proteína", "g"], ["sodio", "Sódio", "mg"]];
 const MAC = [["prot", "Proteína", "P", "var(--n-orange)"], ["gord", "Gordura", "G", "var(--n-green)"], ["carb", "Carboidratos", "C", "var(--n-blue)"], ["kcal", "Calorias", "", "var(--n-red)"]];
 
-const D = { day: iso(new Date()), view: "diario", foods: [], open: new Set(), started: false, entry: null, libQ: "" };
+const D = { day: iso(new Date()), view: "diario", foods: [], open: new Set(), started: false, entry: null, libQ: "", taco: [] };
+const fold = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+// TACO (Tabela Brasileira de Composição de Alimentos, NEPA/Unicamp): 591 alimentos, valores por 100 g
+let tacoP; const loadTaco = () => tacoP || (tacoP = fetch("/taco.json").then(r => r.json()).then(l => { D.taco = l.map(f => Object.assign(f, { fonte: "taco", marca: "", porcoes: [], _k: fold(f.nome) })); }).catch(() => {}));
+function tacoFind(q, max = 25) {
+  const ws = fold(q).split(/[\s,]+/).filter(w => w.length > 1); if (!ws.length) return [];
+  return D.taco.filter(f => ws.every(w => f._k.includes(w))).sort((a, b) => a._k.indexOf(ws[0]) - b._k.indexOf(ws[0]) || a.nome.length - b.nome.length).slice(0, max);
+}
 
 // ---------------- alimentos ----------------
 const per = (food, gramas) => { const o = {}; for (const [k] of NUT) { const v = food.n && food.n[k]; o[k] = v == null ? null : Math.round(v * gramas / 100 * 10) / 10; } return o; };
@@ -137,7 +144,7 @@ function openAdd(meal) {
     <input class="tr-search" id="ft-q" type="search" placeholder="Buscar alimento" autocomplete="off">
     <div class="ft-tools"><button class="gbtn" data-act="scan">Escanear código</button><button class="gbtn" data-act="new-food">Novo alimento</button><button class="gbtn" data-act="quick">Adição rápida</button><button class="gbtn" data-act="ai">Descrever (IA)</button></div>
     <div id="ft-res"></div>`);
-  addList(); setTimeout(() => $("ft-q") && $("ft-q").focus(), 120);
+  addList(); loadTaco().then(() => addList()); setTimeout(() => $("ft-q") && $("ft-q").focus(), 120);
 }
 function nextMeal() { const h = new Date(); const hm = `${pad(h.getHours())}:${pad(h.getMinutes())}`; let best = MEALS[0][0]; for (const [n, t] of MEALS) if (t <= hm) best = n; return best; }
 function addList(off) {
@@ -145,8 +152,10 @@ function addList(off) {
   const q = (($("ft-q") || {}).value || "").toLowerCase().trim();
   const rec = recents().filter(it => !q || it.nome.toLowerCase().includes(q)).slice(0, q ? 20 : 12);
   const mine = D.foods.filter(f => !q || f.nome.toLowerCase().includes(q) || (f.marca || "").toLowerCase().includes(q)).sort((a, b) => (b.usadoEm || "").localeCompare(a.usadoEm || "")).slice(0, 30);
+  const tc = q.length >= 2 ? tacoFind(q) : []; D.tacoList = tc;
   box.innerHTML = `${rec.length ? `<h4 class="tr-sub">Recentes</h4><ul class="ios-list ft-list">${rec.map((it, k) => `<li data-act="pick-recent" data-k="${k}"><span><b>${esc(it.nome)}</b><small class="hint">${it.marca ? esc(it.marca) + " · " : ""}${esc(it.porcao || "")} · ${f0(it.kcal)} kcal</small></span><span class="plus">+</span></li>`).join("")}</ul>` : ""}
     ${mine.length ? `<h4 class="tr-sub">Biblioteca</h4><ul class="ios-list ft-list">${mine.map(f => `<li data-act="pick-food" data-id="${esc(f.id)}"><span><b>${esc(f.nome)}</b><small class="hint">${f.marca ? esc(f.marca) + " · " : ""}${f.n && f.n.kcal != null ? f0(f.n.kcal) + " kcal/100" + (f.base || "g") : "sem kcal"}${f.fonte === "historico" ? " · do histórico" : ""}</small></span><span class="plus">+</span></li>`).join("")}</ul>` : ""}
+    ${tc.length ? `<h4 class="tr-sub">TACO · alimentos genéricos</h4><ul class="ios-list ft-list">${tc.map((f, k) => `<li data-act="pick-taco" data-k="${k}"><span><b>${esc(f.nome)}</b><small class="hint">${f0(f.n.kcal)} kcal · P ${f1(f.n.prot)} · C ${f1(f.n.carb)} · G ${f1(f.n.gord)} /100 g</small></span><span class="plus">+</span></li>`).join("")}</ul>` : ""}
     ${q.length >= 2 ? `<button class="gbtn big" data-act="off-search">Buscar “${esc(q)}” no Open Food Facts</button>` : ""}
     ${off ? off : ""}
     ${!rec.length && !mine.length && q.length < 2 ? `<p class="empty">Busque pelo nome, escaneie o código de barras ou cadastre um alimento.</p>` : ""}`;
@@ -166,7 +175,7 @@ function openEntry(food, opts) {
   const it = opts.item, base = food.base || "g";
   const defU = it ? (it.unid || base) : ((food.porcoes || [])[0] ? food.porcoes[0].nome : base);
   const defQ = it ? (it.qtd ?? food._g ?? num(String(it.porcao).match(/[\d.,]+/)?.[0]) ?? 100) : ((food.porcoes || [])[0] ? 1 : 100);
-  D.entry = { food, meal: opts.meal, day: opts.day || D.day, j: opts.j, item: it, qtd: defQ, unid: defU, hora: it?.hora || (mealsOf(D.day).find(m => m.nome === opts.meal) || {}).hora || "12:00", precisao: it?.precisao || "exato" };
+  D.entry = { food, marca: it ? (it.marca || "") : (food.marca || ""), meal: opts.meal, day: opts.day || D.day, j: opts.j, item: it, qtd: defQ, unid: defU, hora: it?.hora || (mealsOf(D.day).find(m => m.nome === opts.meal) || {}).hora || "12:00", precisao: it?.precisao || "exato" };
   renderEntry();
 }
 function entryValues() {
@@ -180,6 +189,7 @@ function renderEntry() {
   const units = [base, ...(f.porcoes || []).map(p => p.nome)];
   sheet(`${head(E.item ? "Editar registro" : "Novo registro", "entry-save")}
     <div class="ft-summary"><b>${esc(f.nome)}</b><small>${f.marca ? esc(f.marca) + " · " : ""}${f1(E.qtd)} ${esc(E.unid)}</small>${chips(v)}</div>
+    <div class="group-ios"><label class="row"><span>Marca</span><input id="fe-b" value="${esc(E.marca ?? f.marca ?? "")}" placeholder="opcional" style="text-align:right;flex:1;min-width:0;background:transparent"></label></div>
     <div class="group-ios">
       <label class="row"><span>Data</span><span class="dt"><input type="date" id="fe-d" value="${E.day}"><input type="time" id="fe-h" value="${E.hora}"></span></label>
       <label class="row"><span>Refeição</span><select id="fe-m">${MEALS.map(([n]) => `<option ${n === E.meal ? "selected" : ""}>${n}</option>`).join("")}</select></label>
@@ -191,14 +201,14 @@ function renderEntry() {
     ${t ? `<h4 class="tr-sub">Impacto nas metas</h4><div class="group-ios ft-impact">${MAC.map(([k, l, s, c]) => `<div class="row"><span><i style="--c:${c}">${s || "🔥"}</i>${l}</span><span>+${f0(v[k] || 0)}${k === "kcal" ? " kcal" : " g"} (${t[k] ? Math.round((v[k] || 0) / t[k] * 100) : 0}%)</span></div>`).join("")}</div>` : ""}
     <h4 class="tr-sub">Informação nutricional · por porção</h4>
     <div class="group-ios ft-facts">${NUT.map(([k, l, u, sub]) => `<div class="row${sub ? " sub" : ""}"><span>${l}</span><span>${v[k] == null ? "—" : f1(v[k]) + " " + u}</span></div>`).join("")}</div>
-    ${f.fonte === "off" ? `<p class="hint ft-attr">Fonte: Open Food Facts (ODbL)${f.codigo ? " · " + esc(f.codigo) : ""}.</p>` : ""}
+    ${f.fonte === "off" ? `<p class="hint ft-attr">Fonte: Open Food Facts (ODbL)${f.codigo ? " · " + esc(f.codigo) : ""}.</p>` : f.fonte === "taco" ? `<p class="hint ft-attr">Fonte: TACO, 4ª edição (NEPA/Unicamp). Valores por 100 g do alimento como descrito.</p>` : ""}
     <div class="ft-bottom">${E.item ? `<button class="gbtn danger" data-act="entry-del">Apagar</button>` : ""}${f.id ? `<button class="gbtn" data-act="food-edit" data-id="${esc(f.id)}">Editar alimento</button>` : `<button class="gbtn" data-act="food-save-from-entry">Salvar na biblioteca</button>`}</div>`);
 }
 async function saveEntry() {
   const E = D.entry; E.qtd = num($("fe-q").value) || 0; E.unid = $("fe-u").value; E.day = $("fe-d").value || E.day; E.hora = $("fe-h").value || E.hora; E.precisao = $("fe-p").value;
-  const meal = $("fe-m").value, v = entryValues(), f = E.food;
+  const meal = $("fe-m").value, v = entryValues(), f = E.food; E.marca = $("fe-b").value.trim();
   if (!(v.kcal >= 0)) { alert("Este alimento não tem calorias cadastradas. Edite o alimento antes."); return; }
-  const item = { id: (E.item && E.item.id) || uid(), nome: f.nome, marca: f.marca || "", alimentoId: f.id || null, qtd: E.qtd, unid: E.unid, gramas: Math.round(v._g * 10) / 10,
+  const item = { id: (E.item && E.item.id) || uid(), nome: f.nome, marca: E.marca, alimentoId: f.id || null, qtd: E.qtd, unid: E.unid, gramas: Math.round(v._g * 10) / 10,
     porcao: E.unid === "g" || E.unid === "ml" ? `${f1(E.qtd)}${E.unid}` : `${f1(E.qtd)} × ${E.unid}`, hora: E.hora, precisao: E.precisao };
   for (const [k] of NUT) if (v[k] != null) item[k] = v[k];
   // remove do lugar antigo (se mudou dia ou refeição) e grava no novo
@@ -210,7 +220,7 @@ async function saveEntry() {
   const ms = mealsOf(E.day), m = ms.find(x => x.nome === meal); legacyFix(m); m.itens = (m.itens || []).concat(item); m.hora = m.itens.length === 1 ? E.hora : m.hora;
   await saveDay(E.day, ms); done(f);
   async function done(food) {
-    if (food.id) { try { await db.doc(`saude/alimentos/${food.id}`).update({ usadoEm: new Date().toISOString() }); } catch {} }
+    if (food.id) { try { await db.doc(`saude/alimentos/${food.id}`).update(Object.assign({ usadoEm: new Date().toISOString() }, E.marca && !food.marca ? { marca: E.marca } : {})); } catch {} }
     closeSheet(); D.open.add(meal); D.day = E.day; toast("Registrado");
   }
 }
@@ -249,7 +259,7 @@ async function saveFood() {
 // adição rápida (só kcal e macros)
 function openQuick(meal) {
   sheet(`${head("Adição rápida", "quick-save")}
-    <div class="group-ios"><input id="fq-n" placeholder="Descrição (ex.: Café com leite)"></div>
+    <div class="group-ios"><input id="fq-n" placeholder="Descrição (ex.: Café com leite)"><input id="fq-b" placeholder="Marca (opcional)"></div>
     <div class="group-ios ft-facts">${[["kcal", "Calorias (kcal)"], ["prot", "Proteína (g)"], ["carb", "Carboidratos (g)"], ["gord", "Gordura (g)"]].map(([k, l]) => `<label class="row"><span>${l}</span><input data-q="${k}" inputmode="decimal" placeholder="—"></label>`).join("")}</div>`);
   D.quickMeal = meal;
 }
@@ -257,7 +267,7 @@ async function saveQuick() {
   const v = {}; document.querySelectorAll("#ft-sheet [data-q]").forEach(i => { const x = num(i.value); if (x != null) v[i.dataset.q] = x; });
   if (v.kcal == null) { if (v.prot != null || v.carb != null || v.gord != null) v.kcal = (v.prot || 0) * 4 + (v.carb || 0) * 4 + (v.gord || 0) * 9; else { alert("Informe as calorias."); return; } }
   const ms = mealsOf(D.day), m = ms.find(x => x.nome === D.quickMeal); legacyFix(m);
-  m.itens = (m.itens || []).concat(Object.assign({ id: uid(), nome: $("fq-n").value.trim() || "Adição rápida", porcao: "1 porção", precisao: "estimado", hora: m.hora }, v));
+  m.itens = (m.itens || []).concat(Object.assign({ id: uid(), nome: $("fq-n").value.trim() || "Adição rápida", marca: $("fq-b").value.trim(), porcao: "1 porção", precisao: "estimado", hora: m.hora }, v));
   await saveDay(D.day, ms); closeSheet(); D.open.add(D.quickMeal); toast("Registrado");
 }
 
@@ -277,9 +287,12 @@ async function runAI() {
     const sample = await window.claude.use("sample");
     const lib = D.foods.filter(f => f.n && f.n.kcal != null).slice(0, 80).map(f => `${f.nome}${f.marca ? " (" + f.marca + ")" : ""}: ${f.n.kcal} kcal, P ${f.n.prot ?? "?"}, C ${f.n.carb ?? "?"}, G ${f.n.gord ?? "?"} por 100 ${f.base || "g"}`).join("\n");
     const j = await sample.json(`Estime a composição nutricional da refeição descrita. Use valores típicos de tabelas brasileiras (como a TACO) para alimentos genéricos; quando um item corresponder a um alimento da BIBLIOTECA do usuário, use os valores dela. Quando a quantidade não for dita, assuma uma porção usual e marque "estimado": true.
-Responda só com JSON: {"itens":[{"nome": string em português, "gramas": número, "kcal": número, "prot": número, "carb": número, "gord": número, "fibra": número, "estimado": boolean}]}
+Quando o usuário citar uma marca, preencha "marca".
+Responda só com JSON: {"itens":[{"nome": string em português, "marca": string ou "", "gramas": número, "kcal": número, "prot": número, "carb": número, "gord": número, "fibra": número, "estimado": boolean}]}
 BIBLIOTECA:
 ${lib || "(vazia)"}
+TACO (por 100 g; prefira estes valores para alimentos genéricos):
+${[...new Set(txt.split(/[\s,;.]+/).filter(w => w.length >= 4))].flatMap(w => tacoFind(w, 6)).slice(0, 40).map(f => `${f.nome}: ${f.n.kcal} kcal, P ${f.n.prot ?? "?"}, C ${f.n.carb ?? "?"}, G ${f.n.gord ?? "?"}, fibra ${f.n.fibra ?? "?"}`).join("\n") || "(nenhum)"}
 REFEIÇÃO:
 ${txt}`, { modelTier: "default" });
     D.aiItems = (j.itens || []).filter(i => i && i.nome && isFinite(+i.kcal));
@@ -289,7 +302,7 @@ ${txt}`, { modelTier: "default" });
 }
 async function saveAI() {
   const ms = mealsOf(D.day), m = ms.find(x => x.nome === D.aiMeal); legacyFix(m);
-  m.itens = (m.itens || []).concat(D.aiItems.map(i => ({ id: uid(), nome: i.nome, qtd: +i.gramas || null, unid: "g", gramas: +i.gramas || null, porcao: i.gramas ? `${f0(i.gramas)}g` : "1 porção", precisao: "estimado", hora: m.hora,
+  m.itens = (m.itens || []).concat(D.aiItems.map(i => ({ id: uid(), nome: i.nome, marca: i.marca || "", qtd: +i.gramas || null, unid: "g", gramas: +i.gramas || null, porcao: i.gramas ? `${f0(i.gramas)}g` : "1 porção", precisao: "estimado", hora: m.hora,
     kcal: +i.kcal || 0, prot: +i.prot || 0, carb: +i.carb || 0, gord: +i.gord || 0, fibra: +i.fibra || 0 })));
   await saveDay(D.day, ms); closeSheet(); D.open.add(D.aiMeal); toast("Refeição registrada");
 }
@@ -379,6 +392,7 @@ async function onClick(e) {
     case "pick-recent": { const it = D.recentList[+b.dataset.k]; const f = foodFromItem(it); openEntry(f, { meal: D.addMeal }); if (!f.id && it.qtd) { D.entry.qtd = it.qtd; D.entry.unid = it.unid || D.entry.unid; renderEntry(); } break; }
     case "pick-food": openEntry(foodById(b.dataset.id), { meal: D.addMeal }); break;
     case "pick-off": openEntry(D.offList[+b.dataset.k], { meal: D.addMeal }); break;
+    case "pick-taco": openEntry(Object.assign({}, D.tacoList[+b.dataset.k], { id: null }), { meal: D.addMeal }); break;
     case "entry-save": saveEntry(); break;
     case "entry-del": if (confirm("Apagar este registro?")) delEntry(); break;
     case "food-edit": { const f = foodById(b.dataset.id); openFood(f, D.entry ? { meal: D.entry.meal, item: D.entry.item, j: D.entry.j } : null); break; }
@@ -399,7 +413,7 @@ async function onClick(e) {
 function onInput(e) {
   if (e.target.id === "ft-q") { clearTimeout(D.qT); D.qT = setTimeout(() => addList(), 120); }
   if (e.target.id === "ft-libq") { D.libQ = e.target.value; const pos = e.target.selectionStart; render(); const n = $("ft-libq"); n.focus(); n.setSelectionRange(pos, pos); }
-  if (["fe-q", "fe-u"].includes(e.target.id) && D.entry) { D.entry.qtd = num($("fe-q").value) || 0; D.entry.unid = $("fe-u").value; const keep = e.target.id; D.entry.day = $("fe-d").value; D.entry.hora = $("fe-h").value; D.entry.precisao = $("fe-p").value; D.entry.meal = $("fe-m").value; renderEntry(); const el = $(keep); if (el && keep === "fe-q") { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }
+  if (["fe-q", "fe-u"].includes(e.target.id) && D.entry) { D.entry.qtd = num($("fe-q").value) || 0; D.entry.unid = $("fe-u").value; const keep = e.target.id; D.entry.marca = $("fe-b").value; D.entry.day = $("fe-d").value; D.entry.hora = $("fe-h").value; D.entry.precisao = $("fe-p").value; D.entry.meal = $("fe-m").value; renderEntry(); const el = $(keep); if (el && keep === "fe-q") { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }
 }
 function swipeWeek() {
   const el = $("dieta-root"); let x0 = null, y0 = 0;
@@ -408,6 +422,7 @@ function swipeWeek() {
 }
 
 export function start() {
+  loadTaco();
   if (!D.started) {
     D.started = true;
     document.addEventListener("click", e => { if (e.target.closest("#dieta-root, #ft-sheet, #ft-scan")) onClick(e); });

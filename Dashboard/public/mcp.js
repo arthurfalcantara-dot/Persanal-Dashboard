@@ -158,6 +158,12 @@ const TOOLS = {
     }
     return { payload: { pages } };
   },
+  // mandar uma página para a lixeira: { page_id }
+  async "notion-trash-page"(input) {
+    const id = dashed(String(input.page_id || "").match(/[0-9a-f]{32}/i)?.[0] || input.page_id);
+    await api(`notion/pages/${id}`, { method: "PATCH", body: { in_trash: true } });
+    return { payload: { ok: true } };
+  },
   // atualizar propriedades: { page_id, command: "update_properties", properties: {…achatadas…} }
   async "notion-update-page"(input) {
     const d = input.data || input;
