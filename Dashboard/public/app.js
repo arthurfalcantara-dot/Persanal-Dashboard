@@ -1,4 +1,5 @@
 import { init, auth, api, notion, prop, db, ApiError } from "/data.js";
+import { mcp } from "/mcp.js";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -20,16 +21,17 @@ document.querySelectorAll("[data-act=out]").forEach(b => b.onclick = () => auth.
 
 // ---------- navegação por abas (#hash) ----------
 const NAMES = { inicio: "Início", saude: "Saúde & corpo", financas: "Finanças", self: "Self Improvement", carreira: "Carreira", estudos: "Leitura & estudos" };
-const READY = { inicio: "view-inicio", saude: "view-saude" };
+const READY = { inicio: "view-inicio", saude: "view-saude", financas: "view-financas" };
 function route() {
   const tab = NAMES[(location.hash || "#inicio").slice(1)] ? (location.hash || "#inicio").slice(1) : "inicio";
   document.querySelectorAll(".tab").forEach(t => { if (t.dataset.tab === tab) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
   const vid = READY[tab] || "view-other";
-  ["view-inicio", "view-saude", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
+  ["view-inicio", "view-saude", "view-financas", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
   if (vid === "view-other") $("ph-title").textContent = NAMES[tab];
   $("tb-title").textContent = NAMES[tab];
   document.title = NAMES[tab] + " · Painel";
-  if (tab === "saude") loadSaude().then(() => window.dispatchEvent(new Event("painel:saude")));
+  if (tab === "saude") loadTab("saude").then(() => window.dispatchEvent(new Event("painel:saude")));
+  if (tab === "financas") loadTab("financas");
   scrollTo(0, 0); onScroll();
 }
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { if (location.hash !== "#" + t.dataset.tab) location.hash = t.dataset.tab; else route(); }));
@@ -42,13 +44,102 @@ addEventListener("scroll", onScroll, { passive: true });
 // ---------- ponte com o código das abas do artifact ----------
 // As abas vieram do painel no claude.ai e pedem o banco com window.claude.use("db").
 // Aqui essa chamada devolve o banco do Supabase, com a mesma interface.
-window.claude = { use: async cap => (cap === "db" && auth.user ? db : null) };
-let saudeP = null;
-function loadSaude() {
-  return saudeP || (saudeP = new Promise((ok, bad) => {
-    const s = document.createElement("script"); s.src = "/saude.js?v=3"; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
+// O conector do Notion ("mcp") vira chamadas à API do Notion pelo servidor do app (mcp.js).
+window.claude = { use: async cap => (!auth.user ? null : cap === "db" ? db : cap === "mcp" ? mcp : null) };
+const TAB_JS = { saude: "/saude.js?v=4", financas: "/financas.js?v=1" }, tabP = {};
+function loadTab(name) {
+  return tabP[name] || (tabP[name] = new Promise((ok, bad) => {
+    const s = document.createElement("script"); s.src = TAB_JS[name]; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
   }));
 }
+
+// ---------- puxar para atualizar (com elástico e mola) ----------
+// O que cada aba faz ao atualizar. Devolve uma promessa: o indicador gira até ela terminar.
+function currentTab() { return NAMES[(location.hash || "#inicio").slice(1)] ? (location.hash || "#inicio").slice(1) : "inicio"; }
+async function refreshTab() {
+  navigator.serviceWorker?.getRegistration?.().then(r => r && r.update()).catch(() => {});
+  const tab = currentTab();
+  if (tab === "inicio") return Promise.all([checks(), workouts()]);
+  if (tab === "saude") return db.reloadAll();
+  if (tab === "financas") {
+    const b = $("refresh"); if (!b || b.disabled) return;
+    b.click(); const t0 = Date.now();
+    await new Promise(r => setTimeout(r, 120));
+    while (b.disabled && Date.now() - t0 < 30000) await new Promise(r => setTimeout(r, 150));
+    return;
+  }
+  return new Promise(r => setTimeout(r, 500));
+}
+
+const PTR = (() => {
+  const el = $("ptr"), ball = el.querySelector(".ptr-ball"), spin = $("ptr-spin"), main = $("main");
+  // 8 raios, como o indicador de atividade do iOS; vão acendendo conforme o puxão
+  spin.innerHTML = Array.from({ length: 8 }, (_, i) => `<line x1="12" y1="3.2" x2="12" y2="7.4" transform="rotate(${i * 45} 12 12)" style="--i:${i}"/>`).join("");
+  const rays = [...spin.querySelectorAll("line")];
+  const DIM = 260, TRIGGER = 72, HOLD = 64;
+  // elástico do iOS: quanto mais se puxa, mais resiste (x → (1 - 1/(x·c/d + 1))·d)
+  const rubber = x => (1 - 1 / (x * 0.55 / DIM + 1)) * DIM;
+  let y = 0, v = 0, startY = null, lastY = 0, lastT = 0, vel = 0, pulling = false, busy = false, raf = 0, armed = false;
+
+  function paint() {
+    const p = Math.max(0, Math.min(1, y / TRIGGER));
+    main.style.transform = y > 0.3 ? `translate3d(0, ${y.toFixed(2)}px, 0)` : "";
+    el.style.transform = `translate3d(-50%, ${(y - 48).toFixed(2)}px, 0)`;
+    el.style.opacity = Math.min(1, y / 28).toFixed(3);
+    // a bolinha "estica" um pouco no puxão e volta ao normal (sensação de material elástico)
+    const s = 0.6 + 0.4 * p, stretch = pulling ? 1 + Math.min(0.18, Math.max(0, (y - TRIGGER) / 400)) : 1;
+    ball.style.transform = `scale(${(s / Math.sqrt(stretch)).toFixed(3)}, ${(s * stretch).toFixed(3)}) rotate(${busy ? 0 : (p * 270).toFixed(1)}deg)`;
+    if (!busy) rays.forEach((r, i) => { r.style.opacity = p * 8 > i ? (0.25 + 0.75 * ((i + 1) / 8)).toFixed(2) : "0"; });
+  }
+  // mola física: massa 1, rigidez k, amortecimento c; integra até parar no alvo
+  function springTo(target, { k = 260, c = 24, v0 = 0 } = {}) {
+    cancelAnimationFrame(raf); v = v0;
+    let t = performance.now();
+    const step = now => {
+      const dt = Math.min(0.032, (now - t) / 1000); t = now;
+      for (let i = 0; i < 4; i++) { const h = dt / 4; const a = -k * (y - target) - c * v; v += a * h; y += v * h; }
+      if (Math.abs(v) < 2 && Math.abs(y - target) < 0.3) { y = target; v = 0; paint(); if (target === 0) { main.style.transform = ""; el.classList.remove("on"); } return; }
+      paint(); raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  }
+  const atTop = () => (document.scrollingElement || document.documentElement).scrollTop <= 0;
+  const blocked = t => t.closest("input, textarea, select, .modal, .tabs, [contenteditable]") || !$("login").hidden;
+
+  addEventListener("touchstart", e => {
+    if (busy || e.touches.length !== 1 || !atTop() || blocked(e.target)) { startY = null; return; }
+    startY = e.touches[0].clientY; lastY = startY; lastT = performance.now(); vel = 0; pulling = false; armed = false;
+  }, { passive: true });
+  addEventListener("touchmove", e => {
+    if (startY === null) return;
+    const cy = e.touches[0].clientY, d = cy - startY, now = performance.now();
+    if (!pulling) { if (d > 6 && atTop()) { pulling = true; cancelAnimationFrame(raf); el.classList.add("on"); } else if (d < 0) { startY = null; return; } else return; }
+    if (e.cancelable) e.preventDefault();          // segura a rolagem nativa enquanto puxa
+    vel = (cy - lastY) / Math.max(1, now - lastT) * 1000; lastY = cy; lastT = now;
+    y = rubber(Math.max(0, d - 6));
+    const nowArmed = y >= TRIGGER;
+    if (nowArmed !== armed) { armed = nowArmed; el.classList.toggle("armed", armed); if (armed && navigator.vibrate) navigator.vibrate(8); }
+    paint();
+  }, { passive: false });
+  const release = async () => {
+    if (startY === null) return; startY = null;
+    if (!pulling) return; pulling = false;
+    // a velocidade do dedo entra na mola (o "quique" depende de como você soltou)
+    const v0 = Math.max(-1500, Math.min(1500, vel * 0.35));
+    if (y >= TRIGGER) {
+      busy = true; el.classList.add("busy"); springTo(HOLD, { k: 320, c: 22, v0 });
+      const t0 = performance.now();
+      try { await refreshTab(); } catch {}
+      // gira pelo menos ~0,7 s: atualizações instantâneas parecem não ter acontecido
+      await new Promise(r => setTimeout(r, Math.max(250, 700 - (performance.now() - t0))));
+      el.classList.remove("busy", "armed"); busy = false; armed = false;
+      springTo(0, { k: 200, c: 22 });
+    } else { el.classList.remove("armed"); springTo(0, { k: 280, c: 20, v0 }); }
+  };
+  addEventListener("touchend", release, { passive: true });
+  addEventListener("touchcancel", release, { passive: true });
+  return { refresh: refreshTab };
+})();
 
 // ---------- login ----------
 let pendingEmail = "";

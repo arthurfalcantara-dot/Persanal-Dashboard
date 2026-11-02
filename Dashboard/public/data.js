@@ -78,7 +78,7 @@ const notify = path => {
 function listen(kind, path, load) {
   let alive = true, t = 0;
   const reload = () => { clearTimeout(t); t = setTimeout(() => alive && load(), 60); };
-  const l = { kind, path, reload }; listeners.add(l);
+  const l = { kind, path, reload, now: () => alive ? load() : null }; listeners.add(l);
   load();
   const filter = kind === "doc" ? `path=eq.${path}` : `collection=eq.${path}`;
   const ch = sb.channel(`docs:${kind}:${path}:${Math.random().toString(36).slice(2)}`)
@@ -106,15 +106,19 @@ function docRef(path) {
     onSnapshot(fn, onErr) { return listen("doc", path, () => this.get().then(fn).catch(e => onErr && onErr(e))); },
   };
 }
-function collectionRef(path, max = 5000) {
+function collectionRef(path, max = 5000, wheres = []) {
   return {
     path,
     doc: id => docRef(`${path}/${id}`),
-    limit: n => collectionRef(path, n),
+    limit: n => collectionRef(path, n, wheres),
+    // filtro simples por campo do documento (só "==", que é o que as abas usam)
+    where: (field, op, value) => { if (op !== "==") throw new Error(`where com "${op}" não suportado`); return collectionRef(path, max, wheres.concat([[field, value]])); },
     async get() {
       const out = []; const step = 1000;
       for (let from = 0; from < max; from += step) {
-        const { data, error } = await sb.from("docs").select("path, data, updated_at").eq("collection", path).order("path").range(from, Math.min(from + step, max) - 1);
+        let q = sb.from("docs").select("path, data, updated_at").eq("collection", path);
+        for (const [f, v] of wheres) q = q.eq(`data->>${f}`, String(v));
+        const { data, error } = await q.order("path").range(from, Math.min(from + step, max) - 1);
         if (error) throw error;
         out.push(...data); if (data.length < step) break;
       }
@@ -134,4 +138,8 @@ async function bulkSet(entries, onProgress) {
   }
   new Set(entries.map(([p]) => p)).forEach(notify);
 }
-export const db = { doc: docRef, collection: p => collectionRef(p), bulkSet };
+// relê tudo o que está aberto na tela (puxar para atualizar)
+function reloadAll() {
+  return Promise.all([...listeners].map(l => Promise.resolve(l.now()).catch(() => {})));
+}
+export const db = { doc: docRef, collection: p => collectionRef(p), bulkSet, reloadAll };

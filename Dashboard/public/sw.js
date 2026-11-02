@@ -1,7 +1,7 @@
 // Service worker: guarda a "casca" do app para abrir rápido e instalar como app.
 // Dados (/api) nunca vão para o cache: sempre buscam do servidor.
-const VERSION = "painel-v2";
-const SHELL = ["/", "/index.html", "/painel.css", "/ios.css", "/app.js", "/saude.js", "/data.js", "/manifest.webmanifest", "/vendor/supabase-2.117.3.js", "/icons/icon-192.png", "/icons/apple-touch-icon.png"];
+const VERSION = "painel-v3";
+const SHELL = ["/", "/index.html", "/painel.css", "/ios.css", "/app.js", "/saude.js", "/financas.js", "/mcp.js", "/data.js", "/manifest.webmanifest", "/vendor/supabase-2.117.3.js", "/icons/icon-192.png", "/icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {

@@ -377,11 +377,186 @@
       <button class="btn primary fab" id="h-fab" aria-label="Registrar" title="Registrar"><i class="ic" data-i="plus"></i><span class="fab-t">Registrar</span></button>
     </section>
 
+      <!-- FINANÇAS (portada do painel do claude.ai) -->
+    <section id="view-financas" style="display:none;flex-direction:column;gap:20px">
+      <header class="page">
+        <div class="title-row">
+          <h1 id="title">Finanças 2026</h1>
+        </div>
+      </header>
+
+      <div class="subtabs" role="tablist" aria-label="Seções de finanças">
+        <button class="subtab" role="tab" id="st-resumo" data-sub="resumo" aria-selected="true" aria-controls="sub-resumo">Resumo</button>
+        <button class="subtab" role="tab" id="st-extrato" data-sub="extrato" aria-selected="false" aria-controls="sub-extrato">Extrato<span class="count" id="extrato-count"></span></button>
+        <div class="sub-tools">
+          <span id="status" class="pill">Conectando ao Notion…</span>
+          <button id="refresh" class="btn icon-btn" aria-label="Atualizar" title="Atualizar: lê só os lançamentos depois do último mês revisado"><i class="ic" data-i="refresh"></i></button>
+          <button id="refresh-all" class="btn icon-btn" aria-label="Reler tudo" title="Reler tudo: relê tudo no Notion e regrava a cópia dos meses revisados"><i class="ic" data-i="reload-all"></i></button>
+        </div>
+      </div>
+
+      <div id="banner" class="banner" hidden></div>
+
+      <div class="controls">
+        <select id="year" class="year" aria-label="Ano"></select>
+        <div id="months" class="months" role="group" aria-label="Mês"></div>
+      </div>
+
+      <!-- ===== RESUMO ===== -->
+      <div id="sub-resumo" role="tabpanel" aria-labelledby="st-resumo" style="display:flex;flex-direction:column;gap:20px">
+        <div id="kpis" class="kpis"></div>
+
+        <div class="grid-2 wide-left">
+          <section class="card">
+            <div class="card-head">
+              <div><h3 data-i="bars">Receita × despesa por mês</h3><p class="hint">Clique num mês para ver o detalhe. Meses futuros mostram o que já está agendado.</p></div>
+              <div class="legend"><span><i class="sw" style="--c:var(--inc)"></i>Receita</span><span><i class="sw" style="--c:var(--exp)"></i>Despesa</span><span><i class="sw dash"></i>Previsto</span></div>
+            </div>
+            <div id="bars" class="chart"></div>
+            <div id="bars-stats" class="ystats"></div>
+          </section>
+          <section class="card">
+            <div class="card-head">
+              <div><h3 data-i="trend">Fluxo de caixa acumulado</h3><p class="hint" id="flow-hint">Saldo inicial do ano + receitas − despesas.</p></div>
+              <button id="edit-start" class="btn ghost" hidden>Editar saldo inicial</button>
+            </div>
+            <form id="start-form" class="inline-form" hidden>
+              <label class="field w-s" for="start-input">Saldo inicial (R$)<input id="start-input" inputmode="decimal"></label>
+              <button class="btn primary" type="submit">Salvar</button>
+              <button class="btn ghost" type="button" id="start-cancel">Cancelar</button>
+            </form>
+            <div id="flow" class="chart"></div>
+            <div id="proj-ctl" class="proj-ctl" hidden><label for="proj-n">Base da projeção</label><input type="range" id="proj-n" min="1" max="12" step="1"><span id="proj-n-v"></span></div>
+            <p id="proj-text" class="proj-text" hidden></p>
+          </section>
+        </div>
+
+        <div class="grid-2">
+          <section class="card">
+            <div class="card-head">
+              <div><h3 id="exp-title" data-i="out">Gastos por categoria</h3><p class="hint" id="exp-hint">Do maior para o menor. Toque numa categoria para abrir as subcategorias.</p></div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><span id="exp-total" class="pill"></span><label class="switch" id="bud-switch" hidden title="Mostrar os gastos em relação ao orçamento do mês"><input type="checkbox" id="bud-on"><i aria-hidden="true"></i>Comparar com orçamento</label><button id="edit-budget" class="btn ghost" hidden><i class="ic" data-i="target"></i>Orçamento</button></div>
+            </div>
+            <form id="budget-form" class="bud-form" hidden></form>
+            <div id="exp-cats" class="cats"></div>
+          </section>
+          <section class="card">
+            <div class="card-head">
+              <div><h3 id="inc-title" data-i="in">Receitas por categoria</h3><p class="hint">Fontes de renda do mês, pelas subcategorias de Renda.</p></div>
+              <span id="inc-total" class="pill"></span>
+            </div>
+            <div id="inc-cats" class="cats"></div>
+            <div id="inc-extra"></div>
+          </section>
+        </div>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h3 data-i="bars">Ano por categoria</h3>
+              <p class="hint">Cada coluna é um mês, empilhada por categoria. Clique numa faixa (ou em ›) para abrir as subcategorias; clique numa etiqueta para esconder ou mostrar.</p>
+            </div>
+            <div class="seg" role="group" aria-label="Tipo">
+              <button id="ann-exp" aria-pressed="true">Despesas</button>
+              <button id="ann-inc" aria-pressed="false">Receitas</button>
+            </div>
+          </div>
+          <div class="crumbs" id="ann-crumbs"></div>
+          <div id="annual" class="chart"></div>
+          <div id="ann-chips" class="chips"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div><h3 data-i="table">Visão anual por categoria</h3><p class="hint">A leitura da aba do ano na planilha. Clique numa categoria para as subcategorias e num mês para selecioná-lo.</p></div>
+            <button id="expand-all" class="btn ghost">Abrir todas</button>
+          </div>
+          <div class="table-wrap"><table id="matrix" class="matrix"></table></div>
+        </section>
+
+        <div class="grid-2">
+          <section class="card">
+            <div class="card-head">
+              <div><h3 data-i="target">Metas de longo prazo</h3><p class="hint" id="goals-hint">Registre aportes para acompanhar o progresso.</p></div>
+              <button id="add-goal" class="btn ghost" hidden>+ Nova meta</button>
+            </div>
+            <form id="goal-form" class="inline-form" hidden>
+              <label class="field w-m" for="g-name">Meta<input id="g-name" placeholder="Reserva de emergência" required></label>
+              <label class="field w-s" for="g-target">Alvo (R$)<input id="g-target" inputmode="decimal" placeholder="10000" required></label>
+              <label class="field w-s" for="g-now">Já guardado (R$)<input id="g-now" inputmode="decimal" placeholder="0"></label>
+              <button class="btn primary" type="submit">Salvar meta</button>
+              <button class="btn ghost" type="button" id="g-cancel">Cancelar</button>
+            </form>
+            <div id="goals" class="goals"></div>
+          </section>
+          <section class="card">
+            <div class="card-head">
+              <div><h3 data-i="alert">Para revisar no Notion</h3><p class="hint">Sem subcategoria ou com subcategoria de outra categoria. Entram no total, mas ficam fora do detalhe.</p></div>
+              <span id="issues-count" class="pill"></span>
+            </div>
+            <div id="issues" class="issues"></div>
+          </section>
+        </div>
+      </div>
+
+      <!-- ===== EXTRATO ===== -->
+      <div id="sub-extrato" role="tabpanel" aria-labelledby="st-extrato" style="display:none;flex-direction:column;gap:16px">
+        <section class="card">
+          <div class="card-head">
+            <div><h3 data-i="plus">Novo lançamento</h3><p class="hint">Vai direto para o banco Expenses no Notion, com categoria e subcategoria já coerentes.</p></div>
+          </div>
+          <form id="entry" class="entry" novalidate>
+            <div class="entry-grid">
+              <div class="kind" role="group" aria-label="Tipo de lançamento">
+                <button type="button" data-kind="exp" aria-pressed="true">Despesa</button>
+                <button type="button" data-kind="inc" aria-pressed="false">Receita</button>
+              </div>
+              <label class="field w-s" for="e-date">Data<input id="e-date" type="date" required></label>
+              <label class="field w-l" for="e-name">Descrição<input id="e-name" placeholder="Ex.: Compras - Assaí" required></label>
+              <label class="field w-s" for="e-amount">Valor (R$)<input id="e-amount" inputmode="decimal" placeholder="0,00" required></label>
+            </div>
+            <div class="entry-grid">
+              <label class="field w-m" for="e-cat">Categoria<select id="e-cat"></select></label>
+              <label class="field w-m" for="e-sub">Subcategoria<select id="e-sub"></select></label>
+              <label class="field w-m" for="e-pay">Pagamento<select id="e-pay">
+                <option value="Credit Card">Cartão de crédito</option>
+                <option value="Debit Card">Cartão de débito</option>
+                <option value="Pix">Pix</option>
+                <option value="Cash">Dinheiro</option>
+              </select></label>
+              <button class="btn primary" type="submit" id="e-submit">Adicionar ao Notion</button>
+            </div>
+            <div class="msg" id="e-msg" hidden></div>
+          </form>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div><h3 id="ledger-title" data-i="list">Extrato</h3><p class="hint">Todos os lançamentos do período, do mais recente ao mais antigo. Datas futuras são parcelas e contas já agendadas.</p></div>
+          </div>
+          <div class="ledger-tools">
+            <label class="field" for="f-period">Período<select id="f-period"><option value="month">Mês selecionado</option><option value="year">Ano inteiro</option></select></label>
+            <label class="field" for="f-kind">Tipo<select id="f-kind"><option value="all">Tudo</option><option value="exp">Despesas</option><option value="inc">Receitas</option></select></label>
+            <label class="field" for="f-cat">Categoria<select id="f-cat"></select></label>
+            <label class="field" for="f-sub">Subcategoria<select id="f-sub"></select></label>
+            <label class="field w-m" for="f-q">Buscar<input id="f-q" type="search" placeholder="descrição…"></label>
+          </div>
+          <div class="ledger-sum" id="ledger-sum"></div>
+          <div class="table-wrap"><table class="ledger" id="ledger"></table></div>
+          <button class="btn" id="ledger-more" hidden>Mostrar mais</button>
+        </section>
+      </div>
+    </section>
+
       <section id="view-other" class="view" style="display:none;flex-direction:column;gap:20px">
         <header class="page"><div class="title-row"><h1 id="ph-title"></h1></div><p>Esta aba entra numa próxima etapa da migração.</p></header>
       </section>
     </main>
   </div>
+
+  <div id="toast" class="toast" hidden role="status"></div>
+  <!-- puxar para atualizar: indicador que desce com o dedo -->
+  <div class="ptr" id="ptr" aria-hidden="true"><div class="ptr-ball glass"><svg viewBox="0 0 24 24" id="ptr-spin"></svg></div></div>
 
   <script src="/vendor/supabase-2.117.3.js"></script>
   <script type="module" src="/app.js"></script>

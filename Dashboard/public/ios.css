@@ -273,3 +273,21 @@ header.page p { color: var(--muted); font-size: 15px; }
 @media (prefers-reduced-transparency: reduce) {
   .glass, .side, .topbar, .subtabs, .seg, .chipnav, .btn, .gbtn, .iconbtn, .fab { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface); }
 }
+
+/* ---------- puxar para atualizar ---------- */
+html, body { overscroll-behavior-y: none; }   /* o elástico nativo daria dois "quiques" ao mesmo tempo */
+#main { will-change: transform; }
+.ptr {
+  position: fixed; z-index: 35; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px);
+  transform: translate3d(-50%, -48px, 0); opacity: 0; pointer-events: none;
+}
+@media (min-width: 761px) { .ptr { left: calc(50% + 124px); } }
+.ptr-ball { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; transform-origin: 50% 0; }
+.ptr-ball svg { width: 24px; height: 24px; stroke: var(--ink-2); stroke-width: 2.4; stroke-linecap: round; }
+.ptr-ball line { transition: opacity .12s; }
+.ptr.armed .ptr-ball svg { stroke: var(--tint); }
+/* girando: os raios "correm" como o indicador de atividade do iOS */
+.ptr.busy .ptr-ball svg { stroke: var(--ink-2); animation: ptr-turn .8s steps(8) infinite; }
+.ptr.busy .ptr-ball line { opacity: calc(.25 + .75 * (var(--i) + 1) / 8) !important; }
+@keyframes ptr-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ptr.busy .ptr-ball svg { animation-duration: 1.6s; } }
