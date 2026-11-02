@@ -725,3 +725,14 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 #dieta-root .ft-item, #dieta-root .ft-sum { padding: 11px 16px; gap: 3px; }
 #dieta-root .ft-addrow { padding: 3px 8px 3px 16px; }
 #dieta-root .ft-mtot { padding: 2px 16px 0; }
+
+/* aviso com "Desfazer" (Agenda e demais abas): botão de texto no tom de destaque, legível no aviso escuro e no claro */
+#toast { display: flex; align-items: center; gap: 12px; max-width: min(92vw, 520px); }
+#toast[hidden] { display: none; }
+.toast-undo { flex: none; border: 0; background: none; padding: 4px 2px; margin-left: auto; cursor: pointer;
+  font: 600 15px var(--body); color: color-mix(in oklab, var(--tint) 65%, var(--bg)); -webkit-appearance: none; appearance: none; }
+.toast-undo:active { opacity: .6; }
+.toast-k { flex: none; font-size: 12px; opacity: .55; font-variant-numeric: tabular-nums; }
+@media (hover: none) { .toast-k { display: none; } } /* no celular não há atalho de teclado */
+#toast { width: max-content; z-index: 90; }
+@media (max-width: 760px) { #toast { bottom: calc(var(--tabbar-h, 64px) + env(safe-area-inset-bottom, 0px) + 22px); } }
