@@ -624,11 +624,28 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 #view-calendario .cal-body { border: 0; border-radius: var(--r-card); box-shadow: var(--shadow); }
 #view-calendario .cal-mgr, #view-calendario .cal-side > * { border-radius: 20px; }
 /* semana e dia ocupam a altura da tela (antes: cartão de 760 px) */
-#view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { max-height: none; height: max(620px, calc(100dvh - 60px)); touch-action: pan-y; }
+/* Semana e Dia: a grade tem a altura do dia inteiro (0h–24h) e a página rola; sem caixa com rolagem própria */
+#view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { max-height: none; height: auto; overflow: hidden; touch-action: pan-y; }
+@supports (overflow: clip) {
+  #view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { overflow-x: clip; overflow-y: visible; } /* clip não cria rolagem: os cabeçalhos dos dias ficam presos no topo da tela */
+}
+#view-calendario .cal-body .cal-stick, #view-calendario .cal-body .cal-axis-hd { top: env(safe-area-inset-top, 0px); }
+/* cores das bases (Notion) iguais às do painel do claude.ai — o roxo do cardio, o verde, o azul… */
+#view-calendario {
+  --n-default: #6f6b66; --n-gray: #8e8a84; --n-brown: #9f6b53; --n-orange: #d9730d; --n-yellow: #c29028;
+  --n-green: #448361; --n-blue: #337ea9; --n-purple: #9065b0; --n-pink: #c14c8a; --n-red: #d44c47;
+}
+:root[data-theme="dark"] #view-calendario {
+  --n-default: #b5b0aa; --n-gray: #9b9b9b; --n-brown: #ba856f; --n-orange: #de8a4e; --n-yellow: #d3a54f;
+  --n-green: #5aa57a; --n-blue: #5e97d1; --n-purple: #a878d9; --n-pink: #d9679f; --n-red: #e0605b;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #view-calendario {
+  --n-default: #b5b0aa; --n-gray: #9b9b9b; --n-brown: #ba856f; --n-orange: #de8a4e; --n-yellow: #d3a54f;
+  --n-green: #5aa57a; --n-blue: #5e97d1; --n-purple: #a878d9; --n-pink: #d9679f; --n-red: #e0605b;
+} }
 #view-calendario .cal-body { touch-action: pan-y; }
 .cal-zoom button { min-width: 34px; font-size: 18px; line-height: 1; }
 @media (max-width: 760px) {
-  #view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { height: max(560px, calc(100dvh - env(safe-area-inset-bottom, 0px) - 120px)); }
   #view-calendario .cal-bar { gap: 8px; }
   #view-calendario .cal-tools { width: 100%; display: flex; gap: 6px; flex-wrap: wrap; }
   #view-calendario header.page .status { flex-wrap: wrap; }

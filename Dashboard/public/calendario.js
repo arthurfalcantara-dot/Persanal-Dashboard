@@ -444,7 +444,20 @@
     else if (pref.view === "agenda") body.innerHTML = agendaHtml(r);
     else body.innerHTML = stripHtml();
     if (pref.view === "week" || pref.view === "day") { const wh = body.querySelector(".cal-pan .cal-wh"); if (wh) body.style.setProperty("--whh", wh.offsetHeight + "px"); setAdh(); }
-    if (pref.view === "week" || pref.view === "day") body.scrollTop = keep !== null ? keep : Math.max(0, (Math.min(new Date().getHours(), 20) - H0 - 1) * HPX);
+    if (pref.view === "week" || pref.view === "day") {
+      const h0 = Math.max(H0, Math.min(new Date().getHours(), 20) - 1);
+      if (body.scrollHeight > body.clientHeight + 2) body.scrollTop = keep !== null ? keep : (h0 - H0) * HPX;
+      else if (keep === null && !S.pageScrolled) {
+        // grade na altura do dia inteiro (sem rolagem interna): a página rola até perto da hora atual, uma vez por visita
+        S.pageScrolled = true;
+        requestAnimationFrame(() => {
+          const hr = body.querySelectorAll(".cal-axis-tg .cal-hr, .cal-hrs .cal-hr")[h0 - H0], st = body.querySelector(".cal-stick, .cal-axis-hd");
+          if (!hr || scrollY > 40) return;
+          const y = hr.getBoundingClientRect().top + scrollY - (st ? st.offsetHeight : 0) - 24;
+          if (y > 0) scrollTo({ top: y, behavior: "smooth" });
+        });
+      }
+    }
     renderSide();
   }
   // cardio registrado na base Workouts (natação, esteira, bike…) fica na cor do cardio, não no azul da musculação
@@ -1047,9 +1060,15 @@
         const v = vp.getBoundingClientRect();
         const k = x < v.left + EDGE ? -Math.min(1, (v.left + EDGE - x) / EDGE) : x > v.right - EDGE ? Math.min(1, (x - v.right + EDGE) / EDGE) : 0;
         if (k) { unroll(); stripMove(k * 0.07); did = true; }
-        const top = b.top + D.stickH;
-        if (y < top + 28 && root.scrollTop > 0) { root.scrollTop -= Math.ceil(14 * Math.min(1, (top + 28 - y) / 28)); did = true; }
-        else if (y > b.bottom - 28) { root.scrollTop += Math.ceil(14 * Math.min(1, (y - b.bottom + 28) / 28)); did = true; }
+        if (root.scrollHeight > root.clientHeight + 2) { // grade com rolagem própria
+          const top = b.top + D.stickH;
+          if (y < top + 28 && root.scrollTop > 0) { root.scrollTop -= Math.ceil(14 * Math.min(1, (top + 28 - y) / 28)); did = true; }
+          else if (y > b.bottom - 28) { root.scrollTop += Math.ceil(14 * Math.min(1, (y - b.bottom + 28) / 28)); did = true; }
+        } else { // grade do dia inteiro: quem rola é a página
+          const top = Math.max(0, b.top) + D.stickH, bot = Math.min(innerHeight, b.bottom) - (matchMedia("(max-width: 760px)").matches ? 96 : 0);
+          if (y < top + 36 && scrollY > 0) { scrollBy(0, -Math.ceil(16 * Math.min(1, (top + 36 - y) / 36))); did = true; }
+          else if (y > bot - 36) { scrollBy(0, Math.ceil(16 * Math.min(1, (y - bot + 36) / 36))); did = true; }
+        }
       }
       if (did) D.update();
       D.raf = requestAnimationFrame(autoScroll);
