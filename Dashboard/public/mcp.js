@@ -160,8 +160,17 @@ const TOOLS = {
     const ds = await schema(input.id);
     const sch = {};
     for (const [name, p] of Object.entries(ds.properties || {})) {
-      const o = p[p.type] && p[p.type].options;
-      sch[name] = Object.assign({ type: p.type }, o ? { options: o.map(x => ({ name: x.name, color: x.color })) } : {});
+      const c = p[p.type] || {}, o = c.options;
+      const s = Object.assign({ type: p.type, name }, o ? { options: o.map(x => ({ name: x.name, color: x.color })) } : {});
+      // relação: a base ligada no formato do conector (collection://<data source>), que a ficha usa para listar as opções
+      if (p.type === "relation") { const rid = c.data_source_id || c.database_id; if (rid) s.dataSourceUrl = "collection://" + rid; }
+      // status: as opções agrupadas (A fazer / Em andamento / Concluído), como o conector devolve
+      if (p.type === "status" && o) {
+        const byId = Object.fromEntries(o.map(x => [x.id, { name: x.name, color: x.color }]));
+        s.groups = Object.fromEntries((c.groups || []).map(g => [g.name, (g.option_ids || []).map(i => byId[i]).filter(Boolean)]));
+        if (!Object.keys(s.groups).length) s.groups = { Opções: s.options };
+      }
+      sch[name] = s;
     }
     const txt = `<data-source-state>${JSON.stringify({ name: text(ds.title), schema: sch })}</data-source-state>`;
     return { payload: txt, content: [{ type: "text", text: txt }] };

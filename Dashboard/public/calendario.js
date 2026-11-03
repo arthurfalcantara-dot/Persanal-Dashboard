@@ -627,6 +627,7 @@
   }
   function relOpts(p) {
     const ds = dsOfUrl(p.dataSourceUrl); S.rels = S.rels || {};
+    if (!ds) return Promise.reject({ code: "tool_error", message: "o Notion não informou qual base esta relação usa" });
     if (!S.rels[ds]) S.rels[ds] = (async () => {
       const sc = await schemaOf(ds), tk = (sc.find(x => x.type === "title") || {}).key || "Name";
       // lê pela view da base (modo "view"): o modo "rows"/SQL do Notion tem cota por hora nos planos sem Business
