@@ -482,9 +482,15 @@
   function layoutDay(list) {
     // colunas para eventos sobrepostos
     const evs = list.filter(e => !e.allDay && e.start).map(e => ({ e, s: Math.max(H0 * 60, minsOf(e.start)), f: Math.min(H1 * 60, e.end && iso(e.end) === e.day ? Math.max(minsOf(e.start) + 20, minsOf(e.end)) : e.end && e.end > e.start ? H1 * 60 : minsOf(e.start) + 60) })).sort((a, b) => a.s - b.s || b.f - a.f);
-    const groups = []; let cur = null;
-    for (const x of evs) { if (!cur || x.s >= cur.end) { cur = { items: [], end: x.f }; groups.push(cur); } cur.items.push(x); cur.end = Math.max(cur.end, x.f); }
-    for (const g of groups) { const cols = []; for (const x of g.items) { let i = cols.findIndex(c => c <= x.s); if (i < 0) { i = cols.length; cols.push(0); } cols[i] = x.f; x.col = i; } g.items.forEach(x => { x.n = cols.length; }); }
+    // como no Google Agenda: só ficam lado a lado os que começam quase juntos (dentro da altura de ~2 linhas de texto);
+    // quem começa depois, sobre a parte vazia de um evento mais longo, entra por cima, recuado, sem cobrir o título dele
+    const T = Math.max(30, Math.round(44 / HPX * 60)), bands = [];
+    for (const x of evs) {
+      let b = bands.find(b => x.s - b.s < T && b.items.some(i => i.f > x.s));
+      if (!b) { const under = bands.filter(b => b.items.some(i => i.f > x.s)); b = { s: x.s, items: [], depth: under.length ? Math.min(3, Math.max(...under.map(u => u.depth)) + 1) : 0 }; bands.push(b); }
+      b.items.push(x);
+    }
+    for (const b of bands) { const cols = []; for (const x of b.items) { let i = cols.findIndex(c => c <= x.s); if (i < 0) { i = cols.length; cols.push(0); } cols[i] = x.f; x.col = i; } b.items.forEach(x => { x.n = cols.length; x.depth = b.depth; }); }
     return evs;
   }
   // plano de treino do dia pela agenda da Saúde (a mesma regra de treinosFor), para qualquer dia
@@ -526,7 +532,7 @@
 
 
       const nl = day === t && minsOf(now) >= H0 * 60 ? `<div class="cal-now" style="top:${(minsOf(now) - H0 * 60) / 60 * HPX}px"></div>` : "";
-      return `<div class="cal-col${day === t ? " today" : ""}" data-day="${day}" data-slot="1">${evs.map(x => { const e = x.e, s = SRC[e.src]; const top = (x.s - H0 * 60) / 60 * HPX, ht = Math.max(18, (x.f - x.s) / 60 * HPX - 2); const hc = (s.done || (s.done === "n" && NDB[e.src] && NDB[e.src].done)) && !e.ro; return `<div class="cal-tev${hc ? " ck" : ""}${e.done ? " done" : ""}${ht < 34 ? " short" : ""}${S.busy.has(e.key) ? " busy" : ""}" style="--c:${evC(e)};top:${top}px;height:${ht}px;left:calc(${x.col} * 100% / ${x.n} + 2px);width:calc(100% / ${x.n} - 4px)" data-ev="${esc(e.key)}" data-move="${e.ro || s.prop === null ? "" : "1"}" title="${esc([e.title, s.l, e.meta].filter(Boolean).join(" · "))}">${hc ? `<button type="button" class="cal-ck" data-ck="${esc(e.key)}" aria-label="${e.done ? "Reabrir" : "Concluir"} ${esc(e.title)}">${CHECK}</button>` : ""}<span>${esc(e.title)}${pj(e) ? " " + pj(e) : ""}</span><b>${hm(e.start)}${e.end ? "–" + hm(e.end) : ""}</b>${e.ro || s.prop === null ? "" : `<i class="rz top" data-rz="t"></i><i class="rz" data-rz="b"></i>`}</div>`; }).join("")}${nl}</div>`;
+      return `<div class="cal-col${day === t ? " today" : ""}" data-day="${day}" data-slot="1">${evs.map(x => { const e = x.e, s = SRC[e.src]; const top = (x.s - H0 * 60) / 60 * HPX, ht = Math.max(18, (x.f - x.s) / 60 * HPX - 2); const hc = (s.done || (s.done === "n" && NDB[e.src] && NDB[e.src].done)) && !e.ro; return `<div class="cal-tev${x.depth ? " over" : ""}${hc ? " ck" : ""}${e.done ? " done" : ""}${ht < 34 ? " short" : ""}${S.busy.has(e.key) ? " busy" : ""}" style="--c:${evC(e)};top:${top}px;height:${ht}px;--ind:${x.depth * 14}%;left:calc(var(--ind) + ${x.col} * (100% - var(--ind)) / ${x.n} + 2px);width:calc((100% - var(--ind)) / ${x.n} - 4px)${x.depth ? `;z-index:${1 + x.depth}` : ""}" data-ev="${esc(e.key)}" data-move="${e.ro || s.prop === null ? "" : "1"}" title="${esc([e.title, s.l, e.meta].filter(Boolean).join(" · "))}">${hc ? `<button type="button" class="cal-ck" data-ck="${esc(e.key)}" aria-label="${e.done ? "Reabrir" : "Concluir"} ${esc(e.title)}">${CHECK}</button>` : ""}<span>${esc(e.title)}${pj(e) ? " " + pj(e) : ""}</span><b>${hm(e.start)}${e.end ? "–" + hm(e.end) : ""}</b>${e.ro || s.prop === null ? "" : `<i class="rz top" data-rz="t"></i><i class="rz" data-rz="b"></i>`}</div>`; }).join("")}${nl}</div>`;
     }).join("");
     return `<div class="cal-week" style="--n:${days.length};--hpx:${HPX}px"><div class="cal-stick">${head}${all}</div><div class="cal-scroll"><div class="cal-tg" style="height:${(H1 - H0) * HPX}px">${inPanel ? "" : `<div class="cal-hrs">${hours}</div>`}<div class="cal-cols">${cols}</div></div></div></div>`;
   }

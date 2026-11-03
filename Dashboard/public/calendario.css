@@ -331,3 +331,5 @@
 .cal-whp { display: block; margin-top: 3px; font-size: 12px; line-height: 1.25; font-weight: 600; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .cal-body { transition: transform .15s ease; touch-action: pan-y; }
 :root { --n-sky: #32ade6; } :root[data-theme="dark"] { --n-sky: #64d2ff; } @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --n-sky: #64d2ff; } }
+/* evento por cima de outro (começa mais tarde): contorno na cor do cartão para separar os dois */
+.cal-tev.over { box-shadow: 0 0 0 1.5px var(--surface), 0 2px 6px rgba(0, 0, 0, .12); }
