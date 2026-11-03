@@ -67,7 +67,7 @@
   const MON3 = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
   const DOWS = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
   const DOW_KEYS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"];
-  const H0 = 0, H1 = 24; let HPX = (() => { try { return +localStorage.getItem("painel.cal.hpx") || 46; } catch { return 46; } })(); // altura de 1 hora (zoom − / +) // grade de horas da semana: 0h à meia-noite seguinte
+  const H0 = 0, H1 = 24, VIS = [7, 20]; let HPX = (() => { try { return +localStorage.getItem("painel.cal.hpx") || 46; } catch { return 46; } })(); // altura de 1 hora (zoom − / +) // grade de horas da semana: 0h à meia-noite seguinte
 
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
@@ -445,24 +445,24 @@
     else body.innerHTML = stripHtml();
     if (pref.view === "week" || pref.view === "day") { const wh = body.querySelector(".cal-pan .cal-wh"); if (wh) body.style.setProperty("--whh", wh.offsetHeight + "px"); setAdh(); }
     if (pref.view === "week" || pref.view === "day") {
-      const h0 = Math.max(H0, Math.min(new Date().getHours(), 20) - 1);
-      if (body.scrollHeight > body.clientHeight + 2) body.scrollTop = keep !== null ? keep : (h0 - H0) * HPX;
-      else if (keep === null && !S.pageScrolled) {
-        // grade na altura do dia inteiro (sem rolagem interna): a página rola até perto da hora atual, uma vez por visita
-        S.pageScrolled = true;
-        requestAnimationFrame(() => {
-          const hr = body.querySelectorAll(".cal-axis-tg .cal-hr, .cal-hrs .cal-hr")[h0 - H0], st = body.querySelector(".cal-stick, .cal-axis-hd");
-          if (!hr || scrollY > 40) return;
-          const y = hr.getBoundingClientRect().top + scrollY - (st ? st.offsetHeight : 0) - 24;
-          if (y > 0) scrollTo({ top: y, behavior: "smooth" });
-        });
-      }
-    }
+      // janela padrão: 7h às 20h na altura do cartão; antes ou depois disso, arrasta-se a grade
+      // o cabeçalho cresce com a faixa "dia inteiro" (animação de .15s): mede de novo quando ela termina
+      // a linha das 7:00 fica logo abaixo do cabeçalho preso (com folga para o rótulo aparecer inteiro)
+      const fit = top => {
+        const st = body.querySelector(".cal-stick, .cal-axis-hd"), hdr = st ? st.offsetHeight : 0;
+        body.style.height = `${hdr + 8 + (VIS[1] - VIS[0]) * HPX + 14}px`;
+        if (!top) return;
+        const hr = body.querySelectorAll(".cal-axis-tg .cal-hr, .cal-hrs .cal-hr")[VIS[0] - H0];
+        if (hr && st) body.scrollTop += hr.getBoundingClientRect().top - st.getBoundingClientRect().bottom - 10;
+      };
+      if (keep !== null) body.scrollTop = keep; else body.scrollTop = (VIS[0] - H0) * HPX;
+      fit(keep === null); clearTimeout(S.fitT); S.fitT = setTimeout(() => fit(keep === null), 220);
+    } else body.style.height = "";
     renderSide();
   }
   // cardio registrado na base Workouts (natação, esteira, bike…) fica na cor do cardio, não no azul da musculação
   const CARDIO_RX = /cardio|esteira|corrid|run\b|running|bike|bicicleta|el[ií]ptic|caminhad|futebol|soccer|spinning|treadmill|walk|nata[cç][aã]o|swim|remo|rowing|pedal|trote|hiit|escada|stairs/i;
-  const evC = e => e && e.src === "workout" && CARDIO_RX.test(e.title || "") ? SRC.run.c : SRC[e.src].c;
+  const evC = e => e && e.src === "workout" && CARDIO_RX.test(e.title || "") ? SRC.run.c : e && e.src === "fin" && e.inc ? "var(--inc)" : SRC[e.src].c; // receitas agendadas no verde de receita
   const chip = (e, compact) => {
     const s = SRC[e.src], time = !e.allDay && e.start ? hm(e.start) : "";
     const drag = !e.ro && s.prop !== null && !S.busy.has(e.key);

@@ -624,12 +624,8 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 #view-calendario .cal-body { border: 0; border-radius: var(--r-card); box-shadow: var(--shadow); }
 #view-calendario .cal-mgr, #view-calendario .cal-side > * { border-radius: 20px; }
 /* semana e dia ocupam a altura da tela (antes: cartão de 760 px) */
-/* Semana e Dia: a grade tem a altura do dia inteiro (0h–24h) e a página rola; sem caixa com rolagem própria */
-#view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { max-height: none; height: auto; overflow: hidden; touch-action: pan-y; }
-@supports (overflow: clip) {
-  #view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { overflow-x: clip; overflow-y: visible; } /* clip não cria rolagem: os cabeçalhos dos dias ficam presos no topo da tela */
-}
-#view-calendario .cal-body .cal-stick, #view-calendario .cal-body .cal-axis-hd { top: env(safe-area-inset-top, 0px); }
+/* Semana e Dia: o cartão mostra 7h–20h (altura calculada em calendario.js); antes e depois, rola-se a grade */
+#view-calendario .cal-body.v-week, #view-calendario .cal-body.v-day { max-height: none; overflow-x: hidden; overflow-y: auto; touch-action: pan-y; }
 /* cores das bases (Notion) iguais às do painel do claude.ai — o roxo do cardio, o verde, o azul… */
 #view-calendario {
   --n-default: #6f6b66; --n-gray: #8e8a84; --n-brown: #9f6b53; --n-orange: #d9730d; --n-yellow: #c29028;
