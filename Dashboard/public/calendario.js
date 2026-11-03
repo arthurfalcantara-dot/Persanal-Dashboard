@@ -728,11 +728,11 @@
   }
   async function renderPropFields(pfx, dest, e, foreign) {
     const box = $(pfx + "-props"); if (!box) return;
-    box.dataset.src = dest; box.innerHTML = "";
+    box.dataset.dest = dest; box.innerHTML = "";
     if (!DS[dest] || !S.mcp) return;
     box.innerHTML = `<p class="c-mini">Lendo as propriedades de ${esc(SRC[dest].l)}…</p>`;
-    let sc; try { sc = await schemaOf(dest); } catch (err) { if (box.isConnected && box.dataset.src === dest) box.innerHTML = `<p class="c-mini">Não consegui ler as propriedades desta base. ${esc(errCopy(err))}</p>`; return; }
-    if (!box.isConnected || box.dataset.src !== dest) return;
+    let sc; try { sc = await schemaOf(dest); } catch (err) { if (box.isConnected && box.dataset.dest === dest) box.innerHTML = `<p class="c-mini">Não consegui ler as propriedades desta base. ${esc(errCopy(err))}</p>`; return; }
+    if (!box.isConnected || box.dataset.dest !== dest) return;
     const skip = skipProps(dest, !!e && !foreign), row = (e && e.row) || {};
     // relações: menos as que apontam para a própria base (subtarefas, tarefa-mãe) e a candidatura das Job Tasks (já tem campo)
     const own = DS[dest];
@@ -742,7 +742,7 @@
     // candidaturas: a lista que o painel já leu (todas as vagas), em vez de só 100 páginas da base
     const appRel = p => dsOfUrl(p.dataSourceUrl) === "f6caa859-7834-4a73-9649-68b0c59552ce" && S.appNames && Object.keys(S.appNames).length;
     await Promise.all(fields.filter(p => p.type === "relation").map(async p => { try { p.rel = appRel(p) ? Object.entries(S.appNames).map(([id, name]) => ({ id, url: "https://www.notion.so/" + id, name: name || "(sem nome)" })).sort((a, b) => a.name.localeCompare(b.name, "pt-BR")) : await relOpts(p); } catch (err) { p.relErr = (err && (err.message || err.code)) || "erro"; console.warn("relação", p.name, err); } }));
-    if (!box.isConnected || box.dataset.src !== dest) return;
+    if (!box.isConnected || box.dataset.dest !== dest) return;
     // relação que depende de outra: se as páginas da lista B têm uma propriedade com o mesmo nome de outra relação A
     // da ficha (ex.: Assignments têm "Course"), a lista B mostra só as ligadas ao que estiver escolhido em A
     const rels = fields.filter(p => p.type === "relation" && p.rel);
@@ -955,7 +955,7 @@
     const dest = $("cf-cal") ? $("cf-cal").value : e.src;
     if (dest !== e.src) {
       const day = $("cf-day") ? $("cf-day").value : e.day, t1 = $("cf-day") ? ($("cf-t1")?.value || "") : (tOf(e) || ""), t2 = $("cf-day") ? ($("cf-t2")?.value || "") : (t2Of(e) || "");
-      const extra = DS[dest] && $("cf-props") && $("cf-props").dataset.src === dest ? readProps("cf", false).out : {};
+      const extra = DS[dest] && $("cf-props") && $("cf-props").dataset.dest === dest ? readProps("cf", false).out : {};
       return moveCal(e, dest, title || e.title, day, t1, t2, $("cf-done") ? $("cf-done").checked : e.done, btn, extra);
     }
     const old = { title: e.title, day: e.day, allDay: e.allDay, start: e.start, end: e.end, endDay: e.endDay, raw: e.raw, done: e.done }, o1 = tOf(e), o2 = t2Of(e), snap = Object.assign({}, e);
@@ -1334,7 +1334,7 @@
       if ((el = q("[data-miniday]"))) { S.frac = 0; S.cursor = el.dataset.miniday; S.mini = null; if (window.matchMedia("(max-width: 900px)").matches) pref.mgr = false; savePref(); render(); return; }
       if (q(".cal-mg-sw")) return;
       if ((el = q("#cal-views button, [data-view]"))) { S.frac = 0; pref.view = el.dataset.v || el.dataset.view; savePref(); render(); return; }
-      if ((el = q("[data-src]"))) { const k = el.dataset.src; pref.off = on(k) ? [...pref.off, k] : pref.off.filter(x => x !== k); savePref(); render(); return; }
+      if ((el = q("#cal-mgr [data-src]"))) { const k = el.dataset.src; pref.off = on(k) ? [...pref.off, k] : pref.off.filter(x => x !== k); savePref(); render(); return; }
       if ((el = q("[data-adtg], [data-admore]"))) { pref.adOpen = el.dataset.admore ? true : !pref.adOpen; savePref(); render(); return; }
       if ((el = q("[data-ck]"))) { ev.stopPropagation(); const e = evBy(el.dataset.ck); if (e) toggleDone(e); return; }
       if ((el = q("[data-hab]"))) { const h = S.habits.find(x => x.id === el.dataset.hab); if (h) toggleHabit(h); return; }
