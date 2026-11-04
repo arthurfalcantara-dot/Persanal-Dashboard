@@ -36,6 +36,9 @@
 
   --r-card: 22px; --r-ctl: 999px;
   --tabbar-h: 62px;
+  /* barra de abas do iPhone (kit iOS 27: cápsula de 54pt + 4pt de borda, a ~25pt da borda inferior, sobre a área do indicador) */
+  --tabbar-b: max(12px, calc(env(safe-area-inset-bottom, 0px) - 9px));
+  --above-tabbar: calc(var(--tabbar-b) + var(--tabbar-h) + 14px);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -209,17 +212,17 @@ header.page p { color: var(--muted); font-size: 15px; }
   body { font-size: 15px; }
   .topbar { display: flex; }
   .shell, .shell.collapsed { grid-template-columns: minmax(0, 1fr); }
-  main { padding: calc(env(safe-area-inset-top, 0px) + 18px) 16px calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 40px); }
+  main { padding: calc(env(safe-area-inset-top, 0px) + 18px) 16px calc(var(--above-tabbar) + 20px); }
   .side, .shell.collapsed .side {
-    position: fixed; z-index: 45; top: auto; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
-    margin: 0; height: var(--tabbar-h); padding: 5px; border-radius: 999px; flex-direction: row; align-items: stretch; gap: 0;
+    position: fixed; z-index: 45; top: auto; left: 21px; right: 21px; bottom: var(--tabbar-b);
+    margin: 0; height: var(--tabbar-h); padding: 4px; border-radius: 999px; flex-direction: row; align-items: stretch; gap: 0;
     border-bottom: .5px solid var(--glass-edge); overflow: visible;
   }
   .side-top, .side-foot { display: none; }
   .tabs { flex-direction: row; flex: 1; gap: 0; overflow: visible; }
   .tab, .shell.collapsed .tab {
     flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: 1px; padding: 4px 2px; border-radius: 999px;
-    font: 600 10.5px/1.1 var(--body); color: var(--ink-2); letter-spacing: 0;
+    font: 600 10px/12px var(--body); color: var(--ink-2); letter-spacing: 0;
   }
   .tab .ico { width: 26px; height: 24px; background: none; color: var(--ink-2); border-radius: 0; }
   .tab .ico svg { width: 23px; height: 23px; stroke-width: 1.8; }
@@ -235,7 +238,7 @@ header.page p { color: var(--muted); font-size: 15px; }
   .tab[aria-current="page"] .ico { background: none; color: var(--tint); }
   .tab::after { display: none; }
   header.page h1 { font-size: 34px; }
-  .btn.fab { display: grid; right: 18px; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 22px); }
+  .btn.fab { display: grid; right: 21px; bottom: var(--above-tabbar); }
   .subtabs { align-self: stretch; }
   .sub-tools #h-reg { display: none; } /* no celular, o botão flutuante faz o papel de Registrar */
   .modal { place-items: end center; padding: 0; }
@@ -525,7 +528,7 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 .tr-chk.on { background: var(--n-green); color: #fff; }
 .tr-addset { width: 100%; }
 .tr-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.tr-mini { position: fixed; z-index: 46; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 82px); display: grid; grid-template-columns: 1fr auto; gap: 0 10px; text-align: left; padding: 10px 16px; border-radius: 18px; color: var(--ink); font: inherit; cursor: pointer; }
+.tr-mini { position: fixed; z-index: 46; left: 12px; right: 12px; bottom: var(--above-tabbar); display: grid; grid-template-columns: 1fr auto; gap: 0 10px; text-align: left; padding: 10px 16px; border-radius: 18px; color: var(--ink); font: inherit; cursor: pointer; }
 .tr-mini[hidden] { display: none; } .tr-mini span:first-of-type { color: var(--tint); font-weight: 600; font-variant-numeric: tabular-nums; } .tr-mini .hint { grid-column: 1 / -1; margin: 0; }
 @media (min-width: 761px) { .tr-mini { left: auto; right: 24px; bottom: 24px; width: 320px; } }
 .tr-rest { position: fixed; z-index: 85; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 20px; overflow: hidden; }
@@ -570,7 +573,7 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 .ft-addrow { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 6px 18px; }
 .ft-addrow button { border: 0; background: none; color: var(--food); font: 500 15.5px var(--body); padding: 9px 0; cursor: pointer; } .ft-addrow .dots { color: var(--muted); font-size: 20px; padding: 10px; }
 .ft-mtot { padding: 0 18px; }
-.ft-fab { position: fixed; z-index: 44; right: 18px; bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); width: 62px; height: 62px; border-radius: 50%; border: 0; background: var(--food); color: #fff; font-size: 34px; font-weight: 300; line-height: 1; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 10px 28px color-mix(in srgb, var(--food) 45%, transparent); }
+.ft-fab { position: fixed; z-index: 44; right: 18px; bottom: var(--above-tabbar); width: 62px; height: 62px; border-radius: 50%; border: 0; background: var(--food); color: #fff; font-size: 34px; font-weight: 300; line-height: 1; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 10px 28px color-mix(in srgb, var(--food) 45%, transparent); }
 @media (min-width: 761px) { .ft-fab { right: 28px; bottom: 28px; } }
 .ft-fab:active { transform: scale(.94); }
 .ft-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .ft-tools .gbtn { font-size: 14px; }
@@ -748,4 +751,58 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 .toast-k { flex: none; font-size: 12px; opacity: .55; font-variant-numeric: tabular-nums; }
 @media (hover: none) { .toast-k { display: none; } } /* no celular não há atalho de teclado */
 #toast { width: max-content; z-index: 90; }
-@media (max-width: 760px) { #toast { bottom: calc(var(--tabbar-h, 64px) + env(safe-area-inset-bottom, 0px) + 22px); } }
+@media (max-width: 760px) { #toast { bottom: var(--above-tabbar); } }
+
+/* ======================================================================
+   Campos de texto e seleção — padrão iOS 27 (kit oficial via ios27-design-system:
+   44 pt de altura, raio arredondado, fundo preenchido sem contorno, anel azul de 2 pt no foco).
+   -webkit-appearance: none tira o estilo nativo antigo do Safari no iPhone.
+   ====================================================================== */
+:root { --field-bg: rgba(118, 118, 128, .12); --field-r: 12px; }
+:root[data-theme="dark"] { --field-bg: rgba(118, 118, 128, .24); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --field-bg: rgba(118, 118, 128, .24); } }
+:root body :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file], [type=hidden], [type=submit], [type=button], .switch), select, textarea) {
+  -webkit-appearance: none; appearance: none; border: 0; border-radius: var(--field-r); background-color: var(--field-bg); color: var(--ink);
+  min-height: 40px; padding: 8px 12px; box-shadow: none; outline: none; background-clip: padding-box; max-width: 100%;
+  transition: box-shadow .15s ease, background-color .15s ease;
+}
+@media (max-width: 760px) {
+  :root body :is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file], [type=hidden], [type=submit], [type=button], .switch), select, textarea) { min-height: 44px; font-size: max(16px, 1em); }
+}
+:root body :is(input, select, textarea):focus { box-shadow: 0 0 0 2px var(--tint); }
+:root body :is(input, textarea)::placeholder { color: var(--muted); opacity: .75; }
+:root body select:not([multiple]) {
+  padding-right: 32px !important; cursor: pointer; text-overflow: ellipsis;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16' fill='none' stroke='%238e8e93' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6l3-3 3 3M2 10l3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 11px center; background-size: 9px 14px;
+}
+:root body textarea { min-height: 88px; line-height: 1.4; resize: vertical; }
+:root body input::-webkit-inner-spin-button, :root body input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+:root body input[type=number] { -moz-appearance: textfield; }
+:root body input::-webkit-date-and-time-value { text-align: left; min-height: 1.2em; }
+:root body input::-webkit-calendar-picker-indicator { opacity: .45; cursor: pointer; }
+:root body input[type=search] {
+  padding-left: 34px; background-repeat: no-repeat; background-position: 11px center; background-size: 16px 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M15.5 15.5 20 20'/%3E%3C/svg%3E");
+}
+:root body input[type=search]::-webkit-search-decoration { -webkit-appearance: none; }
+:root body :is(input, select, textarea):disabled { opacity: .5; cursor: default; }
+
+/* listas agrupadas (estilo Ajustes): o campo de texto livre ocupa a linha inteira, sem caixa própria */
+:root body .group-ios { border-radius: 18px; }
+:root body .group-ios > :is(input, textarea) { background-color: transparent; border-radius: 0; min-height: 48px; padding: 12px 16px; box-shadow: none; border-bottom: .5px solid var(--line); }
+:root body .group-ios > :is(input, textarea):last-child { border-bottom: 0; }
+:root body .group-ios > :is(input, textarea):focus { background-color: color-mix(in srgb, var(--tint) 6%, transparent); }
+:root body .group-ios .row :is(input, select) { min-height: 36px; padding-top: 6px; padding-bottom: 6px; border-radius: 10px; }
+:root body .ft-facts input { background-color: transparent !important; min-height: 32px; }
+
+/* séries do treino: caixas preenchidas e compactas (sem o contorno antigo) */
+:root body .tr-set input { min-height: 0; height: 38px; padding: 0 6px; border-radius: 10px; text-align: center; font: 600 16px var(--body); background-color: var(--field-bg); }
+:root body .tr-set.done input { background-color: transparent; }
+
+/* folhas (sheets) do iPhone: cantos de 34 pt e alça de arrastar, como no kit iOS 27 */
+@media (max-width: 760px) {
+  .tr-sheet-box, .ft-sheet-box { border-radius: 34px 34px 0 0; }
+  .modal-box { border-radius: 34px 34px 0 0; }
+  .tr-sheet-box::before, .ft-sheet-box::before, .modal-box::before { content: ""; position: sticky; top: -6px; z-index: 3; display: block; flex: none; width: 36px; height: 5px; margin: -6px auto 2px; border-radius: 999px; background: var(--line-strong); opacity: .9; }
+}
