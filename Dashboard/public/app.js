@@ -105,14 +105,14 @@ function saudeMode(m) {
   document.querySelectorAll("#saude-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
   $("treino-root").hidden = m !== "treino"; $("dieta-root").hidden = m !== "dieta";
   if (m === "treino") import("/treino.js?v=4").then(x => x.start());
-  if (m === "dieta") import("/dieta.js?v=5").then(x => x.start());
+  if (m === "dieta") import("/dieta.js?v=6").then(x => x.start());
   if (m === "painel") window.dispatchEvent(new Event("painel:saude"));
 }
 document.querySelectorAll("#saude-mode button").forEach(b => b.addEventListener("click", () => { saudeMode(b.dataset.mode); scrollTo(0, 0); }));
 // atalhos do Painel (Hoje) para Alimentação e Treino: data-go="dieta:add|dieta:dia|treino:comecar|treino:sugestao|treino:inicio"
 window.addEventListener("painel:go", e => {
   const { go, dia, refeicao } = e.detail || {}, [mod, acao] = String(go || "").split(":");
-  if (mod === "dieta") { saudeMode("dieta"); scrollTo(0, 0); import("/dieta.js?v=5").then(() => { const D = window.painelDieta; if (!D) return; acao === "add" ? D.add(dia, refeicao) : D.goto(dia); }); }
+  if (mod === "dieta") { saudeMode("dieta"); scrollTo(0, 0); import("/dieta.js?v=6").then(() => { const D = window.painelDieta; if (!D) return; acao === "add" ? D.add(dia, refeicao) : D.goto(dia); }); }
   if (mod === "treino") { saudeMode("treino"); scrollTo(0, 0); import("/treino.js?v=4").then(() => setTimeout(() => { const T = window.painelTreino; if (T && acao !== "inicio") T.begin(acao === "sugestao"); }, 60)); }
 });
 // treino em andamento continua acessível de qualquer aba (mini barra)

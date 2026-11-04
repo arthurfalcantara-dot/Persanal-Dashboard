@@ -119,6 +119,23 @@ function ring(p, c, over) {
 function chips(o) {
   return `<span class="ft-chips"><span class="k">${f0(o.kcal)}</span>${o.carb != null ? `<span class="c">C ${f1(o.carb)}</span>` : ""}${o.gord != null ? `<span class="g">G ${f1(o.gord)}</span>` : ""}${o.prot != null ? `<span class="p">P ${f1(o.prot)}</span>` : ""}${o.fibra ? `<span class="f">${f1(o.fibra)}</span>` : ""}</span>`;
 }
+// como no FoodNoms: refeição vazia sugere repetir a mesma refeição do dia anterior
+function yesterdayMeal(nome) {
+  const y = iso(addDays(parseDay(D.day), -1));
+  const m = mealsOf(y).find(x => x.nome === nome);
+  return m && (m.itens || []).length ? m : null;
+}
+function repeatHtml(m) {
+  const y = yesterdayMeal(m.nome); if (!y) return "";
+  const t = mealTotals(y);
+  return `<button class="ft-repeat" data-act="repeat" data-m="${esc(m.nome)}"><span class="ic-rep">↻</span><span><b>Repetir de ontem</b><small>${esc(y.itens.map(i => i.nome).slice(0, 3).join(", "))}${y.itens.length > 3 ? ` +${y.itens.length - 3}` : ""}</small></span>${chips(t)}</button>`;
+}
+async function repeatMeal(nome) {
+  const y = yesterdayMeal(nome); if (!y) return;
+  const meals = mealsOf(D.day), m = meals.find(x => x.nome === nome); if (!m) return;
+  m.itens = (m.itens || []).concat(y.itens.map(it => Object.assign({}, it, { id: uid() })));
+  await saveDay(D.day, meals); D.open.add(nome); render(); toast(`${nome}: ${y.itens.length} ${y.itens.length > 1 ? "itens repetidos" : "item repetido"} de ontem`);
+}
 function mealHtml(m) {
   const items = m.itens || [], t = mealTotals(m), open = D.open.has(m.nome) || !items.length;
   return `<section class="ft-meal">
@@ -126,6 +143,7 @@ function mealHtml(m) {
     <div class="ft-card">
       ${items.length && !open ? `<button class="ft-sum" data-act="toggle" data-m="${esc(m.nome)}"><b>${items.length} ${items.length > 1 ? "itens" : "item"}</b><span>${esc(items.map(i => i.nome).join(", "))}</span>${chips(t)}</button>`
         : items.map((it, j) => `<button class="ft-item" data-act="entry" data-m="${esc(m.nome)}" data-j="${j}"><b>${esc(it.nome)}</b><small>${it.marca ? esc(it.marca) + " · " : ""}${esc(it.porcao || "")}${it.precisao === "estimado" ? " · estimado" : ""}</small>${chips(it)}</button>`).join("")}
+      ${!items.length ? repeatHtml(m) : ""}
       ${open || !items.length ? `<div class="ft-addrow"><button data-act="add" data-m="${esc(m.nome)}">Adicionar alimento</button><button class="dots" data-act="meal-menu" data-m="${esc(m.nome)}" aria-label="Mais">⋯</button></div>` : ""}
     </div>
     ${items.length && open ? `<div class="ft-mtot">${chips(t)}</div>` : ""}
@@ -382,6 +400,7 @@ async function onClick(e) {
     case "goals": location.hash = "saude"; document.querySelector('#saude-mode [data-mode="painel"]')?.click(); document.querySelector('[data-hsub="plano"]')?.click(); break;
     case "toggle": { const m = b.dataset.m; D.open.has(m) ? D.open.delete(m) : D.open.add(m); render(); break; }
     case "add": openAdd(b.dataset.m); break;
+    case "repeat": repeatMeal(b.dataset.m); break;
     case "meal-menu": { const m = b.dataset.m, y = iso(addDays(parseDay(D.day), -1)), src = mealsOf(y).find(x => x.nome === m);
       if (!src || !src.itens.length) { toast(`Nada em ${m} ontem para copiar.`); break; }
       if (confirm(`Copiar ${src.itens.length} item(ns) de ${m} de ontem para ${m}?`)) { const ms = mealsOf(D.day), t = ms.find(x => x.nome === m); legacyFix(t); t.itens = (t.itens || []).concat(src.itens.map(i => Object.assign({}, i, { id: uid() }))); await saveDay(D.day, ms); D.open.add(m); toast("Refeição copiada"); }
@@ -389,7 +408,12 @@ async function onClick(e) {
     case "entry": { const ms = mealsOf(D.day), m = ms.find(x => x.nome === b.dataset.m), it = m.itens[+b.dataset.j]; openEntry(foodFromItem(it), { meal: m.nome, item: it, j: +b.dataset.j }); D.entry.origDay = D.day; break; }
     case "close": closeSheet(); break;
     case "off-search": offSearch(); break;
-    case "pick-recent": { const it = D.recentList[+b.dataset.k]; const f = foodFromItem(it); openEntry(f, { meal: D.addMeal }); if (!f.id && it.qtd) { D.entry.qtd = it.qtd; D.entry.unid = it.unid || D.entry.unid; renderEntry(); } break; }
+    case "pick-recent": { // recente: abre com a mesma quantidade e unidade da última vez
+      const it = D.recentList[+b.dataset.k], f = foodFromItem(it); openEntry(f, { meal: D.addMeal });
+      const units = [f.base || "g", "g", "ml", ...(f.porcoes || []).map(p => p.nome)];
+      const q = it.qtd ?? (/([\d.,]+)\s*(g|ml)\b/i.test(String(it.porcao || "")) ? num(String(it.porcao).match(/[\d.,]+/)[0]) : null);
+      if (q) { D.entry.qtd = q; if (it.unid && units.includes(it.unid)) D.entry.unid = it.unid; else if (!it.unid && /\d\s*ml\b/i.test(String(it.porcao))) D.entry.unid = "ml"; else if (!it.unid) D.entry.unid = "g"; renderEntry(); }
+      break; }
     case "pick-food": openEntry(foodById(b.dataset.id), { meal: D.addMeal }); break;
     case "pick-off": openEntry(D.offList[+b.dataset.k], { meal: D.addMeal }); break;
     case "pick-taco": openEntry(Object.assign({}, D.tacoList[+b.dataset.k], { id: null }), { meal: D.addMeal }); break;

@@ -813,3 +813,11 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 .look-row .seg { display: inline-flex; }
 .look-icons { display: flex; gap: 14px; padding: 6px 0 2px; }
 .look-icons img { border-radius: 22.5%; box-shadow: 0 4px 14px rgba(0, 0, 0, .18); }
+
+/* Alimentação: sugestão "Repetir de ontem" na refeição vazia */
+#dieta-root .ft-repeat { width: 100%; border: 0; background: color-mix(in srgb, var(--food) 8%, transparent); display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; text-align: left; padding: 11px 16px; color: var(--ink); font: inherit; cursor: pointer; border-bottom: .5px solid var(--line); }
+#dieta-root .ft-repeat .ic-rep { grid-row: 1 / span 2; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--food); color: #fff; font: 700 16px var(--body); }
+#dieta-root .ft-repeat b { font-size: 15px; font-weight: 600; color: var(--food); } #dieta-root .ft-repeat small { display: block; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#dieta-root .ft-repeat > span:nth-child(2) { min-width: 0; }
+#dieta-root .ft-repeat .ft-chips { grid-column: 2; }
+#dieta-root .ft-repeat:active { background: color-mix(in srgb, var(--food) 14%, transparent); }
