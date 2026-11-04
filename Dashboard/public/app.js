@@ -104,7 +104,7 @@ function saudeMode(m) {
   $("view-saude").dataset.mode = m;
   document.querySelectorAll("#saude-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
   $("treino-root").hidden = m !== "treino"; $("dieta-root").hidden = m !== "dieta";
-  if (m === "treino") import("/treino.js?v=6").then(x => x.start());
+  if (m === "treino") import("/treino.js?v=8").then(x => x.start());
   if (m === "dieta") import("/dieta.js?v=6").then(x => x.start());
   if (m === "painel") window.dispatchEvent(new Event("painel:saude"));
 }
@@ -113,10 +113,10 @@ document.querySelectorAll("#saude-mode button").forEach(b => b.addEventListener(
 window.addEventListener("painel:go", e => {
   const { go, dia, refeicao } = e.detail || {}, [mod, acao] = String(go || "").split(":");
   if (mod === "dieta") { saudeMode("dieta"); scrollTo(0, 0); import("/dieta.js?v=6").then(() => { const D = window.painelDieta; if (!D) return; acao === "add" ? D.add(dia, refeicao) : D.goto(dia); }); }
-  if (mod === "treino") { saudeMode("treino"); scrollTo(0, 0); import("/treino.js?v=6").then(() => setTimeout(() => { const T = window.painelTreino; if (T && acao !== "inicio") T.begin(acao === "sugestao"); }, 60)); }
+  if (mod === "treino") { saudeMode("treino"); scrollTo(0, 0); import("/treino.js?v=8").then(() => setTimeout(() => { const T = window.painelTreino; if (T && acao !== "inicio") T.begin(acao === "sugestao"); }, 60)); }
 });
 // treino em andamento continua acessível de qualquer aba (mini barra)
-try { if (localStorage.getItem("painel.treino.atual")) setTimeout(() => import("/treino.js?v=6").then(x => x.start && window.painelSaude ? x.start() : null), 1500); } catch {}
+try { if (localStorage.getItem("painel.treino.atual")) setTimeout(() => import("/treino.js?v=8").then(x => x.start && window.painelSaude ? x.start() : null), 1500); } catch {}
 
 // ---------- puxar para atualizar (com elástico e mola) ----------
 // O que cada aba faz ao atualizar. Devolve uma promessa: o indicador gira até ela terminar.
@@ -314,7 +314,7 @@ function show(signedIn) {
   $("login").hidden = signedIn; $("app").hidden = !signedIn; $("sb-blur").hidden = !signedIn; $("gear").hidden = !signedIn; $("side-open").hidden = !signedIn || !document.documentElement.classList.contains("side-closed");
   if (signedIn) {
     $("c-user").textContent = auth.user ? `Conectado como ${auth.user.email}.` : "";
-    route(); if (!started) { started = true; checks(); workouts(); googleReturn(); googleCard(); import("/treino.js?v=6").catch(() => {}); /* nome do treino (Push/Pull…) também na Agenda */ }
+    route(); if (!started) { started = true; checks(); workouts(); googleReturn(); googleCard(); import("/treino.js?v=8").catch(() => {}); /* nome do treino (Push/Pull…) também na Agenda */ }
   }
 }
 (async () => {

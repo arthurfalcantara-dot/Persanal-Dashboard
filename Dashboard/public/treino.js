@@ -36,7 +36,23 @@ function catalog() {
   const cat = (S().cat && S().cat.exercicios) || {};
   for (const [nome, e] of Object.entries(cat)) out.set(nome.toLowerCase(), { nome, grupo: e.grupo, hevy: (e.aliases || [])[0] || null });
   for (const s of sessions()) for (const e of s.exercicios) if (!out.has(e.nome.toLowerCase())) out.set(e.nome.toLowerCase(), { nome: e.nome, grupo: e.grupo, hevy: e.hevy || null });
+  for (const [nome, hevy] of CARDIO_LIST) if (!out.has(nome.toLowerCase())) out.set(nome.toLowerCase(), { nome, grupo: "Cardio", hevy });
+  // nomes antigos de cardio que são a mesma modalidade da lista padrão não aparecem duas vezes
+  const std = new Set(CARDIO_LIST.map(([, h]) => h.toLowerCase()));
+  for (const [k, e] of out) if (e.grupo === "Cardio" && !CARDIO_LIST.some(([n]) => n.toLowerCase() === k) && std.has(String(e.hevy || "").toLowerCase())) out.delete(k);
   return [...out.values()];
+}
+// ---------- cardio: modalidades e o que cada uma registra ----------
+// tempo + distância (km) · natação: tempo + distância em metros · esteira: tempo + distância + inclinação (%) · só tempo
+const CARDIO_LIST = [["Caminhada", "Walking"], ["Corrida", "Running"], ["Esteira (caminhada)", "Treadmill Walk"], ["Esteira (corrida)", "Treadmill Run"], ["Esteira inclinada", "Incline Treadmill Walk"],
+  ["Natação", "Swimming"], ["Bicicleta ergométrica", "Stationary Bike"], ["Ciclismo", "Cycling"], ["Spinning", "Spin Class"], ["Elíptico", "Elliptical Trainer"], ["Remo ergômetro", "Rowing Machine"],
+  ["Escada (stepmill)", "Stair Climber"], ["Pular corda", "Jump Rope"], ["HIIT", "HIIT"], ["Futebol", "Soccer"]];
+function cardioKind(nome) {
+  const n = String(nome || "").toLowerCase();
+  if (/esteira|treadmill/.test(n)) return "esteira";
+  if (/nata[cç]|swim/.test(n)) return "natacao";
+  if (/futebol|soccer|hiit|corda|jump rope|escada|stair|stepmill|spinning|spin class/.test(n)) return "tempo";
+  return "distancia";
 }
 // histórico de um exercício (mais recente primeiro)
 function exHist(nome) {
@@ -151,7 +167,7 @@ function cardHtml(s) {
   return `<section class="card tr-card" data-act="detail" data-id="${esc(s.id)}">
     <div class="tr-card-h"><b>${esc(s.titulo || "Treino")}</b><small>${rel(s.data)}${s.inicio ? " · " + new Date(s.inicio).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" }) : ""}</small></div>
     <div class="tr-stats"><span><small>Tempo</small><b>${st.min ? dur(st.min * 60) : "—"}</b></span><span><small>Volume</small><b>${kg(st.vol)}</b></span>${prs ? `<span><small>Recordes</small><b class="tr-pr">${prs}</b></span>` : ""}</div>
-    <ul class="tr-exlist">${ex.slice(0, 3).map(e => `<li><span class="tr-g" style="--c:var(--g-${gslug(e.grupo)}, var(--n-blue))">${esc(e.grupo.slice(0, 2))}</span>${e.series.length} série${e.series.length > 1 ? "s" : ""} ${esc(e.nome)}</li>`).join("")}</ul>
+    <ul class="tr-exlist">${ex.slice(0, 3).map(e => `<li><span class="tr-g" style="--c:var(--g-${gslug(e.grupo)}, var(--n-blue))">${esc(e.grupo.slice(0, 2))}</span>${e.series.length} série${e.series.length > 1 ? "s" : ""} ${esc(enName(e.nome))}</li>`).join("")}</ul>
     ${ex.length > 3 ? `<p class="tr-more">Ver mais ${ex.length - 3} exercício${ex.length - 3 > 1 ? "s" : ""}</p>` : ""}
   </section>`;
 }
@@ -181,11 +197,24 @@ function openDetail(id) {
     ${s.exercicios.map(e => `<div class="tr-dex"><button class="tr-exname" data-act="ex" data-nome="${esc(e.nome)}">${esc(enName(e.nome))}</button>${e.nota ? `<p class="hint">${esc(e.nota)}</p>` : ""}
       <table class="tr-sets"><thead><tr><th>Série</th><th>${e.grupo === "Cardio" ? "Tempo e distância" : "Peso e reps"}</th></tr></thead><tbody>${setRows(e)}</tbody></table></div>`).join("")}`);
 }
+// cardio no histórico: tempo · distância · ritmo (corrida/caminhada/natação) ou velocidade (bike/esteira) · inclinação
+function cardioTxt(nome, x) {
+  const ck = cardioKind(nome), min = (x.seg || 0) / 60, km = +x.km || 0, out = [];
+  if (min) out.push(`${Math.round(min)} min`);
+  if (km) out.push(ck === "natacao" ? `${Math.round(km * 1000)} m` : `${fmtN(km)} km`);
+  if (km && min) {
+    if (ck === "natacao") out.push(`${dur(x.seg / (km * 10))}/100 m`);
+    else if (/corrida|running|caminhada|walking/i.test(nome) && !/esteira|treadmill/i.test(nome)) out.push(`${dur(x.seg / km)}/km`);
+    else out.push(`${fmtN(Math.round(km / (min / 60) * 10) / 10)} km/h`);
+  }
+  if (x.incl != null && x.incl !== "") out.push(`${fmtN(+x.incl)}% incl.`);
+  return out.join(" · ");
+}
 function setRows(e) {
   let n = 0;
   return e.series.map(x => {
     const lab = x.tipo === "warmup" ? "A" : x.tipo === "failure" ? "F" : x.tipo === "dropset" ? "D" : String(++n);
-    const v = e.grupo === "Cardio" ? `${x.seg ? Math.round(x.seg / 60) + " min" : ""}${x.km ? " · " + fmtN(x.km) + " km" : ""}` : `${fmtN(+x.kg || 0)} kg × ${x.reps || 0}${x.rpe ? ` <small>@ RPE ${x.rpe}</small>` : ""}`;
+    const v = e.grupo === "Cardio" ? cardioTxt(e.nome, x) : `${fmtN(+x.kg || 0)} kg × ${x.reps || 0}${x.rpe ? ` <small>@ RPE ${x.rpe}</small>` : ""}`;
     return `<tr><td class="t-${x.tipo || "normal"}">${lab}</td><td>${v}</td></tr>`;
   }).join("");
 }
@@ -235,6 +264,7 @@ const EX_MAP = {"abdominal declinado": "0277", "abdominal declinado com peso": "
 // nome no padrão do repositório (inglês); sem par no banco, o nome do Hevy; por último, o nome registrado
 const dsName = n => cap(String(n || "").replace(/в°/g, "°"));
 function enName(nome) {
+  const cl = CARDIO_LIST.find(([n]) => n.toLowerCase() === String(nome || "").toLowerCase()); if (cl) return cl[1]; // cardio: nome padrão em inglês
   const l = libQuiet(nome); if (l) return dsName(l.n);
   const c = catalog().find(c => c.nome === nome); return (c && c.hevy) || nome;
 }
@@ -283,9 +313,9 @@ function closeSheet() { const m = $("tr-sheet"); m.hidden = true; m.innerHTML = 
 function blankSet(prev) { return { tipo: "normal", kg: "", reps: "", rpe: "", feito: false, seg: "", km: "", ph: prev || null }; }
 function exFrom(e, prevSets) {
   const last = exHist(e.nome)[0], ps = last ? last.e.series : [];
-  const series = (prevSets && prevSets.length ? prevSets : ps.length ? ps : [{}, {}, {}]).map((x, i) => {
+  const series = (prevSets && prevSets.length ? prevSets : ps.length ? ps : e.grupo === "Cardio" ? [{}] : [{}, {}, {}]).map((x, i) => {
     const p = ps[i] || null;
-    return Object.assign(blankSet(p ? { kg: p.kg, reps: p.reps, seg: p.seg, km: p.km } : null), { tipo: x.tipo || "normal", kg: prevSets ? (x.kg ?? "") : "", reps: prevSets ? (x.reps ?? "") : "", seg: prevSets ? (x.seg ?? "") : "", km: prevSets ? (x.km ?? "") : "" });
+    return Object.assign(blankSet(p ? { kg: p.kg, reps: p.reps, seg: p.seg, km: p.km, incl: p.incl } : null), { tipo: x.tipo || "normal", kg: prevSets ? (x.kg ?? "") : "", reps: prevSets ? (x.reps ?? "") : "", seg: prevSets ? (x.seg ?? "") : "", km: prevSets ? (x.km ?? "") : "" });
   });
   return { nome: e.nome, grupo: e.grupo, hevy: e.hevy || null, nota: "", descanso: e.descanso ?? 90, series };
 }
@@ -300,7 +330,7 @@ function nomeTreino(exs, soFeitas) {
     const n = (e.series || []).filter(x => x.tipo !== "warmup" && (!soFeitas || x.feito)).length; if (n) c[e.grupo] = (c[e.grupo] || 0) + n;
   }
   const core = ["Abdômen", "Lombar"], tot = Object.entries(c).filter(([g]) => !core.includes(g)).reduce((a, [, n]) => a + n, 0);
-  if (!tot) return Object.keys(c).length ? "Core" : "";
+  if (!tot) return Object.keys(c).length ? "Core" : (exs || []).some(e => e.grupo === "Cardio" && (e.series || []).some(x => !soFeitas || x.feito)) ? "Cardio" : "";
   const sh = g => (c[g] || 0) / tot, sum = gs => gs.reduce((a, g) => a + sh(g), 0);
   const legs = sum(G_LEG), upper = 1 - legs;
   if (legs >= .3 && upper >= .3) return "Full Body";
@@ -377,22 +407,25 @@ function exBlock(e, i, modo) {
   let n = 0;
   const rows = e.series.map((x, j) => {
     const lab = x.tipo === "normal" ? String(++n) : TIPOS[x.tipo];
-    const p = x.ph, prev = p ? (cardio ? `${p.seg ? Math.round(p.seg / 60) + "min" : ""}${p.km ? " " + fmtN(p.km) + "km" : ""}` : (p.kg != null && p.reps != null ? `${fmtN(+p.kg || 0)}kg × ${p.reps}` : "—")) : "—";
+    const ck = cardio ? cardioKind(e.nome) : null;
+    const p = x.ph, prev = p ? (cardio ? [p.seg ? Math.round(p.seg / 60) + "min" : "", p.km ? (ck === "natacao" ? Math.round(p.km * 1000) + "m" : fmtN(p.km) + "km") : "", p.incl ? p.incl + "%" : ""].filter(Boolean).join(" ") || "—" : (p.kg != null && p.reps != null ? `${fmtN(+p.kg || 0)}kg × ${p.reps}` : "—")) : "—";
     const pr = rec && x.feito && x.tipo !== "warmup" && rec.peso && ((num(x.kg) || 0) > rec.peso || e1rm(num(x.kg), num(x.reps)) > rec.rm + .01);
     const phKg = p && !cardio ? p.kg ?? "" : "", phR = p && !cardio ? p.reps ?? "" : "";
     return `<div class="tr-set${x.feito && modo === "live" ? " done" : ""}" data-i="${i}" data-j="${j}">
       <button class="tr-tipo t-${x.tipo}" data-act="set-type" aria-label="Tipo da série">${lab}</button>
       <span class="tr-prev">${esc(prev)}</span>
-      ${cardio ? `<input inputmode="decimal" data-f="seg" value="${esc(x.seg)}" placeholder="${p && p.seg ? Math.round(p.seg / 60) : "min"}" aria-label="Minutos"><input inputmode="decimal" data-f="km" value="${esc(x.km)}" placeholder="${p && p.km ? fmtN(p.km) : "km"}" aria-label="Quilômetros">`
+      ${cardio ? `<input inputmode="decimal" data-f="seg" value="${esc(x.seg)}" placeholder="${p && p.seg ? Math.round(p.seg / 60) : "min"}" aria-label="Minutos">${ck === "tempo" ? `<span class="tr-na">—</span>`
+          : ck === "natacao" ? `<input inputmode="numeric" data-f="m" value="${esc(x.m ?? (x.km ? Math.round(num(x.km) * 1000) : ""))}" placeholder="${p && p.km ? Math.round(p.km * 1000) : "m"}" aria-label="Metros">`
+          : `<input inputmode="decimal" data-f="km" value="${esc(x.km)}" placeholder="${p && p.km ? fmtN(p.km) : "km"}" aria-label="Quilômetros">`}`
         : `<input inputmode="decimal" data-f="kg" value="${esc(x.kg)}" placeholder="${esc(phKg === "" ? "" : fmtN(+phKg))}" aria-label="Peso em kg"><input inputmode="numeric" data-f="reps" value="${esc(x.reps)}" placeholder="${esc(phR)}" aria-label="Repetições">`}
-      ${modo === "rotina" ? `<button class="tr-del" data-act="set-del" aria-label="Remover série">✕</button>` : `<button class="tr-rpe${x.rpe ? " on" : ""}" data-act="set-rpe" aria-label="RPE">${x.rpe ? esc(x.rpe) : `<svg viewBox="0 0 24 24"><path d="M4 16a8 8 0 0 1 16 0"/><path d="m12 16 3-4"/></svg>`}</button>`}
+      ${ck === "esteira" ? `<input inputmode="decimal" data-f="incl" value="${esc(x.incl)}" placeholder="${p && p.incl ? p.incl : "%"}" aria-label="Inclinação (%)">` : modo === "rotina" ? `<button class="tr-del" data-act="set-del" aria-label="Remover série">✕</button>` : `<button class="tr-rpe${x.rpe ? " on" : ""}" data-act="set-rpe" aria-label="RPE">${x.rpe ? esc(x.rpe) : `<svg viewBox="0 0 24 24"><path d="M4 16a8 8 0 0 1 16 0"/><path d="m12 16 3-4"/></svg>`}</button>`}
       ${modo === "live" ? `<button class="tr-chk${x.feito ? " on" : ""}" data-act="set-done" aria-label="Concluir série">${pr ? "★" : "✓"}</button>` : modo === "edit" ? `<button class="tr-del" data-act="set-del" aria-label="Remover série">✕</button>` : ""}
     </div>`;
   }).join("");
   return `<section class="tr-ex" data-i="${i}">
     <div class="tr-ex-h"><button class="tr-exname" data-act="ex" data-nome="${esc(e.nome)}">${thumb((libQuiet(e.nome) || {}).id, e.nome)}<span>${esc(enName(e.nome))}</span></button><button class="iconbtn" data-act="ex-menu" data-i="${i}" aria-label="Opções do exercício">⋮</button></div>
     <div class="tr-pills">${modo !== "edit" ? `<button class="tr-pill" data-act="ex-rest" data-i="${i}"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/></svg>Descanso: ${e.descanso ? (e.descanso >= 60 ? `${Math.floor(e.descanso / 60)}min${e.descanso % 60 ? " " + (e.descanso % 60) + "s" : ""}` : e.descanso + "s") : "desligado"}</button>` : ""}<button class="tr-pill" data-act="ex-note" data-i="${i}"><svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5z"/><path d="M9 13h6M12 10v6"/></svg>${e.nota ? esc(e.nota.slice(0, 24)) : "Nota"}</button></div>
-    <div class="tr-set tr-set-h"><span>Série</span><span>Anterior</span>${cardio ? "<span>Min</span><span>Km</span>" : "<span>Kg</span><span>Reps</span>"}<span>${modo === "rotina" ? "" : "RPE"}</span>${modo !== "rotina" ? "<span>✓</span>" : ""}</div>
+    <div class="tr-set tr-set-h"><span>Série</span><span>Anterior</span>${cardio ? `<span>Min</span><span>${{ natacao: "Metros", tempo: "", esteira: "Km", distancia: "Km" }[cardioKind(e.nome)]}</span>` : "<span>Kg</span><span>Reps</span>"}<span>${cardio && cardioKind(e.nome) === "esteira" ? "Incl %" : modo === "rotina" ? "" : "RPE"}</span>${modo !== "rotina" ? "<span>✓</span>" : ""}</div>
     ${rows}
     <button class="gbtn tr-addset" data-act="set-add" data-i="${i}">+ Adicionar série</button>
   </section>`;
@@ -482,6 +515,7 @@ async function pickChosen(e) {
   const f = T.pickerFor; closeSheet();
   const L = T.live; if (!L) return;
   const ex = exFrom(e);
+  if (e.grupo === "Cardio") ex.descanso = 0; // cardio não usa cronômetro de descanso
   if (L.modo !== "live") ex.series = ex.series.map(s => Object.assign(s, { kg: s.ph && s.ph.kg != null ? s.ph.kg : "", reps: s.ph && s.ph.reps != null ? s.ph.reps : "" }));
   if (f.mode === "replace") L.exercicios[f.i] = ex; else L.exercicios.push(ex);
   // exercício novo vira parte do catálogo da Saúde (nome em português + nome original como apelido)
@@ -497,11 +531,12 @@ async function pickChosen(e) {
 // ---------------- salvar ----------------
 function toDoc(L, fimMs) {
   const d = new Date(L.inicio), data = iso(d), hora = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  let series = 0, vol = 0, km = 0, seg = 0, forca = false;
+  let series = 0, vol = 0, km = 0, seg = 0, forca = false, inclS = 0, inclT = 0, ctipo = "";
   const exercicios = L.exercicios.map(e => {
     const cardio = e.grupo === "Cardio";
     const ss = e.series.filter(x => L.modo !== "live" || x.feito).map(x => {
-      if (cardio) { const o = { tipo: x.tipo, seg: Math.round((num(x.seg) || 0) * 60), km: num(x.km) || 0 }; km += o.km; seg += o.seg; return o; }
+      if (cardio) { const ck = cardioKind(e.nome), o = { tipo: x.tipo, seg: Math.round((num(x.seg) || 0) * 60), km: ck === "natacao" ? (num(x.m) || 0) / 1000 : ck === "tempo" ? 0 : num(x.km) || 0 };
+        if (ck === "esteira" && num(x.incl) != null) o.incl = num(x.incl); km += o.km; seg += o.seg; if (o.incl != null) { inclS += o.incl * o.seg; inclT += o.seg; } if (!ctipo) ctipo = e.nome; return o; }
       const o = { tipo: x.tipo, kg: num(x.kg) || 0, reps: Math.round(num(x.reps) || 0) }; if (num(x.rpe)) o.rpe = num(x.rpe);
       if (x.tipo !== "warmup") { series++; vol += o.kg * o.reps; } forca = true; return o;
     });
@@ -509,7 +544,7 @@ function toDoc(L, fimMs) {
   }).filter(e => e.series.length);
   const durMin = fimMs ? Math.round((fimMs - L.inicio) / 60000) : (L.duracaoMin || null);
   const doc = { titulo: L.titulo || "Treino", data, inicio: `${data}T${hora}`, fim: fimMs ? new Date(fimMs).toISOString() : (L.fimOrig || null), duracaoMin: durMin, descricao: L.descricao || "", origem: "app", link: null, exercicios, series, volumeKg: Math.round(vol), forca };
-  if (km || seg) doc.cardio = { km: Math.round(km * 100) / 100, min: Math.round(seg / 60) };
+  if (km || seg) { doc.cardio = { km: Math.round(km * 100) / 100, min: Math.round(seg / 60), tipo: ctipo }; if (inclT) doc.cardio.incl = Math.round(inclS / inclT * 10) / 10; }
   return { id: L.id || data.replace(/-/g, "") + "T" + hora.replace(":", ""), doc };
 }
 async function finish() {
@@ -634,7 +669,7 @@ function onClick(e) {
     case "set-done": { const { i, j } = at(), e = L.exercicios[i], x = e.series[j];
       if (!x.feito) {
         // como no Hevy: campo vazio assume o valor anterior mostrado
-        if (x.ph) { for (const f of e.grupo === "Cardio" ? ["seg", "km"] : ["kg", "reps"]) if (x[f] === "" && x.ph[f] != null) x[f] = f === "seg" ? Math.round(x.ph.seg / 60) : x.ph[f]; }
+        if (x.ph) { for (const f of e.grupo === "Cardio" ? ["seg", "km", "incl", "m"] : ["kg", "reps"]) { const pv = f === "m" ? (x.ph.km ? Math.round(x.ph.km * 1000) : null) : x.ph[f]; if ((x[f] === "" || x[f] == null) && pv != null) x[f] = f === "seg" ? Math.round(x.ph.seg / 60) : pv; } }
         if (e.grupo !== "Cardio" && (num(x.kg) == null || !num(x.reps))) { alert("Preencha peso e repetições."); return; }
         x.feito = true; startRest(e.descanso);
       } else x.feito = false;
