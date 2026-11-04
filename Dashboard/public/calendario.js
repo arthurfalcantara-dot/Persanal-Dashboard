@@ -434,7 +434,7 @@
   function render() {
     if (!S.started) return;
     const r = visRange();
-    $("cal-label").textContent = r.label;
+    $("cal-label").textContent = r.label; shortLabel(r);
     document.querySelectorAll("#cal-views button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === pref.view)));
     renderMgr(r);
     gEnsure(r);
@@ -505,6 +505,16 @@
   }
   const nf0 = n => Math.round(n).toLocaleString("pt-BR");
   // cabeçalho do dia: dia da semana e número; treino (força) com ✓/✗; cardio; meta de calorias e macros; hábitos
+  // celular: a barra cabe numa linha; o botão "Hoje" mostra o período (toque volta para hoje) e as visualizações viram um seletor
+  function shortLabel(r) {
+    const t = $("cal-today"), sel = $("cal-vsel"); if (sel) sel.value = pref.view;
+    if (!t) return;
+    if (!matchMedia("(max-width: 760px)").matches) { t.textContent = "Hoje"; return; }
+    const d = x => `${x.getDate()} ${MON3[x.getMonth()]}`, DW = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+    t.textContent = pref.view === "day" ? `${DW[r.start.getDay()]}, ${d(r.start)}` : pref.view === "month" ? (m => `${MON3[m.getMonth()]} ${m.getFullYear()}`)(addDays(r.start, 10))
+      : r.start.getMonth() === r.end.getMonth() ? `${r.start.getDate()}–${d(r.end)}` : `${d(r.start)} – ${d(r.end)}`;
+    t.title = "Voltar para hoje";
+  }
   function headInfo(day) {
     const d = parseISO(day), p = hPlan(day), has = p && (p.forca || +p.cardioMin);
     const fin = on("fin") && S.finPast[day] ? `<em title="Gasto do dia">−${fmtR(S.finPast[day])}</em>` : "";
@@ -1268,7 +1278,7 @@
     }
     const s = $("cal-body").querySelector(".cal-strip"); if (s) s.style.transform = stripX();
     setAdh();
-    $("cal-label").textContent = visRange().label;
+    { const vr = visRange(); $("cal-label").textContent = vr.label; shortLabel(vr); }
   }
   // a semana (Seg–Dom) passa a começar no dia do gesto, sem pular de posição
   function unroll() {
@@ -1370,6 +1380,8 @@
       if (ev.target.classList.contains("cal-mg-col")) { const row = ev.target.closest(".cal-mg-row"); if (row) row.style.setProperty("--c", ev.target.value); }
       if (ev.target.id === "cal-mg-q") { S.mq = ev.target.value; renderMgr(); }
     });
+    root.addEventListener("change", ev => { if (ev.target.id === "cal-vsel") { S.frac = 0; pref.view = ev.target.value; savePref(); render(); } });
+    matchMedia("(max-width: 760px)").addEventListener?.("change", () => render());
     root.addEventListener("submit", ev => { ev.preventDefault(); const f = ev.target; if (f.id === "cal-evf") saveEvForm(f); else if (f.id === "cal-newf") createTask(f); });
     $("cal-sheet-box").addEventListener("click", ev => { const b = ev.target.closest("[data-del-ev]"); if (b) delEv(evBy(b.dataset.delEv), b); });
     $("cal-sheet-box").addEventListener("change", ev => { if (ev.target.id === "cf-cal") { const e = evBy($("cal-evf")?.dataset.key || ""); const n = $("cf-cal-n"); if (n) n.hidden = !e || ev.target.value === e.src; const pp = $("cf-props"); if (pp && e) { const d = ev.target.value; pp.hidden = !DS[d]; if (DS[d]) renderPropFields("cf", d, e, d !== e.src); } const b = $("cal-evf")?.querySelector("[type=submit]"); if (b && e) b.textContent = ev.target.value === e.src ? "Salvar" : "Mover para " + (SRC[ev.target.value] ? SRC[ev.target.value].l : "outro calendário"); } });

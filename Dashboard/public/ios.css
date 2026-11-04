@@ -826,3 +826,19 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 /* cardio sem distância (futebol, HIIT, corda…): célula vazia no lugar do campo */
 .tr-set .tr-na { text-align: center; color: var(--muted); }
 .tr-set input[data-f="incl"] { min-height: 0; height: 38px; }
+
+/* Agenda no celular: tudo acima do calendário numa linha só
+   [calendários] ‹ [período · toque = hoje] › [visualização ▾] [+] — status e zoom ficam ocultos */
+#cal-vsel { display: none; }
+@media (max-width: 760px) {
+  #view-calendario > header.page .status, #view-calendario .cal-zoom, #view-calendario #cal-views, #view-calendario .cal-nav h2 { display: none !important; }
+  #view-calendario .cal-bar { flex-wrap: nowrap; gap: 6px; align-items: center; }
+  #view-calendario .cal-nav { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; gap: 4px; }
+  #view-calendario .cal-nav .iconbtn { width: 36px; height: 36px; flex: none; }
+  #view-calendario #cal-today { flex: 1 1 auto; min-width: 0; min-height: 36px; padding: 6px 10px; font: 600 15px var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #view-calendario .cal-tools { flex: none; width: auto; flex-wrap: nowrap; gap: 6px; }
+  :root body #view-calendario #cal-vsel { display: block; width: auto; min-height: 36px; height: 36px; padding: 6px 28px 6px 12px !important; border-radius: 999px; font: 600 15px var(--body); background-position: right 10px center; }
+  #view-calendario #cal-add { width: 36px; height: 36px; min-height: 36px; padding: 0; border-radius: 50%; font-size: 0; display: grid; place-items: center; }
+  #view-calendario #cal-add::before { content: "+"; font: 400 24px/1 var(--body); margin-top: -2px; }
+  #view-calendario { gap: 12px !important; }
+}
