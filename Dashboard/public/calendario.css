@@ -317,7 +317,7 @@
 .cal-whh .dot { width: 7px; height: 7px; border-radius: 2px; background: var(--n-yellow); }
 .cal-whp .wf, .cal-whp .wc { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .cal-whp .ck { margin-left: 4px; font-size: 12px; font-weight: 700; vertical-align: baseline; }
-.cal-whp .ck.ok { color: var(--n-green); }
+.cal-whp .ck.ok { color: inherit; } /* ✓ na mesma cor do treino (azul) ou do cardio (roxo) */
 .cal-whp .ck.no { color: var(--n-red); }
 .cal-whp { display: block; margin-top: 3px; font-size: 12px; line-height: 1.25; font-weight: 600; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .cal-body { transition: transform .15s ease; touch-action: pan-y; }
@@ -326,10 +326,16 @@
 .cal-whh .dot { width: 7px; height: 7px; border-radius: 2px; background: var(--n-yellow); }
 .cal-whp .wf, .cal-whp .wc { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .cal-whp .ck { margin-left: 4px; font-size: 12px; font-weight: 700; vertical-align: baseline; }
-.cal-whp .ck.ok { color: var(--n-green); }
+.cal-whp .ck.ok { color: inherit; } /* ✓ na mesma cor do treino (azul) ou do cardio (roxo) */
 .cal-whp .ck.no { color: var(--n-red); }
 .cal-whp { display: block; margin-top: 3px; font-size: 12px; line-height: 1.25; font-weight: 600; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .cal-body { transition: transform .15s ease; touch-action: pan-y; }
 :root { --n-sky: #32ade6; } :root[data-theme="dark"] { --n-sky: #64d2ff; } @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --n-sky: #64d2ff; } }
 /* evento por cima de outro (começa mais tarde): contorno na cor do cartão para separar os dois */
 .cal-tev.over { box-shadow: 0 0 0 1.5px var(--surface), 0 2px 6px rgba(0, 0, 0, .12); }
+/* PC: status e Atualizar na linha das visualizações, compactos */
+.cal-tools .status.cal-st-inline { display: flex; align-items: center; gap: 6px; margin-left: 4px; }
+.cal-tools .status.cal-st-inline .pill { font-size: 12px; padding: 4px 10px; }
+.cal-tools .status.cal-st-inline .btn { min-height: 32px; padding: 5px 12px; font-size: 13px; }
+
+.cal-whp .ck { margin: 0 4px 0 0 !important; }

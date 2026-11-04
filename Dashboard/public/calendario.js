@@ -509,15 +509,22 @@
     const d = parseISO(day), p = hPlan(day), has = p && (p.forca || +p.cardioMin);
     const fin = on("fin") && S.finPast[day] ? `<em title="Gasto do dia">−${fmtR(S.finPast[day])}</em>` : "";
     let out = `<span class="cal-whl"><small>${DOWS[dowIdx(day)]}</small><b>${d.getDate()}</b>${fin}</span>`;
-    if (p) {
-      const feito = has && day <= todayISO() ? (S.sess || []).some(s => s.data === day) : null;
-      const ck = feito === null ? "" : ` <b class="ck ${feito ? "ok" : "no"}" title="${feito ? "Treino feito" : "Treino não feito"}">${feito ? "✓" : "✗"}</b>`;
-      const parts = [p.forca ? `<span class="wf">${esc((window.painelGrpShort ? window.painelGrpShort(p.grupo) : p.grupo) || "Força")}</span>` : "", +p.cardioMin ? `<span class="wc">Cardio ${+p.cardioMin} min</span>` : ""].filter(Boolean);
-      const tip = has ? `Treino planejado: ${[p.forca ? "musculação" : "", +p.cardioMin ? `cardio ${p.cardioMin} min (${p.cardioTipo || ""})` : ""].filter(Boolean).join(" + ")}` : "Dia de descanso";
-      // uma linha para o treino (musculação, com ✓/✗) e outra para o cardio
-      if (p.forca && ck) parts[0] = parts[0].replace(/<\/span>$/, ck + "</span>");
-      else if (ck && parts.length) parts[parts.length - 1] = parts[parts.length - 1].replace(/<\/span>$/, ck + "</span>");
-      out += `<span class="cal-whp" title="${esc(tip)}">${has ? parts.join("") : "Descanso"}</span>`;
+    // o que foi feito no dia: sessões do painel e Workouts/Runs do Notion
+    const CRX = /cardio|esteira|corrid|run\b|running|bike|bicicleta|el[ií]ptic|caminhad|nata[cç]|swim|remo|rowing|spinning|treadmill|walk/i;
+    const ss = (S.sess || []).filter(s => s.data === day), nev = S.ev.filter(e => (e.src === "workout" || e.src === "run") && e.day === day);
+    const fDone = ss.filter(s => s.forca), cDone = ss.filter(s => !s.forca || (s.cardio && (s.cardio.min || s.cardio.km)));
+    const nF = nev.filter(e => e.src === "workout" && !CRX.test(e.title || "")), nC = nev.filter(e => e.src === "run" || CRX.test(e.title || ""));
+    const nameF = fDone.length ? fDone.map(s => window.painelNomeTreino ? window.painelNomeTreino(s) : (s.titulo || "Força")).join(" + ") : nF.map(e => e.title).join(" + ");
+    const cMin = cDone.reduce((a, s) => a + (+(s.cardio && s.cardio.min) || (!s.forca ? +s.duracaoMin || 0 : 0)), 0);
+    const nameC = cDone.length || nC.length ? (cDone.length ? `${(cDone.find(s => s.cardio && s.cardio.tipo) || {}).cardio?.tipo || "Cardio"}${cMin ? ` ${Math.round(cMin)} min` : ""}` : nC.map(e => e.title).join(" + ")) : "";
+    if (p || nameF || nameC) {
+      const past = day < todayISO(), ok = () => `<b class="ck ok" title="Feito">✓</b>`, no = `<b class="ck no" title="Planejado e não feito">✗</b>`;
+      const grp = p && p.forca ? ((window.painelGrpShort ? window.painelGrpShort(p.grupo) : p.grupo) || "Força") : "";
+      // faixa principal: qual treino de força foi feito (✓ na mesma cor); senão o planejado (✗ se o dia já passou)
+      const lf = nameF ? `<span class="wf">${ok()}${esc(nameF)}</span>` : grp ? `<span class="wf">${past ? no : ""}${esc(grp)}</span>` : "";
+      const lc = nameC ? `<span class="wc">${ok()}${esc(nameC)}</span>` : p && +p.cardioMin ? `<span class="wc">${past ? no : ""}Cardio ${+p.cardioMin} min</span>` : "";
+      const tip = [nameF ? `Força feita: ${nameF}` : grp ? `Força planejada: ${grp}` : "", nameC ? `Cardio feito: ${nameC}` : p && +p.cardioMin ? `Cardio planejado: ${p.cardioMin} min (${p.cardioTipo || ""})` : ""].filter(Boolean).join(" · ") || "Dia de descanso";
+      out += `<span class="cal-whp" title="${esc(tip)}">${lf || lc ? lf + lc : "Descanso"}</span>`;
       const tg = window.painelDayTarget ? window.painelDayTarget(day, S.hcfg) : null;
       if (tg && tg.kcal > 0) out += `<span class="cal-whk" title="Meta do dia (${tg.fonte}): ${nf0(tg.kcal)} kcal · proteína ${nf0(tg.prot)} g · carboidrato ${nf0(tg.carb)} g · gordura ${nf0(tg.gord)} g"><span class="mk">${nf0(tg.kcal)} kcal</span><span class="cal-whm"><span class="mp">P${nf0(tg.prot)}</span> <span class="mc">C${nf0(tg.carb)}</span> <span class="mg">G${nf0(tg.gord)}</span></span></span>`;
     }
@@ -1392,7 +1399,13 @@
     bindSwipe($("cal-body"));
   }
   window.addEventListener("painel:calendario", () => {
-    if (!S.started) { S.started = true; bind(); initDb(); render(); load(false); }
+    if (!S.started) {
+      S.started = true; bind(); initDb(); render(); load(false);
+      // no computador, status do Notion/Google e "Atualizar" descem para a linha das visualizações (a de cima some)
+      const st = document.querySelector("#view-calendario > header.page .status"), hdr = st && st.parentElement, tools = document.querySelector("#view-calendario .cal-tools");
+      const place = () => { if (!st || !tools) return; const pc = matchMedia("(min-width: 761px)").matches; if (pc && st.parentElement !== tools) { tools.appendChild(st); st.classList.add("cal-st-inline"); } else if (!pc && st.parentElement !== hdr) { hdr.appendChild(st); st.classList.remove("cal-st-inline"); } };
+      place(); matchMedia("(min-width: 761px)").addEventListener?.("change", place);
+    }
     else { render(); if (!S.loadedAt || Date.now() - S.loadedAt > 120000) load(false); }
   });
 })();
