@@ -289,9 +289,39 @@ function exFrom(e, prevSets) {
   });
   return { nome: e.nome, grupo: e.grupo, hevy: e.hevy || null, nota: "", descanso: e.descanso ?? 90, series };
 }
+// ---------- nome do treino pelo agrupamento muscular predominante ----------
+// convenção das divisões de treino: Push = peito + ombros/tríceps; Pull = costas + ombros/bíceps; Upper = peito e costas;
+// Lower = pernas sem um grupo dominante; Full Body = superiores e pernas; um grupo com ≥ 70% das séries (60% nas pernas) dá o nome a ele
+const G_LEG = ["Quadríceps", "Posterior", "Glúteos", "Panturrilha"], G_NOME = { Posterior: "Posteriores", Bíceps: "Braços", Tríceps: "Braços" };
+function nomeTreino(exs, soFeitas) {
+  const c = {};
+  for (const e of exs || []) {
+    if (!e.grupo || e.grupo === "Cardio") continue;
+    const n = (e.series || []).filter(x => x.tipo !== "warmup" && (!soFeitas || x.feito)).length; if (n) c[e.grupo] = (c[e.grupo] || 0) + n;
+  }
+  const core = ["Abdômen", "Lombar"], tot = Object.entries(c).filter(([g]) => !core.includes(g)).reduce((a, [, n]) => a + n, 0);
+  if (!tot) return Object.keys(c).length ? "Core" : "";
+  const sh = g => (c[g] || 0) / tot, sum = gs => gs.reduce((a, g) => a + sh(g), 0);
+  const legs = sum(G_LEG), upper = 1 - legs;
+  if (legs >= .3 && upper >= .3) return "Full Body";
+  if (legs > upper) { const top = G_LEG.map(g => [g, sh(g) / legs]).sort((a, b) => b[1] - a[1])[0]; return top[1] >= .6 ? (G_NOME[top[0]] || top[0]) : "Lower"; }
+  const has = g => sh(g) / upper >= .15;
+  const chest = has("Peito"), back = has("Costas") || has("Trapézio"), shoulders = has("Ombros"), arms = sum(["Bíceps", "Tríceps"]) / upper;
+  const top = Object.keys(c).filter(g => !core.includes(g) && !G_LEG.includes(g)).map(g => [g, sh(g) / upper]).sort((a, b) => b[1] - a[1])[0];
+  if (arms >= .6) return "Braços";
+  if (top && top[1] >= .7) return top[0] === "Trapézio" ? "Costas" : top[0];
+  if (chest && back) return "Upper";
+  if (chest) return "Push";
+  if (back) return "Pull";
+  if (shoulders) return arms >= .3 ? "Ombros e Braços" : "Ombros";
+  return "Upper";
+}
+window.painelNomeTreino = s => nomeTreino(s.exercicios || [], false) || s.titulo || "Força";
+
 function startLive(fromRoutine) {
   const now = new Date();
-  T.live = { modo: "live", titulo: fromRoutine ? fromRoutine.nome : (now.getHours() < 12 ? "Treino da manhã" : now.getHours() < 18 ? "Treino da tarde" : "Treino da noite"),
+  const plano = fromRoutine && fromRoutine.planejado;
+  T.live = { modo: "live", tituloAuto: !fromRoutine || !!plano, titulo: plano || (fromRoutine ? fromRoutine.nome : (now.getHours() < 12 ? "Treino da manhã" : now.getHours() < 18 ? "Treino da tarde" : "Treino da noite")),
     rotinaId: fromRoutine ? fromRoutine.id : null, inicio: now.getTime(), exercicios: fromRoutine ? fromRoutine.exercicios.map(e => exFrom(e, e.series)) : [] };
   saveLive(); openLive();
 }
@@ -486,6 +516,7 @@ async function finish() {
   const L = T.live, done = L.exercicios.some(e => e.series.some(x => x.feito));
   if (!done) { alert("Conclua ao menos uma série (✓) antes de terminar, ou descarte o treino."); return; }
   const fim = Date.now();
+  if (L.tituloAuto !== false) { const nm = nomeTreino(L.exercicios, true); if (nm) L.titulo = nm; } // ao finalizar: o grupo predominante
   sheet(`<div class="tr-sh-h"><button class="btn ghost" data-act="close">Voltar</button><h3>Salvar treino</h3><button class="btn ghost strong" data-act="save-finish">Salvar</button></div>
     <div class="group-ios"><input id="tf-t" value="${esc(L.titulo)}" placeholder="Título"><textarea id="tf-d" rows="3" placeholder="Como foi o treino?"></textarea></div>
     <div class="tr-stats"><span><small>Duração</small><b>${dur((fim - L.inicio) / 1000)}</b></span><span><small>Volume</small><b>${kg(liveStats().vol)}</b></span><span><small>Séries</small><b>${liveStats().ser}</b></span></div>
@@ -538,7 +569,8 @@ function onClick(e) {
   switch (act) {
     case "start-empty": startLive(null); break;
     case "start-sug": { const g = T.sug && T.sug.forca; if (!g) { startLive(null); break; }
-      if (g.tipo === "rotina") startLive(Object.assign({ id: g.r.id }, g.r.data)); else startLive(sessionToRoutine(g.s)); break; }
+      { const pl = P() && P().dayTarget(iso(new Date())), pn = pl && pl.plan && pl.plan.forca ? (pl.plan.grupo || "Treino do dia") : null; // o treino planejado leva o nome do plano
+        if (g.tipo === "rotina") startLive(Object.assign({ id: g.r.id, planejado: pn }, g.r.data)); else startLive(Object.assign(sessionToRoutine(g.s), { planejado: pn })); } break; }
     case "start-cardio": { const p = T.sug.cardio, nome = cardioNome(p.cardioTipo);
       startLive({ nome: "Cardio", exercicios: [{ nome, grupo: "Cardio", hevy: nome, descanso: 0, series: [{ tipo: "normal", seg: +p.cardioMin }] }] }); break; }
     case "edit-plan": document.querySelector('#saude-mode [data-mode="painel"]')?.click(); setTimeout(() => document.querySelector('[data-hsub="plano"]')?.click(), 50); break;
@@ -572,7 +604,7 @@ function onClick(e) {
     case "delete-session": if (confirm("Apagar este treino?")) db.doc(`saude/treinos/sessoes/${L.id}`).delete().then(() => { T.live = null; $("tr-live").hidden = true; document.documentElement.classList.remove("tr-noscroll"); toast("Treino apagado"); }); break;
     case "delete-routine": if (confirm("Apagar esta rotina?")) db.doc(`saude/rotinas/${L.id}`).delete().then(() => { T.live = null; $("tr-live").hidden = true; document.documentElement.classList.remove("tr-noscroll"); }); break;
     case "discard": if (confirm("Descartar o treino em andamento? Nada será salvo.")) { clearLive(); T.live = null; T.rest = null; restUI(); $("tr-live").hidden = true; document.documentElement.classList.remove("tr-noscroll"); mini(); render(); } break;
-    case "rename": { const t = prompt("Nome do treino", L.titulo); if (t) { L.titulo = t.trim(); saveLive(); renderLive(); } break; }
+    case "rename": { const t = prompt("Nome do treino", L.titulo); if (t) { L.titulo = t.trim(); L.tituloAuto = false; saveLive(); renderLive(); } break; }
     case "add-ex": openPicker("add"); break;
     case "pick-g": T.pickG = b.dataset.g; document.querySelectorAll("#tr-pg button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); pickList(); break;
     case "pick": { const c = catalog().find(x => x.nome === b.dataset.nome); pickChosen(c); break; }
