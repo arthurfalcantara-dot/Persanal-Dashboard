@@ -507,7 +507,7 @@
   // cabeçalho do dia: dia da semana e número; treino (força) com ✓/✗; cardio; meta de calorias e macros; hábitos
   // celular: a barra cabe numa linha; o botão "Hoje" mostra o período (toque volta para hoje) e as visualizações viram um seletor
   function shortLabel(r) {
-    const t = $("cal-today"), sel = $("cal-vsel"); if (sel) sel.value = pref.view;
+    const t = $("cal-today"), sel = $("cal-vsel"); if (sel) sel.value = pref.view === "week" && pref.dias === 2 ? "two" : pref.view;
     if (!t) return;
     if (!matchMedia("(max-width: 760px)").matches) { t.textContent = "Hoje"; return; }
     const d = x => `${x.getDate()} ${MON3[x.getMonth()]}`, DW = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
@@ -1207,7 +1207,7 @@
   // a rolagem (ou o arraste dentro dele) desloca o conjunto em frações de dia, e pode parar no meio de um dia.
   // celular: a "Semana" mostra 3 dias por vez e desliza para os lados (no computador, 7)
   const narrow = () => window.matchMedia("(max-width: 640px)").matches;
-  function stripN() { return pref.view === "day" ? 1 : narrow() ? 3 : 7; }
+  function stripN() { return pref.view === "day" ? 1 : narrow() ? (pref.dias === 2 ? 2 : 3) : 7; } // celular: 3 ou 2 dias
   function stripBase() { const c = parseISO(S.cursor); return pref.view === "week" && !S.rolling && !narrow() ? monday(c) : c; }
   function stripX() { return `translateX(${(-33.3333 - (S.frac || 0) * 100 / (3 * stripN())).toFixed(4)}%)`; }
   function visRange() {
@@ -1380,7 +1380,7 @@
       if (ev.target.classList.contains("cal-mg-col")) { const row = ev.target.closest(".cal-mg-row"); if (row) row.style.setProperty("--c", ev.target.value); }
       if (ev.target.id === "cal-mg-q") { S.mq = ev.target.value; renderMgr(); }
     });
-    root.addEventListener("change", ev => { if (ev.target.id === "cal-vsel") { S.frac = 0; pref.view = ev.target.value; savePref(); render(); } });
+    root.addEventListener("change", ev => { if (ev.target.id === "cal-vsel") { const v = ev.target.value; S.frac = 0; pref.view = v === "two" ? "week" : v; if (v === "two") pref.dias = 2; else if (v === "week") pref.dias = 3; savePref(); render(); } });
     matchMedia("(max-width: 760px)").addEventListener?.("change", () => render());
     root.addEventListener("submit", ev => { ev.preventDefault(); const f = ev.target; if (f.id === "cal-evf") saveEvForm(f); else if (f.id === "cal-newf") createTask(f); });
     $("cal-sheet-box").addEventListener("click", ev => { const b = ev.target.closest("[data-del-ev]"); if (b) delEv(evBy(b.dataset.delEv), b); });
