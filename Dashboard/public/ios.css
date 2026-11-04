@@ -806,3 +806,10 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
   .modal-box { border-radius: 34px 34px 0 0; }
   .tr-sheet-box::before, .ft-sheet-box::before, .modal-box::before { content: ""; position: sticky; top: -6px; z-index: 3; display: block; flex: none; width: 36px; height: 5px; margin: -6px auto 2px; border-radius: 999px; background: var(--line-strong); opacity: .9; }
 }
+
+/* Configurações · Aparência */
+.look-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 6px 0; }
+.look-row > span { font-weight: 500; }
+.look-row .seg { display: inline-flex; }
+.look-icons { display: flex; gap: 14px; padding: 6px 0 2px; }
+.look-icons img { border-radius: 22.5%; box-shadow: 0 4px 14px rgba(0, 0, 0, .18); }

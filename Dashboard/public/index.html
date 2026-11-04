@@ -8,13 +8,14 @@
 <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/icons/icon-192.png" type="image/png">
+<link rel="icon" id="ic-l" href="/icons/light-64.png" type="image/png" media="(prefers-color-scheme: light)">
+<link rel="icon" id="ic-d" href="/icons/dark-64.png" type="image/png" media="(prefers-color-scheme: dark)">
 <!-- iPhone: tela cheia quando instalado na Tela de Início; o conteúdo passa por baixo da barra de status -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Painel">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" id="ic-a" href="/icons/light-180.png">
 <link rel="stylesheet" href="/painel.css">
 <link rel="stylesheet" href="/carreira.css">
 <link rel="stylesheet" href="/calendario.css">
@@ -24,7 +25,7 @@
   <!-- tela de entrada -->
   <main id="login" class="login" hidden>
     <div class="login-box">
-      <div class="brand"><img src="/icons/icon-192.png" alt="" width="64" height="64"><h1>Painel da Vida</h1><p>Entre com o código enviado ao seu e-mail.</p></div>
+      <div class="brand"><img src="/icons/light-192.png" data-appicon alt="" width="64" height="64"><h1>Painel da Vida</h1><p>Entre com o código enviado ao seu e-mail.</p></div>
       <form id="login-email" class="group">
         <label class="row-field"><span>E-mail</span><input id="l-email" type="email" autocomplete="email" required placeholder="voce@exemplo.com"></label>
         <button class="btn primary big" type="submit">Receber código</button>
@@ -47,7 +48,7 @@
   <button class="gbtn round side-open" id="side-open" type="button" aria-label="Abrir a barra lateral" title="Abrir a barra lateral" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg></button>
   <div class="shell" id="app" hidden>
     <aside class="side glass" id="side">
-      <div class="side-top"><span class="side-brand"><img src="/icons/icon-192.png" alt="" width="26" height="26">Painel</span><button class="gbtn round side-x" id="side-close" type="button" aria-label="Fechar a barra lateral" title="Fechar a barra lateral"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg></button></div>
+      <div class="side-top"><span class="side-brand"><img src="/icons/light-192.png" data-appicon alt="" width="26" height="26">Painel</span><button class="gbtn round side-x" id="side-close" type="button" aria-label="Fechar a barra lateral" title="Fechar a barra lateral"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg></button></div>
       <nav class="tabs" aria-label="Pilares">
       <button class="tab" data-tab="agenda" style="--c:var(--n-red)" data-label="Agenda">
         <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M8 13.5h2M14 13.5h2M8 16.5h2"/></svg></span>
@@ -106,6 +107,13 @@
             </div>
             <p class="msg" id="imp-msg" hidden></p>
           </section>
+          <section class="card" id="c-look">
+            <h3 class="sec">Aparência</h3>
+            <div class="look-row"><span>Tema do app</span><div class="seg" role="group" aria-label="Tema do app" data-look="tema"><button data-v="auto">Automático</button><button data-v="light">Claro</button><button data-v="dark">Escuro</button></div></div>
+            <div class="look-row"><span>Ícone</span><div class="seg" role="group" aria-label="Ícone do app" data-look="icone"><button data-v="auto">Automático</button><button data-v="light">Claro</button><button data-v="dark">Escuro</button></div></div>
+            <div class="look-icons"><img src="/icons/light-192.png" alt="Ícone claro" width="64" height="64"><img src="/icons/dark-192.png" alt="Ícone escuro" width="64" height="64"></div>
+            <p class="hint">Automático acompanha o modo claro/escuro do aparelho. No iPhone, o ícone da tela de início é gravado quando o app é adicionado: para trocá-lo, remova o atalho e adicione de novo (Compartilhar → Adicionar à Tela de Início) depois de escolher.</p>
+          </section>
           <section class="card">
             <h3 class="sec">Google Calendar</h3>
             <div id="c-google"><p class="hint">Carregando…</p></div>
@@ -115,7 +123,6 @@
             <p class="hint" id="c-user"></p>
             <div class="row-acts">
               <button class="gbtn" type="button" id="b-db">Testar banco</button>
-              <button class="gbtn" type="button" data-act="theme">Tema claro/escuro</button>
               <button class="gbtn danger" type="button" data-act="out">Sair</button>
             </div>
             <p class="msg" id="c-db" hidden></p>

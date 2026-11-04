@@ -15,9 +15,31 @@ function applyTheme(t) { if (t) root.dataset.theme = t; else delete root.dataset
 try { applyTheme(localStorage.getItem(THEME_KEY)); } catch {}
 function toggleTheme() {
   const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  const t = dark ? "light" : "dark"; applyTheme(t); try { localStorage.setItem(THEME_KEY, t); } catch {}
+  const t = dark ? "light" : "dark"; applyTheme(t); try { localStorage.setItem(THEME_KEY, t); } catch {} if (typeof lookPaint === "function") lookPaint();
 }
 document.querySelectorAll("[data-act=theme]").forEach(b => b.onclick = toggleTheme);
+// ícone (Liquid Glass claro/escuro), lembrado neste aparelho; "auto" segue o modo do sistema
+const ICON_KEY = "painel.icone";
+function applyIcon() {
+  let pref = "auto"; try { pref = localStorage.getItem(ICON_KEY) || "auto"; } catch {}
+  const sysDark = matchMedia("(prefers-color-scheme: dark)").matches, mode = pref === "auto" ? (sysDark ? "dark" : "light") : pref;
+  const l = $("ic-l"), d = $("ic-d"), a = $("ic-a");
+  if (l && d) { if (pref === "auto") { l.media = "(prefers-color-scheme: light)"; d.media = "(prefers-color-scheme: dark)"; l.href = "/icons/light-64.png"; d.href = "/icons/dark-64.png"; } else { l.media = "all"; l.href = `/icons/${mode}-64.png`; d.media = "not all"; } }
+  if (a) a.href = `/icons/${mode}-180.png`;
+  document.querySelectorAll("img[data-appicon]").forEach(i => { i.src = `/icons/${mode}-192.png`; });
+}
+function lookPaint() {
+  let t = null, ic = "auto"; try { t = localStorage.getItem(THEME_KEY); ic = localStorage.getItem(ICON_KEY) || "auto"; } catch {}
+  const cur = { tema: t || "auto", icone: ic };
+  document.querySelectorAll("[data-look]").forEach(g => g.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === cur[g.dataset.look]))));
+}
+document.querySelectorAll("[data-look] button").forEach(b => b.addEventListener("click", () => {
+  const k = b.closest("[data-look]").dataset.look, v = b.dataset.v;
+  try { if (k === "tema") { if (v === "auto") localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, v); applyTheme(v === "auto" ? null : v); } else { localStorage.setItem(ICON_KEY, v); } } catch {}
+  applyIcon(); lookPaint();
+}));
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyIcon);
+applyIcon(); lookPaint();
 document.querySelectorAll("[data-act=out]").forEach(b => b.onclick = () => auth.signOut());
 
 // ---------- navegação por abas (#hash) ----------
