@@ -95,7 +95,7 @@ function homeHtml(live) {
     <div class="tr-h"><h3 class="sec">Rotinas</h3><button class="gbtn small" data-act="new-routine">Nova rotina</button></div>
     ${rs.length ? rs.map(r => `<section class="card tr-rout">
         <div class="tr-rout-h"><b>${esc(r.data.nome)}</b><button class="iconbtn" data-act="routine-menu" data-id="${esc(r.id)}" aria-label="Opções">⋯</button></div>
-        <p class="hint">${esc(r.data.exercicios.map(e => e.nome).join(", "))}</p>
+        <p class="hint">${esc(r.data.exercicios.map(e => enName(e.nome)).join(", "))}</p>
         <button class="btn primary" data-act="start-routine" data-id="${esc(r.id)}" ${live ? "disabled" : ""}>Começar rotina</button>
       </section>`).join("") : `<section class="card"><p class="empty">Nenhuma rotina ainda. Crie uma do zero ou salve um treino do histórico como rotina.</p></section>`}
     <div class="tr-h"><h3 class="sec">Últimos treinos</h3><button class="linkbtn" data-act="go-feed">Ver todos</button></div>
@@ -165,7 +165,7 @@ function libHtml() {
     .filter(e => !q || e.nome.toLowerCase().includes(q) || String(e.hevy || "").toLowerCase().includes(q))
     .map(e => ({ e, n: exHist(e.nome).length })).sort((a, b) => b.n - a.n || a.e.nome.localeCompare(b.e.nome));
   return `<input class="tr-search" id="tr-libq" type="search" placeholder="Buscar exercício" value="${esc(T.libQ || "")}">
-    <section class="card tr-lib"><ul class="ios-list">${list.slice(0, 120).map(({ e, n }) => `<li data-act="ex" data-nome="${esc(e.nome)}"><span><b>${esc(e.nome)}</b><small class="hint"> · ${esc(e.grupo)}</small></span><span class="hint">${n ? n + "×" : ""} ›</span></li>`).join("")}</ul></section>`;
+    <section class="card tr-lib"><ul class="ios-list">${list.slice(0, 120).map(({ e, n }) => `<li data-act="ex" data-nome="${esc(e.nome)}"><span><b>${esc(enName(e.nome))}</b><small class="hint"> · ${esc(e.grupo)}</small></span><span class="hint">${n ? n + "×" : ""} ›</span></li>`).join("")}</ul></section>`;
 }
 
 // ---------------- detalhe do treino ----------------
@@ -178,7 +178,7 @@ function openDetail(id) {
       <div class="tr-stats"><span><small>Tempo</small><b>${st.min ? dur(st.min * 60) : "—"}</b></span><span><small>Volume</small><b>${kg(st.vol)}</b></span><span><small>Séries</small><b>${st.series}</b></span>${s.cardio ? `<span><small>Cardio</small><b>${s.cardio.min || 0} min</b></span>` : ""}</div></div>
     ${split.length ? `<h4 class="tr-sub">Divisão muscular</h4><div class="tr-split">${split.map(([g, n]) => `<div><span>${esc(g)}</span><i><b style="width:${(n / split[0][1] * 100).toFixed(0)}%"></b></i><em>${Math.round(n / tot * 100)}%</em></div>`).join("")}</div>` : ""}
     <div class="tr-h"><h4 class="tr-sub">Treino</h4><button class="linkbtn" data-act="edit-session" data-id="${esc(s.id)}">Editar treino</button></div>
-    ${s.exercicios.map(e => `<div class="tr-dex"><button class="tr-exname" data-act="ex" data-nome="${esc(e.nome)}">${esc(e.nome)}</button>${e.nota ? `<p class="hint">${esc(e.nota)}</p>` : ""}
+    ${s.exercicios.map(e => `<div class="tr-dex"><button class="tr-exname" data-act="ex" data-nome="${esc(e.nome)}">${esc(enName(e.nome))}</button>${e.nota ? `<p class="hint">${esc(e.nota)}</p>` : ""}
       <table class="tr-sets"><thead><tr><th>Série</th><th>${e.grupo === "Cardio" ? "Tempo e distância" : "Peso e reps"}</th></tr></thead><tbody>${setRows(e)}</tbody></table></div>`).join("")}`);
 }
 function setRows(e) {
@@ -216,7 +216,7 @@ function renderEx() {
   }
   if (!MEDIA) mediaLoad(() => { if (T.exDetail === nome) renderEx(); });
   const dm = tab !== "historico" ? demo(lib) : "";
-  sheet(`<div class="tr-sh-h"><button class="iconbtn" data-act="close" aria-label="Voltar">‹</button><h3>${esc(nome)}</h3><span></span></div>
+  sheet(`<div class="tr-sh-h"><button class="iconbtn" data-act="close" aria-label="Voltar">‹</button><h3>${esc(enName(nome))}</h3><span></span></div>
     ${dm}<div class="seg tr-tabs">${[["resumo", "Resumo"], ["historico", "Histórico"], ["como", "Como fazer"]].map(([k, l]) => `<button data-act="extab" data-t="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>${body}`, "ex");
 }
 // mídia dos exercícios (GIFs © Gym visual, servidos do repositório exercises-dataset; não copiados para cá)
@@ -230,8 +230,17 @@ function mediaUrl(id, gif) {
   const f = MEDIA && id && MEDIA[id]; if (!f) return "";
   return MEDIA_BASE + (gif ? "videos/" + f : "images/" + f.replace(/\.gif$/, ".jpg"));
 }
+// seus exercícios (nomes em português/Hevy) → exercício do exercises-dataset, revisado à mão; o resto, por semelhança
+const EX_MAP = {"abdominal declinado": "0277", "abdominal declinado com peso": "0277", "abdominal oblíquo": "0635", "abdominal sit-up com peso": "3670", "abdominal na polia": "0175", "abdominal na polia (joelhos)": "0175", "agachamento livre": "0043", "agachamento máquina": "0743", "bulgarian split squat (dumbbell)": "0410", "cadeira extensora": "0585", "cadeira flexora": "0599", "mesa flexora": "0586", "calf extensions (horizontal leg press)": "1391", "crucifixo inverso cross": "0154", "crucifixo inverso máquina": "0602", "crucifixo máquina": "0596", "crucifixo polia alta": "0227", "crucifixo polia baixa": "0179", "crucifixo sentado no cabo": "0188", "desenvolvimento máquina": "0603", "desenvolvimento com halter": "0405", "elevação frontal corda": "0162", "elevação frontal com barra": "0041", "elevação lateral sentado": "0396", "elevação lateral com halter": "0334", "elevação lateral no cross": "0192", "elevação pélvica": "1409", "elevação de joelhos nas paralelas": "0011", "elevação de pernas": "0826", "encolhimento com barra": "0095", "encolhimento com halter": "0406", "esteira inclinada": "3666", "glúteo coice máquina": "0860", "iso-lateral low row": "0581", "remada baixa articulada": "0581", "leg press": "0739", "leg press horizontal": "2611", "panturrilha sentado": "0594", "panturrilha em pé": "0605", "panturrilha em pé no smith": "0773", "panturrilha na máquina": "2289", "panturrilha no leg press": "1391", "plank": "2135", "pull down": "0237", "puxada alta invertida": "0673", "puxada alta máquina": "0579", "puxada fechada": "2616", "remada apoiada inclinada": "0327", "remada baixa": "0861", "remada curvada": "3017", "rosca 45º": "0318", "rosca direta barra w": "0447", "rosca martelo": "0313", "rosca martelo na polia": "0165", "rosca scott barra": "0070", "rosca scott máquina": "0592", "rosca no cross": "0868", "stiff": "0116", "supino inclinado com barra": "0047", "supino inclinado com halter": "0314", "supino reto máquina": "0577", "supino reto com barra": "0025", "terra romeno": "0085", "triceps corda no cross": "0200", "triceps francês": "2188", "triceps francês na polia": "0194", "triceps kickback (cable)": "0860", "triceps pulley": "0201", "triceps testa": "0060", "calf on the super squat": "1385"};
+// nome no padrão do repositório (inglês); sem par no banco, o nome do Hevy; por último, o nome registrado
+const dsName = n => cap(String(n || "").replace(/в°/g, "°"));
+function enName(nome) {
+  const l = libQuiet(nome); if (l) return dsName(l.n);
+  const c = catalog().find(c => c.nome === nome); return (c && c.hevy) || nome;
+}
 function libQuiet(nome) {
   const x = P() && P().xdb(); if (!x || x.state !== 2) return null;
+  const mid = EX_MAP[String(nome || "").toLowerCase()]; if (mid && x.byId[mid]) return x.byId[mid];
   const c = catalog().find(c => c.nome === nome), keys = [nome, c && c.hevy].filter(Boolean).map(s => s.toLowerCase());
   const hit = x.list.find(e => keys.includes(e.n.toLowerCase()));
   if (hit) return hit;
@@ -351,12 +360,32 @@ function exBlock(e, i, modo) {
     </div>`;
   }).join("");
   return `<section class="tr-ex" data-i="${i}">
-    <div class="tr-ex-h"><button class="tr-exname" data-act="ex" data-nome="${esc(e.nome)}">${thumb((libQuiet(e.nome) || {}).id, e.nome)}<span>${esc(e.nome)}</span></button><button class="iconbtn" data-act="ex-menu" data-i="${i}" aria-label="Opções do exercício">⋮</button></div>
+    <div class="tr-ex-h"><button class="tr-exname" data-act="ex" data-nome="${esc(e.nome)}">${thumb((libQuiet(e.nome) || {}).id, e.nome)}<span>${esc(enName(e.nome))}</span></button><button class="iconbtn" data-act="ex-menu" data-i="${i}" aria-label="Opções do exercício">⋮</button></div>
     <div class="tr-pills">${modo !== "edit" ? `<button class="tr-pill" data-act="ex-rest" data-i="${i}"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/></svg>Descanso: ${e.descanso ? (e.descanso >= 60 ? `${Math.floor(e.descanso / 60)}min${e.descanso % 60 ? " " + (e.descanso % 60) + "s" : ""}` : e.descanso + "s") : "desligado"}</button>` : ""}<button class="tr-pill" data-act="ex-note" data-i="${i}"><svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5z"/><path d="M9 13h6M12 10v6"/></svg>${e.nota ? esc(e.nota.slice(0, 24)) : "Nota"}</button></div>
     <div class="tr-set tr-set-h"><span>Série</span><span>Anterior</span>${cardio ? "<span>Min</span><span>Km</span>" : "<span>Kg</span><span>Reps</span>"}<span>${modo === "rotina" ? "" : "RPE"}</span>${modo !== "rotina" ? "<span>✓</span>" : ""}</div>
     ${rows}
     <button class="gbtn tr-addset" data-act="set-add" data-i="${i}">+ Adicionar série</button>
   </section>`;
+}
+
+// variações do mesmo movimento no exercises-dataset: outra pegada (pronada, supinada, neutra, fechada, aberta),
+// outro equipamento (barra, halter, cabo, máquina, smith) ou outra posição (sentado, em pé, inclinado)
+const MOVES = ["leg press", "pull-up", "chin-up", "push-up", "pulldown", "pushdown", "kickback", "deadlift", "extension", "shrug", "crunch", "lunge", "squat", "bridge", "plank", "press", "curl", "row", "raise", "fly", "dip"];
+function variantsOf(lib) {
+  const x = P().xdb(), n = lib.n.toLowerCase(), mv = MOVES.find(m => n.includes(m)); if (!mv) return [];
+  const toks = new Set(n.replace(/[()\-,.]/g, " ").split(/\s+/).filter(Boolean));
+  return x.list.filter(e => e.id !== lib.id && e.tg === lib.tg && e.n.toLowerCase().includes(mv) && !/stretch|v\. ?\d|\((male|female)\)|pov\)/i.test(e.n))
+    .map(e => { const t = e.n.toLowerCase().replace(/[()\-,.]/g, " ").split(/\s+/).filter(Boolean); return { e, sc: t.filter(w => toks.has(w)).length - t.length * .15 }; })
+    .sort((a, b) => b.sc - a.sc).slice(0, 40).map(o => o.e);
+}
+function openVariants(i) {
+  const L = T.live, ex = L.exercicios[i], lib = libQuiet(ex.nome);
+  if (!lib) { toast("Este exercício ainda não tem par no banco de exercícios."); return; }
+  const vs = variantsOf(lib);
+  T.varFor = i;
+  sheet(`<div class="tr-sh-h"><button class="btn ghost" data-act="close">Cancelar</button><h3>Variações</h3><span></span></div>
+    <p class="hint">Mesmo movimento (${esc(dsName(lib.n))}) com outra pegada, equipamento ou posição. As séries continuam; o histórico passa a contar no novo nome.</p>
+    ${vs.length ? `<ul class="ios-list tr-pick">${vs.map(e => `<li data-act="pick-var" data-id="${esc(e.id)}">${thumb(e.id, e.n)}<span><b>${esc(dsName(e.n))}</b><small class="hint">${esc(cap(e.eq))}</small></span><span class="plus">›</span></li>`).join("")}</ul>` : `<p class="empty">Sem variações no banco para este movimento.</p>`}`, "picker");
 }
 
 // cronômetro de descanso (barra flutuante)
@@ -411,12 +440,12 @@ function openPicker(mode, i) {
 function pickList() {
   const box = $("tr-plist"); if (!box) return;
   const q = (T.pickQ || "").toLowerCase().trim(), g = T.pickG;
-  const mine = catalog().filter(e => (!g || e.grupo === g) && (!q || e.nome.toLowerCase().includes(q) || String(e.hevy || "").toLowerCase().includes(q)))
+  const mine = catalog().filter(e => (!g || e.grupo === g) && (!q || e.nome.toLowerCase().includes(q) || String(e.hevy || "").toLowerCase().includes(q) || enName(e.nome).toLowerCase().includes(q)))
     .map(e => ({ e, n: exHist(e.nome).length })).sort((a, b) => b.n - a.n || a.e.nome.localeCompare(b.e.nome));
-  const known = new Set(catalog().flatMap(e => [e.nome.toLowerCase(), String(e.hevy || "").toLowerCase()]));
+  const known = new Set(catalog().flatMap(e => [e.nome.toLowerCase(), String(e.hevy || "").toLowerCase(), String((libQuiet(e.nome) || {}).n || "").toLowerCase()]).filter(Boolean));
   const x = P() && P().xdb(), lib = x && x.state === 2 ? x.list.filter(e => !known.has(e.n.toLowerCase()) && (!g || grupoDe(e) === g) && (!q || e.n.toLowerCase().includes(q))).slice(0, q ? 60 : 25) : [];
-  box.innerHTML = `${mine.length ? `<h4 class="tr-sub">Seus exercícios</h4><ul class="ios-list tr-pick">${mine.slice(0, 80).map(({ e, n }) => `<li data-act="pick" data-nome="${esc(e.nome)}">${thumb((libQuiet(e.nome) || {}).id, e.nome)}<span><b>${esc(e.nome)}</b><small class="hint">${esc(e.grupo)}${n ? ` · ${n} treinos` : ""}</small></span><span class="plus">+</span></li>`).join("")}</ul>` : ""}
-    ${lib.length ? `<h4 class="tr-sub">Biblioteca</h4><ul class="ios-list tr-pick">${lib.map(e => `<li data-act="pick-lib" data-id="${esc(e.id)}">${thumb(e.id, e.n)}<span><b>${esc(cap(e.n))}</b><small class="hint">${esc(grupoDe(e))} · ${esc(cap(e.eq))}</small></span><span class="plus">+</span></li>`).join("")}</ul>` : ""}
+  box.innerHTML = `${mine.length ? `<h4 class="tr-sub">Seus exercícios</h4><ul class="ios-list tr-pick">${mine.slice(0, 80).map(({ e, n }) => `<li data-act="pick" data-nome="${esc(e.nome)}">${thumb((libQuiet(e.nome) || {}).id, e.nome)}<span><b>${esc(enName(e.nome))}</b><small class="hint">${esc(e.grupo)}${n ? ` · ${n} treinos` : ""}</small></span><span class="plus">+</span></li>`).join("")}</ul>` : ""}
+    ${lib.length ? `<h4 class="tr-sub">Biblioteca</h4><ul class="ios-list tr-pick">${lib.map(e => `<li data-act="pick-lib" data-id="${esc(e.id)}">${thumb(e.id, e.n)}<span><b>${esc(dsName(e.n))}</b><small class="hint">${esc(grupoDe(e))} · ${esc(cap(e.eq))}</small></span><span class="plus">+</span></li>`).join("")}</ul>` : ""}
     ${!mine.length && !lib.length ? `<p class="empty">Nada encontrado. Toque em Criar para adicionar “${esc(T.pickQ || "")}”.</p>` : ""}`;
 }
 async function pickChosen(e) {
@@ -547,11 +576,13 @@ function onClick(e) {
     case "add-ex": openPicker("add"); break;
     case "pick-g": T.pickG = b.dataset.g; document.querySelectorAll("#tr-pg button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); pickList(); break;
     case "pick": { const c = catalog().find(x => x.nome === b.dataset.nome); pickChosen(c); break; }
-    case "pick-lib": { const x = P().xdb().byId[b.dataset.id]; pickChosen({ nome: cap(x.n), grupo: grupoDe(x), hevy: x.n }); break; }
+    case "pick-var": { const x = P().xdb().byId[b.dataset.id], ex = T.live && T.live.exercicios[T.varFor]; if (x && ex) { ex.nome = dsName(x.n); ex.hevy = x.n; closeSheet(); saveLive(); renderLive(); } break; }
+    case "pick-lib": { const x = P().xdb().byId[b.dataset.id]; pickChosen({ nome: dsName(x.n), grupo: grupoDe(x), hevy: x.n }); break; }
     case "new-ex": { const nome = prompt("Nome do exercício", T.pickQ ? cap(T.pickQ) : ""); if (!nome) break;
       const gs = [...(P() ? P().GROUPS : []), "Cardio"]; const g = prompt(`Grupo muscular (${gs.join(", ")})`, T.pickG || "Peito");
       pickChosen({ nome: nome.trim(), grupo: gs.find(x => x.toLowerCase() === String(g || "").trim().toLowerCase()) || "Peito", hevy: null }); break; }
-    case "ex-menu": { const i = +b.dataset.i; menu(L.exercicios[i].nome, [{ l: "Substituir exercício" }, { l: "Mover para cima" }, { l: "Mover para baixo" }, { l: "Remover exercício", danger: true }]).then(k => {
+    case "ex-menu": { const i = +b.dataset.i; menu(enName(L.exercicios[i].nome), [{ l: "Substituir exercício" }, { l: "Mover para cima" }, { l: "Mover para baixo" }, { l: "Remover exercício", danger: true }, { l: "Variação (pegada, equipamento…)" }]).then(k => {
+      if (k === 4) return openVariants(i);
       if (k === 0) openPicker("replace", i);
       if (k === 1 && i > 0) { [L.exercicios[i - 1], L.exercicios[i]] = [L.exercicios[i], L.exercicios[i - 1]]; }
       if (k === 2 && i < L.exercicios.length - 1) { [L.exercicios[i + 1], L.exercicios[i]] = [L.exercicios[i], L.exercicios[i + 1]]; }
@@ -603,6 +634,8 @@ export function start() {
     P() && P().onChange(() => { if (!$("treino-root").hidden) render(); });
     setInterval(everySecond, 1000);
     mini();
+    // nomes em inglês e miniaturas vêm do banco de exercícios: carrega uma vez e redesenha
+    P() && P().xdbLoad(() => { mediaLoad(() => { if (!$("treino-root").hidden) render(); if (T.live && !$("tr-live").hidden) renderLive(); }); });
   }
   render();
 }

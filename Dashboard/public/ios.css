@@ -821,3 +821,5 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 #dieta-root .ft-repeat > span:nth-child(2) { min-width: 0; }
 #dieta-root .ft-repeat .ft-chips { grid-column: 2; }
 #dieta-root .ft-repeat:active { background: color-mix(in srgb, var(--food) 14%, transparent); }
+/* demonstração do exercício: o GIF do banco tem 180×180 px; mostrado perto do tamanho real fica nítido (esticado, borra) */
+.tr-demo img { width: min(240px, 70vw); max-width: none; image-rendering: auto; }
