@@ -136,7 +136,16 @@
         <div class="title-row"><h1>Saúde &amp; corpo</h1></div>
       </header>
 
-      <div class="seg saude-mode" id="saude-mode" role="tablist" aria-label="Modo da Saúde"><button data-mode="painel" aria-pressed="true">Painel</button><button data-mode="treino" aria-pressed="false">Treino</button><button data-mode="dieta" aria-pressed="false">Alimentação</button></div>
+      <div class="saude-top" id="saude-top">
+        <div class="seg saude-mode" id="saude-mode" role="tablist" aria-label="Modo da Saúde"><button data-mode="painel" aria-pressed="true">Painel</button><button data-mode="treino" aria-pressed="false">Treino</button><button data-mode="dieta" aria-pressed="false">Alimentação</button></div>
+        <div class="navrow" id="d-nav">
+          <span class="lbl" id="d-label" hidden></span>
+          <button class="iconbtn" id="d-prev" aria-label="Dia anterior">‹</button>
+          <input type="date" id="d-pick" aria-label="Escolher dia">
+          <button class="iconbtn" id="d-next" aria-label="Próximo dia">›</button>
+          <button class="btn ghost" id="d-today">Hoje</button>
+        </div>
+      </div>
       <div id="treino-root" class="saude-sub" hidden></div>
       <div id="dieta-root" class="saude-sub" hidden></div>
       <div class="subtabs" role="tablist" aria-label="Seções de saúde">
@@ -152,13 +161,6 @@
 
       <!-- HOJE -->
       <div class="hpanel" data-hpanel="hoje" style="display:flex;flex-direction:column;gap:18px">
-        <div class="navrow">
-          <span class="lbl" id="d-label" hidden></span>
-          <button class="iconbtn" id="d-prev" aria-label="Dia anterior">‹</button>
-          <input type="date" id="d-pick" aria-label="Escolher dia">
-          <button class="iconbtn" id="d-next" aria-label="Próximo dia">›</button>
-          <button class="btn ghost" id="d-today">Hoje</button>
-        </div>
         <section class="card bal-card" id="d-bal"></section>
         <div class="kpis dtiles" id="d-kpis"></div>
         <!-- alimentação do dia: metas (macros) e qualidade lado a lado, refeições embaixo -->

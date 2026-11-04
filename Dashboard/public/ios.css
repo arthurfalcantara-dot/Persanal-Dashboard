@@ -445,8 +445,8 @@ input.switch:checked::after { transform: translateX(20px); }
 
 /* ======================= Saúde: Painel · Treino · Alimentação ======================= */
 .saude-mode { align-self: flex-start; }
-#view-saude[data-mode="treino"] > :not(header):not(#saude-mode):not(#treino-root),
-#view-saude[data-mode="dieta"] > :not(header):not(#saude-mode):not(#dieta-root) { display: none !important; }
+#view-saude[data-mode="treino"] > :not(header):not(#saude-mode):not(#saude-top):not(#treino-root),
+#view-saude[data-mode="dieta"] > :not(header):not(#saude-mode):not(#saude-top):not(#dieta-root) { display: none !important; }
 .saude-sub { display: flex; flex-direction: column; gap: 14px; }
 .saude-sub[hidden] { display: none !important; }
 html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
@@ -902,3 +902,26 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
   #view-calendario #cal-today { max-width: 104px; padding: 4px 6px; }
 }
 @media (max-width: 760px) { #view-calendario > header.page h1 { padding-right: 0; } #view-calendario #cal-today { max-width: 120px; padding: 4px 8px; } }
+
+/* Saúde: seletor de dia na mesma linha de Painel · Treino · Alimentação (só em Painel › Hoje) */
+.saude-top { display: flex; align-items: center; gap: 10px 12px; flex-wrap: nowrap; }
+.saude-top .saude-mode { flex: none; }
+.saude-top #d-nav { margin-left: auto; flex-wrap: nowrap; gap: 6px; min-width: 0; }
+.saude-top #d-nav[hidden], #view-saude:not([data-mode="painel"]) .saude-top #d-nav { display: none !important; }
+:root body .saude-top #d-nav input[type=date] { min-height: 34px; height: 34px; padding: 4px 10px; font-size: 15px; }
+.saude-top #d-nav .iconbtn { width: 34px; height: 34px; flex: none; }
+@media (max-width: 760px) {
+  .saude-top { gap: 6px; }
+  .saude-top .saude-mode button { padding: 6px 10px; font-size: 13.5px; }
+  .saude-top #d-nav { gap: 2px; }
+  .saude-top #d-nav .iconbtn { width: 26px; }
+  .saude-top #d-nav #d-today { display: none; } /* tocar na data abre o calendário; ‹ › trocam o dia */
+  :root body .saude-top #d-nav input[type=date] { width: 92px; padding: 4px 6px; font-size: 13.5px; text-align: center; }
+  :root body .saude-top #d-nav input[type=date]::-webkit-calendar-picker-indicator { display: none; }
+}
+@media (max-width: 760px) {
+  .saude-top .saude-mode button { padding: 6px 8px; font-size: 13px; }
+  .saude-top #d-nav .iconbtn { width: 22px; min-width: 22px; padding: 0; }
+  :root body .saude-top #d-nav input[type=date] { width: 76px; padding: 4px 2px; font-size: 12.5px; letter-spacing: -.01em; }
+  .saude-top #d-nav { flex: 0 1 auto; }
+}
