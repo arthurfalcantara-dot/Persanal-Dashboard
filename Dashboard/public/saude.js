@@ -128,7 +128,8 @@
   // cores das faixas em RGB, lidas dos tokens do tema
   function bmRGB() {
     const cs = getComputedStyle(document.documentElement), hex = n => { const s = cs.getPropertyValue(n).trim(); const m = s.match(/^#([0-9a-f]{6})$/i); return m ? [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16)) : null; };
-    const green = hex("--n-green") || [68, 131, 97], orange = hex("--n-orange") || [217, 115, 13], white = hex("--surface") || [255, 255, 255];
+    // o mapa usa o azul padrão (--musc), o mesmo das faixas e da legenda
+    const green = hex("--musc") || [4, 140, 250], orange = hex("--n-orange") || [217, 115, 13], white = hex("--surface") || [255, 255, 255];
     const mix = (a, b, t) => a.map((v, i) => Math.round(v * t + b[i] * (1 - t)));
     return [null, mix(green, white, .35), mix(green, white, .65), green, orange];
   }

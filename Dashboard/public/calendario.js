@@ -67,7 +67,8 @@
   const MON3 = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
   const DOWS = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
   const DOW_KEYS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"];
-  const H0 = 0, H1 = 24, VIS = [7, 20]; let HPX = (() => { try { return +localStorage.getItem("painel.cal.hpx") || 46; } catch { return 46; } })(); // altura de 1 hora (zoom − / +) // grade de horas da semana: 0h à meia-noite seguinte
+  const H0 = 0, H1 = 24, VIS = [7, 20]; const HPX_KEY = matchMedia("(min-width: 761px)").matches ? "painel.cal.hpx.pc" : "painel.cal.hpx.cel"; // zoom guardado por formato
+  let HPX = (() => { const def = HPX_KEY.endsWith("pc") ? 60 : 46; try { return +localStorage.getItem(HPX_KEY) || def; } catch { return def; } })(); // altura de 1 hora (zoom − / +) // grade de horas da semana: 0h à meia-noite seguinte
 
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
@@ -450,7 +451,10 @@
       // a linha das 7:00 fica logo abaixo do cabeçalho preso (com folga para o rótulo aparecer inteiro)
       const fit = top => {
         const st = body.querySelector(".cal-stick, .cal-axis-hd"), hdr = st ? st.offsetHeight : 0;
-        body.style.height = `${hdr + 8 + (VIS[1] - VIS[0]) * HPX + 14}px`;
+        let h = hdr + 8 + (VIS[1] - VIS[0]) * HPX + 14;
+        // no computador o cartão vai até o pé da janela (mais horas à vista); no celular fica na janela 7h–20h
+        if (matchMedia("(min-width: 761px)").matches) h = Math.max(h, innerHeight - (body.getBoundingClientRect().top + scrollY) - 20);
+        body.style.height = `${Math.min(h, hdr + 8 + (H1 - H0) * HPX)}px`;
         if (!top) return;
         const hr = body.querySelectorAll(".cal-axis-tg .cal-hr, .cal-hrs .cal-hr")[VIS[0] - H0];
         if (hr && st) body.scrollTop += hr.getBoundingClientRect().top - st.getBoundingClientRect().bottom - 10;
@@ -1381,7 +1385,7 @@
       else if (ev.key.toLowerCase() === "m") { pref.view = "month"; savePref(); render(); } else if (ev.key.toLowerCase() === "s") { pref.view = "week"; savePref(); render(); } else if (ev.key.toLowerCase() === "d") { pref.view = "day"; savePref(); render(); } else if (ev.key.toLowerCase() === "c") setMgr(!pref.mgr);
     });
     // zoom das horas (Semana/Dia): menos altura por hora = mais horas visíveis
-    document.addEventListener("click", ev => { const z = ev.target.closest("[data-calzoom]"); if (!z) return; HPX = Math.max(22, Math.min(96, HPX + (+z.dataset.calzoom) * 8)); try { localStorage.setItem("painel.cal.hpx", HPX); } catch {} document.documentElement.style.setProperty("--hpx", HPX + "px"); render(); });
+    document.addEventListener("click", ev => { const z = ev.target.closest("[data-calzoom]"); if (!z) return; HPX = Math.max(22, Math.min(96, HPX + (+z.dataset.calzoom) * 8)); try { localStorage.setItem(HPX_KEY, HPX); } catch {} document.documentElement.style.setProperty("--hpx", HPX + "px"); render(); });
     document.documentElement.style.setProperty("--hpx", HPX + "px");
     window.matchMedia("(max-width: 640px)").addEventListener?.("change", () => render());
     bindDnD($("cal-body"));
