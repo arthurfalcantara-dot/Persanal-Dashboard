@@ -511,8 +511,9 @@
     if (!t) return;
     if (!matchMedia("(max-width: 760px)").matches) { t.textContent = "Hoje"; return; }
     const d = x => `${x.getDate()} ${MON3[x.getMonth()]}`, DW = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
-    t.textContent = pref.view === "day" ? `${DW[r.start.getDay()]}, ${d(r.start)}` : pref.view === "month" ? (m => `${MON3[m.getMonth()]} ${m.getFullYear()}`)(addDays(r.start, 10))
-      : r.start.getMonth() === r.end.getMonth() ? `${r.start.getDate()}–${d(r.end)}` : `${d(r.start)} – ${d(r.end)}`;
+    const dm = x => `${x.getDate()}/${x.getMonth() + 1}`;
+    t.textContent = pref.view === "day" ? d(r.start) : pref.view === "month" ? (m => `${MON3[m.getMonth()]} ${m.getFullYear()}`)(addDays(r.start, 10))
+      : r.start.getMonth() === r.end.getMonth() ? `${r.start.getDate()}–${d(r.end)}` : `${dm(r.start)}–${dm(r.end)}`;
     t.title = "Voltar para hoje";
   }
   function headInfo(day) {
@@ -1380,7 +1381,7 @@
       if (ev.target.classList.contains("cal-mg-col")) { const row = ev.target.closest(".cal-mg-row"); if (row) row.style.setProperty("--c", ev.target.value); }
       if (ev.target.id === "cal-mg-q") { S.mq = ev.target.value; renderMgr(); }
     });
-    root.addEventListener("change", ev => { if (ev.target.id === "cal-vsel") { const v = ev.target.value; S.frac = 0; pref.view = v === "two" ? "week" : v; if (v === "two") pref.dias = 2; else if (v === "week") pref.dias = 3; savePref(); render(); } });
+    root.addEventListener("change", ev => { if (ev.target.id === "cal-vsel") { const v = ev.target.value; if (v === "mgr") { setMgr(!pref.mgr); shortLabel(visRange()); return; } S.frac = 0; pref.view = v === "two" ? "week" : v; if (v === "two") pref.dias = 2; else if (v === "week") pref.dias = 3; savePref(); render(); } });
     matchMedia("(max-width: 760px)").addEventListener?.("change", () => render());
     root.addEventListener("submit", ev => { ev.preventDefault(); const f = ev.target; if (f.id === "cal-evf") saveEvForm(f); else if (f.id === "cal-newf") createTask(f); });
     $("cal-sheet-box").addEventListener("click", ev => { const b = ev.target.closest("[data-del-ev]"); if (b) delEv(evBy(b.dataset.delEv), b); });
@@ -1413,6 +1414,8 @@
   window.addEventListener("painel:calendario", () => {
     if (!S.started) {
       S.started = true; bind(); initDb(); render(); load(false);
+      // a barra de controles sobe para a mesma linha do título "Agenda" (PC e celular)
+      { const bar = document.querySelector("#view-calendario .cal-bar"), hd = document.querySelector("#view-calendario > header.page"); if (bar && hd && bar.parentElement !== hd) hd.appendChild(bar); }
       // no computador, status do Notion/Google e "Atualizar" descem para a linha das visualizações (a de cima some)
       const st = document.querySelector("#view-calendario > header.page .status"), hdr = st && st.parentElement, tools = document.querySelector("#view-calendario .cal-tools");
       const place = () => { if (!st || !tools) return; const pc = matchMedia("(min-width: 761px)").matches; if (pc && st.parentElement !== tools) { tools.appendChild(st); st.classList.add("cal-st-inline"); } else if (!pc && st.parentElement !== hdr) { hdr.appendChild(st); st.classList.remove("cal-st-inline"); } };
