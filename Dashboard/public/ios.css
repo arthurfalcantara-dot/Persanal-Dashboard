@@ -925,3 +925,25 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
   :root body .saude-top #d-nav input[type=date] { width: 76px; padding: 4px 2px; font-size: 12.5px; letter-spacing: -.01em; }
   .saude-top #d-nav { flex: 0 1 auto; }
 }
+
+/* ícones centrados geometricamente (desenho em máscara, não caractere de fonte) */
+@media (max-width: 760px) {
+  #view-calendario #cal-add::before {
+    content: ""; margin: 0; width: 26px; height: 26px; background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M12 4v16M4 12h16'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M12 4v16M4 12h16'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+}
+@media (min-width: 761px) {
+  #view-calendario .cal-tools .status.cal-st-inline #cal-refresh::before {
+    content: ""; width: 17px; height: 17px; background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12a8 8 0 1 1-2.34-5.66'/%3E%3Cpath d='M20 4v5h-5'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12a8 8 0 1 1-2.34-5.66'/%3E%3Cpath d='M20 4v5h-5'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+}
+/* o texto oculto do botão ainda ocupa uma linha na grade: o ícone vai para o centro exato, por posição absoluta */
+@media (max-width: 760px) { #view-calendario #cal-add::before { position: absolute; inset: 0; margin: auto; } }
+@media (min-width: 761px) {
+  #view-calendario .cal-tools .status.cal-st-inline #cal-refresh { position: relative; }
+  #view-calendario .cal-tools .status.cal-st-inline #cal-refresh::before { position: absolute; inset: 0; margin: auto; }
+}
