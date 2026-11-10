@@ -339,3 +339,7 @@
 .cal-tools .status.cal-st-inline .btn { min-height: 32px; padding: 5px 12px; font-size: 13px; }
 
 .cal-whp .ck { margin: 0 4px 0 0 !important; }
+/* evento que passa da meia-noite: o trecho do dia seguinte começa no topo, sem cantos de cima; o do primeiro dia termina reto embaixo */
+.cal-tev.cross { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.cal-tev.cont { border-top-left-radius: 0; border-top-right-radius: 0; }
+.cal-tev.cont b { font-weight: 500; }

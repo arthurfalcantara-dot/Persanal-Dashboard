@@ -419,7 +419,11 @@
   function habitsFor(day) { return on("habit") ? S.habits.filter(h => h.day === day) : []; }
   function eventsFor(day) {
     const hit = e => on(e.src) && (e.day === day || (e.allDay && e.endDay && e.day < day && day <= e.endDay));
-    const list = S.ev.filter(hit).concat(S.g.ev.filter(hit), treinosFor(day));
+    // evento com hora que passa da meia-noite (como no Notion Calendar): continua no(s) dia(s) seguinte(s), do início do dia até o fim
+    const midnight = parseISO(day);
+    const cont = e => on(e.src) && !e.allDay && e.start && e.end && e.day < day && e.end > midnight && iso(e.end) >= day && !(iso(e.end) === day && minsOf(e.end) === 0);
+    const conts = S.ev.concat(S.g.ev).filter(cont).map(e => Object.assign(Object.create(Object.getPrototypeOf(e)), e, { day, start: midnight, cont: true, origStart: e.start, origDay: e.day }));
+    const list = S.ev.filter(hit).concat(S.g.ev.filter(hit), treinosFor(day), conts);
     return list.sort((a, b) => (a.allDay === b.allDay ? 0 : a.allDay ? -1 : 1) || (a.start && b.start ? a.start - b.start : 0) || (a.done - b.done) || ORDER.indexOf(a.src) - ORDER.indexOf(b.src) || a.title.localeCompare(b.title));
   }
 
@@ -468,8 +472,8 @@
   const CARDIO_RX = /cardio|esteira|corrid|run\b|running|bike|bicicleta|el[ií]ptic|caminhad|futebol|soccer|spinning|treadmill|walk|nata[cç][aã]o|swim|remo|rowing|pedal|trote|hiit|escada|stairs/i;
   const evC = e => e && e.src === "workout" && CARDIO_RX.test(e.title || "") ? SRC.run.c : e && e.src === "fin" && e.inc ? "var(--inc)" : SRC[e.src].c; // receitas agendadas no verde de receita
   const chip = (e, compact) => {
-    const s = SRC[e.src], time = !e.allDay && e.start ? hm(e.start) : "";
-    const drag = !e.ro && s.prop !== null && !S.busy.has(e.key);
+    const s = SRC[e.src], time = !e.allDay && e.start ? (e.cont ? "↳" : hm(e.start)) : "";
+    const drag = !e.ro && !e.cont && s.prop !== null && !S.busy.has(e.key);
     return `<div class="cal-ev${e.done ? " done" : ""}${s.done && !e.done && e.day < todayISO() ? " late" : ""}${e.plan ? " plan" : ""}${e.allDay ? " ad" : ""}${S.busy.has(e.key) ? " busy" : ""}${e.src === "fin" && e.inc ? " inc" : ""}" style="--c:${evC(e)}" data-ev="${esc(e.key)}"${drag ? ' data-drag="1"' : ""} title="${esc([e.title, s.l, e.meta].filter(Boolean).join(" · "))}">${(s.done || (s.done === "n" && NDB[e.src] && NDB[e.src].done)) && !e.ro ? `<button type="button" class="cal-ck" data-ck="${esc(e.key)}" aria-label="${e.done ? "Reabrir" : "Concluir"} ${esc(e.title)}">${CHECK}</button>` : `<i class="dot"></i>`}<span>${esc(e.title)}${pj(e) ? " " + pj(e) : ""}</span>${time ? `<b class="t">${time}</b>` : ""}</div>`;
   };
   const habitChip = (day, list) => { const d = list.filter(h => h.done).length; return `<div class="cal-ev hab${d === list.length ? " done" : ""}" style="--c:${SRC.habit.c}" data-habday="${day}" title="Hábitos de ${day.slice(8, 10)}/${day.slice(5, 7)}"><i class="dot"></i><span>Hábitos ${d}/${list.length}</span></div>`; };
@@ -554,7 +558,7 @@
 
 
       const nl = day === t && minsOf(now) >= H0 * 60 ? `<div class="cal-now" style="top:${(minsOf(now) - H0 * 60) / 60 * HPX}px"></div>` : "";
-      return `<div class="cal-col${day === t ? " today" : ""}" data-day="${day}" data-slot="1">${evs.map(x => { const e = x.e, s = SRC[e.src]; const top = (x.s - H0 * 60) / 60 * HPX, ht = Math.max(18, (x.f - x.s) / 60 * HPX - 2); const hc = (s.done || (s.done === "n" && NDB[e.src] && NDB[e.src].done)) && !e.ro; return `<div class="cal-tev${x.depth ? " over" : ""}${hc ? " ck" : ""}${e.done ? " done" : ""}${ht < 34 ? " short" : ""}${S.busy.has(e.key) ? " busy" : ""}" style="--c:${evC(e)};top:${top}px;height:${ht}px;--ind:${x.depth * 14}%;left:calc(var(--ind) + ${x.col} * (100% - var(--ind)) / ${x.n} + 2px);width:calc((100% - var(--ind)) / ${x.n} - 4px)${x.depth ? `;z-index:${1 + x.depth}` : ""}" data-ev="${esc(e.key)}" data-move="${e.ro || s.prop === null ? "" : "1"}" title="${esc([e.title, s.l, e.meta].filter(Boolean).join(" · "))}">${hc ? `<button type="button" class="cal-ck" data-ck="${esc(e.key)}" aria-label="${e.done ? "Reabrir" : "Concluir"} ${esc(e.title)}">${CHECK}</button>` : ""}<span>${esc(e.title)}${pj(e) ? " " + pj(e) : ""}</span><b>${hm(e.start)}${e.end ? "–" + hm(e.end) : ""}</b>${e.ro || s.prop === null ? "" : `<i class="rz top" data-rz="t"></i><i class="rz" data-rz="b"></i>`}</div>`; }).join("")}${nl}</div>`;
+      return `<div class="cal-col${day === t ? " today" : ""}" data-day="${day}" data-slot="1">${evs.map(x => { const e = x.e, s = SRC[e.src]; const top = (x.s - H0 * 60) / 60 * HPX, ht = Math.max(18, (x.f - x.s) / 60 * HPX - 2); const hc = (s.done || (s.done === "n" && NDB[e.src] && NDB[e.src].done)) && !e.ro; return `<div class="cal-tev${x.depth ? " over" : ""}${e.cont ? " cont" : ""}${!e.allDay && e.end && iso(e.end) !== e.day && !(minsOf(e.end) === 0 && iso(addDays(parseISO(e.day), 1)) === iso(e.end)) ? " cross" : ""}${hc ? " ck" : ""}${e.done ? " done" : ""}${ht < 34 ? " short" : ""}${S.busy.has(e.key) ? " busy" : ""}" style="--c:${evC(e)};top:${top}px;height:${ht}px;--ind:${x.depth * 14}%;left:calc(var(--ind) + ${x.col} * (100% - var(--ind)) / ${x.n} + 2px);width:calc((100% - var(--ind)) / ${x.n} - 4px)${x.depth ? `;z-index:${1 + x.depth}` : ""}" data-ev="${esc(e.key)}" data-move="${e.ro || e.cont || s.prop === null ? "" : "1"}" title="${esc([e.title, s.l, e.meta].filter(Boolean).join(" · "))}">${hc ? `<button type="button" class="cal-ck" data-ck="${esc(e.key)}" aria-label="${e.done ? "Reabrir" : "Concluir"} ${esc(e.title)}">${CHECK}</button>` : ""}<span>${esc(e.title)}${pj(e) ? " " + pj(e) : ""}</span><b${e.cont ? ` title="Começou às ${hm(e.origStart)} de ${e.origDay.slice(8, 10)}/${e.origDay.slice(5, 7)}"` : ""}>${e.cont ? `até ${hm(e.end)}` : `${hm(e.start)}${e.end ? "–" + (iso(e.end) !== e.day ? `${hm(e.end)} (+${Math.round((parseISO(iso(e.end)) - parseISO(e.day)) / 864e5)}d)` : hm(e.end)) : ""}`}</b>${e.ro || e.cont || s.prop === null ? "" : `<i class="rz top" data-rz="t"></i><i class="rz" data-rz="b"></i>`}</div>`; }).join("")}${nl}</div>`;
     }).join("");
     return `<div class="cal-week" style="--n:${days.length};--hpx:${HPX}px"><div class="cal-stick">${head}${all}</div><div class="cal-scroll"><div class="cal-tg" style="height:${(H1 - H0) * HPX}px">${inPanel ? "" : `<div class="cal-hrs">${hours}</div>`}<div class="cal-cols">${cols}</div></div></div></div>`;
   }

@@ -78,7 +78,7 @@ window.claude = { use: async cap => {
   if (cap === "sample") { try { return (await health()).anthropic ? sample : null; } catch { return null; } }
   return null;
 } };
-const TAB_JS = { financas: "/financas.js?v=3", self: "/self.js?v=3", carreira: "/carreira.js?v=3", agenda: "/calendario.js?v=15", saude: "/saude.js?v=8" }, tabP = {};
+const TAB_JS = { financas: "/financas.js?v=3", self: "/self.js?v=3", carreira: "/carreira.js?v=3", agenda: "/calendario.js?v=17", saude: "/saude.js?v=8" }, tabP = {};
 function loadTab(name) {
   return tabP[name] || (tabP[name] = new Promise((ok, bad) => {
     const s = document.createElement("script"); s.src = TAB_JS[name]; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
