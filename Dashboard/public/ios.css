@@ -1004,3 +1004,46 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
 }
 
 .side-foot[hidden] { display: none !important; }
+
+/* ===== Agenda: a página não rola — só o calendário (e os painéis) rolam por dentro ===== */
+html.cal-fixed, html.cal-fixed body { overflow: hidden; overscroll-behavior: none; }
+html.cal-fixed #view-calendario .cal-wrap { align-items: stretch; }
+#view-calendario .cal-body { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+#view-calendario .cal-mgr { max-height: var(--cal-avail, calc(100vh - 24px)); position: relative; top: 0; }
+#view-calendario #cal-help { display: none !important; }
+
+/* Resumo (hoje, próximos 7 dias, dicas) */
+.cal-side-h { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 0; position: sticky; top: 0; z-index: 2; background: inherit; }
+.cal-side-h b { font: 600 17px var(--display); }
+.cal-side .cal-help { margin: 0 4px 6px; font-size: 12.5px; }
+.cal-side-bg { position: fixed; inset: 0; z-index: 46; background: rgba(0, 0, 0, .28); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+.cal-side-bg[hidden] { display: none; }
+#cal-side-t[aria-pressed="true"] { color: var(--tint); }
+/* tela larga: coluna à direita, com rolagem própria (pode ser recolhida) */
+@media (min-width: 1500px) {
+  #view-calendario .cal-side { position: static; height: var(--cal-avail, auto); overflow-y: auto; overscroll-behavior: contain; display: flex; grid-column: auto; padding-bottom: 8px; }
+  #view-calendario .cal-wrap.side-off { grid-template-columns: 236px minmax(0, 1fr); }
+  #view-calendario .cal-wrap.side-off.mgr-off { grid-template-columns: minmax(0, 1fr); }
+  #view-calendario .cal-wrap.side-off .cal-side { display: none; }
+}
+/* PC menor: gaveta que entra pela direita */
+@media (max-width: 1499px) {
+  #view-calendario .cal-side {
+    position: fixed; top: 12px; right: 12px; bottom: 12px; width: min(340px, calc(100vw - 24px)); z-index: 47; display: flex; flex-direction: column; gap: 14px;
+    overflow-y: auto; overscroll-behavior: contain; padding: 14px 12px; background: var(--bg); border-radius: 26px; box-shadow: 0 18px 60px rgba(0, 0, 0, .28);
+    transform: translateX(calc(100% + 24px)); transition: transform .32s cubic-bezier(.2, .9, .3, 1); grid-column: auto;
+  }
+  #view-calendario .cal-side.open { transform: none; }
+}
+/* celular: folha que sobe de baixo, com alça (como no Mapas) */
+@media (max-width: 760px) {
+  #view-calendario #cal-side-t { display: none; }
+  #view-calendario .cal-side {
+    top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 78dvh; border-radius: 34px 34px 0 0;
+    padding: 8px 16px calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateY(105%);
+  }
+  #view-calendario .cal-side::before { content: ""; display: block; flex: none; width: 36px; height: 5px; margin: 0 auto 2px; border-radius: 999px; background: var(--line-strong); }
+  #view-calendario .cal-side.open { transform: none; }
+}
+#view-calendario .cal-side { align-items: stretch; }
+#view-calendario .cal-side > * { width: auto; max-width: none; }

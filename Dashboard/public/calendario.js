@@ -443,7 +443,7 @@
     renderMgr(r);
     gEnsure(r);
     const body = $("cal-body");
-    const keep = body.dataset.v === pref.view ? body.scrollTop : null;
+    const keep = body.dataset.v === pref.view && !S.hpxFitting ? body.scrollTop : null; // ao reajustar a altura da hora, volta para as 7h
     body.className = "cal-body v-" + pref.view; body.dataset.v = pref.view;
     if (pref.view === "month") body.innerHTML = monthHtml(r);
     else if (pref.view === "agenda") body.innerHTML = agendaHtml(r);
@@ -455,17 +455,18 @@
       // a linha das 7:00 fica logo abaixo do cabeçalho preso (com folga para o rótulo aparecer inteiro)
       const fit = top => {
         const st = body.querySelector(".cal-stick, .cal-axis-hd"), hdr = st ? st.offsetHeight : 0;
-        let h = hdr + 8 + (VIS[1] - VIS[0]) * HPX + 14;
-        // no computador o cartão vai até o pé da janela (mais horas à vista); no celular fica na janela 7h–20h
-        if (matchMedia("(min-width: 761px)").matches) h = Math.max(h, innerHeight - (body.getBoundingClientRect().top + scrollY) - 20);
-        body.style.height = `${Math.min(h, hdr + 8 + (H1 - H0) * HPX)}px`;
+        const av = availH();
+        // sem zoom escolhido: a altura da hora se ajusta para 7h–20h ocupar a tela inteira
+        let custom = false; try { custom = !!localStorage.getItem(HPX_KEY); } catch {}
+        if (!custom && !S.hpxFitting) { const want = Math.max(30, Math.min(96, Math.floor((av - hdr - 22) / (VIS[1] - VIS[0])))); if (Math.abs(want - HPX) > 1) { HPX = want; document.documentElement.style.setProperty("--hpx", HPX + "px"); S.hpxFitting = true; render(); S.hpxFitting = false; return; } }
+        body.style.height = `${av}px`;
         if (!top) return;
         const hr = body.querySelectorAll(".cal-axis-tg .cal-hr, .cal-hrs .cal-hr")[VIS[0] - H0];
         if (hr && st) body.scrollTop += hr.getBoundingClientRect().top - st.getBoundingClientRect().bottom - 10;
       };
       if (keep !== null) body.scrollTop = keep; else body.scrollTop = (VIS[0] - H0) * HPX;
       fit(keep === null); clearTimeout(S.fitT); S.fitT = setTimeout(() => fit(keep === null), 220);
-    } else body.style.height = "";
+    } else body.style.height = `${availH()}px`;
     renderSide();
   }
   // cardio registrado na base Workouts (natação, esteira, bike…) fica na cor do cardio, não no azul da musculação
@@ -509,6 +510,15 @@
   }
   const nf0 = n => Math.round(n).toLocaleString("pt-BR");
   // cabeçalho do dia: dia da semana e número; treino (força) com ✓/✗; cardio; meta de calorias e macros; hábitos
+  // altura disponível para o calendário: do topo dele até o pé da tela (no celular, até a barra de abas) — a página não rola
+  function availH() {
+    const body = $("cal-body"), top = body.getBoundingClientRect().top + scrollY;
+    const side = matchMedia("(max-width: 760px)").matches && document.querySelector(".side");
+    const bottom = side ? innerHeight - side.getBoundingClientRect().top + 10 : 16;
+    const h = Math.max(260, Math.round(innerHeight - top - bottom));
+    document.documentElement.style.setProperty("--cal-avail", h + "px");
+    return h;
+  }
   // celular: a barra cabe numa linha; o botão "Hoje" mostra o período (toque volta para hoje) e as visualizações viram um seletor
   function shortLabel(r) {
     const t = $("cal-today"), sel = $("cal-vsel"); if (sel) sel.value = pref.view === "week" && pref.dias === 2 ? "two" : pref.view;
@@ -626,15 +636,30 @@
   const allKeys = () => ORDER.filter(k => SRC[k]);
 
   // painel lateral: hoje, próximos 7 dias e atrasadas
+  // painel "Resumo" (hoje, próximos 7 dias e dicas): coluna à direita em telas largas, gaveta no PC menor, folha no celular
+  function sideWide() { return matchMedia("(min-width: 1500px)").matches; }
+  function setSide(v) {
+    if (sideWide()) { pref.sideOff = !v; savePref(); } else S.sideOpen = v;
+    applySide();
+  }
+  function applySide() {
+    const el = $("cal-side"), bg = $("cal-side-bg"), wrap = $("cal-wrap"); if (!el) return;
+    const wide = sideWide(), open = wide ? !pref.sideOff : !!S.sideOpen;
+    el.classList.toggle("open", open); wrap.classList.toggle("side-off", wide && !open);
+    if (bg) bg.hidden = wide || !open;
+    const t = $("cal-side-t"); if (t) t.setAttribute("aria-pressed", String(open));
+  }
   function renderSide() {
     const t = todayISO(), el = $("cal-side"); if (!el) return;
     const late = S.ev.filter(e => on(e.src) && SRC[e.src].done && !e.done && e.day < t).length;
     const today = eventsFor(t), hb = habitsFor(t), next = [];
     for (let i = 1; i <= 7; i++) { const day = shift(t, i), evs = eventsFor(day).filter(e => e.src !== "treino" || !e.plan); if (evs.length) next.push([day, evs]); }
-    el.innerHTML = `<section class="card cal-today"><div class="card-head"><div><h3 data-i="sun">Hoje</h3><p class="hint">${parseISO(t).getDate()} de ${MON[parseISO(t).getMonth()]}${late ? ` · <button type="button" class="cal-link" data-view="agenda">${late} ${late === 1 ? "atrasada" : "atrasadas"}</button>` : ""}</p></div><button class="btn ghost" data-new="${t}">+ Tarefa</button></div>
+    el.innerHTML = `<div class="cal-side-h"><b>Resumo</b><button type="button" class="iconbtn" id="cal-side-x" aria-label="Fechar resumo">✕</button></div><section class="card cal-today"><div class="card-head"><div><h3 data-i="sun">Hoje</h3><p class="hint">${parseISO(t).getDate()} de ${MON[parseISO(t).getMonth()]}${late ? ` · <button type="button" class="cal-link" data-view="agenda">${late} ${late === 1 ? "atrasada" : "atrasadas"}</button>` : ""}</p></div><button class="btn ghost" data-new="${t}">+ Tarefa</button></div>
       ${hb.length ? `<div class="cal-habs">${hb.map(h => `<button type="button" class="cal-hab${h.done ? " done" : ""}${S.busy.has("habit:" + h.id) ? " busy" : ""}" data-hab="${h.id}"><span class="cal-ck">${CHECK}</span>${esc(h.name)}</button>`).join("")}</div>` : ""}
       <div class="cal-list">${today.length ? today.map(e => `<div class="cal-li"><span class="cal-ag-t">${!e.allDay && e.start ? hm(e.start) : ""}</span>${chip(e)}</div>`).join("") : `<p class="empty">Nada marcado para hoje.</p>`}</div></section>
-      <section class="card"><div class="card-head"><div><h3 data-i="calendar">Próximos 7 dias</h3></div></div><div class="cal-list">${next.length ? next.map(([day, evs]) => `<div class="cal-nd"><button type="button" class="cal-link" data-goday="${day}">${DOWS[dowIdx(day)]} ${day.slice(8, 10)}/${day.slice(5, 7)}</button>${evs.slice(0, 6).map(e => chip(e)).join("")}${evs.length > 6 ? `<small class="c-mini">+${evs.length - 6}</small>` : ""}</div>`).join("") : `<p class="empty">Semana livre.</p>`}</div></section>`;
+      <section class="card"><div class="card-head"><div><h3 data-i="calendar">Próximos 7 dias</h3></div></div><div class="cal-list">${next.length ? next.map(([day, evs]) => `<div class="cal-nd"><button type="button" class="cal-link" data-goday="${day}">${DOWS[dowIdx(day)]} ${day.slice(8, 10)}/${day.slice(5, 7)}</button>${evs.slice(0, 6).map(e => chip(e)).join("")}${evs.length > 6 ? `<small class="c-mini">+${evs.length - 6}</small>` : ""}</div>`).join("") : `<p class="empty">Semana livre.</p>`}</div></section>
+      <p class="hint cal-help">${esc(($("cal-help") || {}).textContent || "")}</p>`;
+    applySide();
   }
 
   // ---------- propriedades das bases do Notion (select, status, multi-select, caixa, número, texto) ----------
@@ -1350,6 +1375,8 @@
       if (q("#cal-add")) return openNew(pref.view === "month" ? todayISO() : S.cursor);
       if (q("#cal-gstatus")) { const t = $("cal-gstatus").title; if (t) toast(t); return; }
       if (q("#cal-mgr-t")) return setMgr(!pref.mgr);
+      if (q("#cal-side-t")) return setSide(!$("cal-side").classList.contains("open"));
+      if (q("#cal-side-x") || t === $("cal-side-bg")) return setSide(false);
       if (q("#cal-mgr-x") || t === $("cal-mgr-bg")) return setMgr(false);
       if (q("#cal-mg-all")) { pref.off = []; savePref(); render(); return; }
       if (q("#cal-mg-reset")) { pref.sc = {}; pref.gc = {}; for (const k in DEFC) if (SRC[k]) SRC[k].c = DEFC[k]; savePref(); render(); return; }
@@ -1385,8 +1412,9 @@
       if (ev.target.classList.contains("cal-mg-col")) { const row = ev.target.closest(".cal-mg-row"); if (row) row.style.setProperty("--c", ev.target.value); }
       if (ev.target.id === "cal-mg-q") { S.mq = ev.target.value; renderMgr(); }
     });
-    root.addEventListener("change", ev => { if (ev.target.id === "cal-vsel") { const v = ev.target.value; if (v === "mgr") { setMgr(!pref.mgr); shortLabel(visRange()); return; } S.frac = 0; pref.view = v === "two" ? "week" : v; if (v === "two") pref.dias = 2; else if (v === "week") pref.dias = 3; savePref(); render(); } });
+    root.addEventListener("change", ev => { if (ev.target.id === "cal-vsel") { const v = ev.target.value; if (v === "mgr") { setMgr(!pref.mgr); shortLabel(visRange()); return; } if (v === "side") { setSide(true); shortLabel(visRange()); return; } S.frac = 0; pref.view = v === "two" ? "week" : v; if (v === "two") pref.dias = 2; else if (v === "week") pref.dias = 3; savePref(); render(); } });
     matchMedia("(max-width: 760px)").addEventListener?.("change", () => render());
+    { let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (document.getElementById("view-calendario").style.display !== "none") render(); }, 150); }); }
     root.addEventListener("submit", ev => { ev.preventDefault(); const f = ev.target; if (f.id === "cal-evf") saveEvForm(f); else if (f.id === "cal-newf") createTask(f); });
     $("cal-sheet-box").addEventListener("click", ev => { const b = ev.target.closest("[data-del-ev]"); if (b) delEv(evBy(b.dataset.delEv), b); });
     $("cal-sheet-box").addEventListener("change", ev => { if (ev.target.id === "cf-cal") { const e = evBy($("cal-evf")?.dataset.key || ""); const n = $("cf-cal-n"); if (n) n.hidden = !e || ev.target.value === e.src; const pp = $("cf-props"); if (pp && e) { const d = ev.target.value; pp.hidden = !DS[d]; if (DS[d]) renderPropFields("cf", d, e, d !== e.src); } const b = $("cal-evf")?.querySelector("[type=submit]"); if (b && e) b.textContent = ev.target.value === e.src ? "Salvar" : "Mover para " + (SRC[ev.target.value] ? SRC[ev.target.value].l : "outro calendário"); } });
@@ -1406,7 +1434,7 @@
       if (ev.key === "Escape" && pref.mgr && window.matchMedia("(max-width: 900px)").matches) { setMgr(false); return; }
       if (/input|select|textarea/i.test(ev.target.tagName) || !$("cal-sheet").hidden) return;
       if (ev.key === "ArrowLeft") nav(-1); else if (ev.key === "ArrowRight") nav(1); else if (ev.key.toLowerCase() === "t") nav(0);
-      else if (ev.key.toLowerCase() === "m") { pref.view = "month"; savePref(); render(); } else if (ev.key.toLowerCase() === "s") { pref.view = "week"; savePref(); render(); } else if (ev.key.toLowerCase() === "d") { pref.view = "day"; savePref(); render(); } else if (ev.key.toLowerCase() === "c") setMgr(!pref.mgr);
+      else if (ev.key.toLowerCase() === "r") setSide(!$("cal-side").classList.contains("open")); else if (ev.key.toLowerCase() === "m") { pref.view = "month"; savePref(); render(); } else if (ev.key.toLowerCase() === "s") { pref.view = "week"; savePref(); render(); } else if (ev.key.toLowerCase() === "d") { pref.view = "day"; savePref(); render(); } else if (ev.key.toLowerCase() === "c") setMgr(!pref.mgr);
     });
     // zoom das horas (Semana/Dia): menos altura por hora = mais horas visíveis
     document.addEventListener("click", ev => { const z = ev.target.closest("[data-calzoom]"); if (!z) return; HPX = Math.max(22, Math.min(96, HPX + (+z.dataset.calzoom) * 8)); try { localStorage.setItem(HPX_KEY, HPX); } catch {} document.documentElement.style.setProperty("--hpx", HPX + "px"); render(); });

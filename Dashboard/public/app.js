@@ -52,6 +52,7 @@ function route() {
   ["view-inicio", "view-saude", "view-financas", "view-self", "view-carreira", "view-calendario", "view-other"].forEach(id => { $(id).style.display = id === vid ? "flex" : "none"; });
   if (vid === "view-other") $("ph-title").textContent = NAMES[tab];
   document.title = NAMES[tab] + " · Painel";
+  document.documentElement.classList.toggle("cal-fixed", tab === "agenda"); // Agenda: só o calendário rola
   if (tab === "saude") loadTab("saude").then(() => { window.dispatchEvent(new Event("painel:saude")); saudeMode(); });
   if (tab === "financas") loadTab("financas");
   if (tab === "agenda") loadTab("agenda").then(() => window.dispatchEvent(new Event("painel:calendario")));
@@ -78,7 +79,7 @@ window.claude = { use: async cap => {
   if (cap === "sample") { try { return (await health()).anthropic ? sample : null; } catch { return null; } }
   return null;
 } };
-const TAB_JS = { financas: "/financas.js?v=3", self: "/self.js?v=3", carreira: "/carreira.js?v=3", agenda: "/calendario.js?v=17", saude: "/saude.js?v=8" }, tabP = {};
+const TAB_JS = { financas: "/financas.js?v=3", self: "/self.js?v=3", carreira: "/carreira.js?v=3", agenda: "/calendario.js?v=18", saude: "/saude.js?v=8" }, tabP = {};
 function loadTab(name) {
   return tabP[name] || (tabP[name] = new Promise((ok, bad) => {
     const s = document.createElement("script"); s.src = TAB_JS[name]; s.onload = ok; s.onerror = bad; document.body.appendChild(s);
