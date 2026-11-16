@@ -448,7 +448,15 @@
     if (pref.view === "month") body.innerHTML = monthHtml(r);
     else if (pref.view === "agenda") body.innerHTML = agendaHtml(r);
     else body.innerHTML = stripHtml();
-    if (pref.view === "week" || pref.view === "day") { const wh = body.querySelector(".cal-pan .cal-wh"); if (wh) body.style.setProperty("--whh", wh.offsetHeight + "px"); setAdh(); }
+    if (pref.view === "week" || pref.view === "day") {
+      // cabeçalho dos dias adaptativo: a altura é a do dia com mais conteúdo (data, treino, cardio, meta, hábitos), igual em todas as colunas
+      const whs = [...body.querySelectorAll(".cal-pan .cal-wh, .cal-week .cal-wh")];
+      whs.forEach(w => { w.style.height = "auto"; });
+      const mx = whs.length ? Math.max(...whs.map(w => w.offsetHeight)) : 0;
+      whs.forEach(w => { w.style.height = mx + "px"; });
+      if (mx) body.style.setProperty("--whh", mx + "px");
+      setAdh();
+    }
     if (pref.view === "week" || pref.view === "day") {
       // janela padrão: 7h às 20h na altura do cartão; antes ou depois disso, arrasta-se a grade
       // o cabeçalho cresce com a faixa "dia inteiro" (animação de .15s): mede de novo quando ela termina

@@ -343,3 +343,7 @@
 .cal-tev.cross { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .cal-tev.cont { border-top-left-radius: 0; border-top-right-radius: 0; }
 .cal-tev.cont b { font-weight: 500; }
+
+/* cabeçalho do dia sem altura fixa: cresce só o necessário para o conteúdo */
+.cal-whd { height: auto !important; min-height: 0; padding-bottom: 7px; }
+.cal-wh { align-items: stretch; }
