@@ -947,3 +947,60 @@ html.tr-noscroll, html.tr-noscroll body { overflow: hidden; }
   #view-calendario .cal-tools .status.cal-st-inline #cal-refresh { position: relative; }
   #view-calendario .cal-tools .status.cal-st-inline #cal-refresh::before { position: absolute; inset: 0; margin: auto; }
 }
+
+/* ======================================================================
+   Apple Human Interface Guidelines (atualizações de 2026) aplicadas ao app
+   ====================================================================== */
+
+/* Tab bars — "Prefer filled symbols": aba selecionada com o ícone preenchido */
+@media (max-width: 760px) {
+  .tab[aria-current="page"] .ico svg :is(path, rect, circle, ellipse, polygon) { fill: color-mix(in srgb, currentColor 22%, transparent); }
+  /* minimizar ao rolar: a barra continua visível (a aba não some), só fica mais baixa e sem os rótulos */
+  .side, .shell.collapsed .side { transition: height .28s cubic-bezier(.3,.7,.3,1), left .28s cubic-bezier(.3,.7,.3,1), right .28s cubic-bezier(.3,.7,.3,1), bottom .28s cubic-bezier(.3,.7,.3,1); }
+  .tab .lbl-s { transition: opacity .18s ease, max-height .28s ease; max-height: 14px; }
+  html.tb-min .side { height: 48px; left: 44px; right: 44px; }
+  html.tb-min .tab .lbl-s { opacity: 0; max-height: 0; }
+  html.tb-min .tab { gap: 0; }
+}
+
+/* Scroll views — efeito de borda só onde há conteúdo rolando atrás de controles flutuantes (a barra de abas) */
+@media (max-width: 760px) {
+  body::after {
+    content: ""; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; pointer-events: none;
+    height: calc(var(--tabbar-b) + var(--tabbar-h) + 28px);
+    background: linear-gradient(to top, color-mix(in srgb, var(--bg) 88%, transparent) 0%, color-mix(in srgb, var(--bg) 55%, transparent) 45%, transparent 100%);
+  }
+  body:has(#login:not([hidden]))::after { display: none; }
+}
+
+/* Buttons — "Always include a press state": linhas e itens tocáveis respondem ao toque */
+.ios-list li[data-act]:active, .tr-pick li:active, .ft-item:active, .ft-sum:active, .ft-list li:active, .cal-ev:active, .meal > button:active, .look-row .seg button:active { background: var(--fill); }
+.tab:active .ico { transform: scale(.92); }
+
+/* Text fields — botão de limpar no fim do campo de busca */
+:root body input[type=search]::-webkit-search-cancel-button { -webkit-appearance: searchfield-cancel-button; cursor: pointer; opacity: .6; }
+
+/* Pointing devices (toque no Mac/iPad) — o que só abria no hover também abre ao tocar */
+#view-calendario .cal-tools .status.cal-st-inline .pill:focus, #view-calendario .cal-tools .status.cal-st-inline .pill:focus-visible { max-width: 260px; font-size: 12px; padding: 4px 10px; outline: none; }
+
+/* Accessibility — alvos de toque de pelo menos 44 pt nos botões compactos do celular (área invisível maior) */
+@media (max-width: 760px) {
+  #view-calendario .cal-nav .iconbtn, .saude-top #d-nav .iconbtn { position: relative; }
+  #view-calendario .cal-nav .iconbtn::after, .saude-top #d-nav .iconbtn::after { content: ""; position: absolute; inset: -6px -9px; }
+}
+/* Accessibility — Reduzir Movimento */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+/* Accessibility / Materials — Reduzir Transparência: vidro vira superfície sólida */
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .side, .topbar, .subtabs, .seg, .chipnav, .btn, .gbtn, .iconbtn, .fab, .modal { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .side, .topbar, .subtabs, .seg, .chipnav, .gbtn, .iconbtn { background: var(--surface) !important; }
+}
+/* Accessibility — Aumentar Contraste */
+@media (prefers-contrast: more) {
+  :root { --line: rgba(0, 0, 0, .35); }
+  .side, .seg, .subtabs, .gbtn, .iconbtn, .card { outline: 1px solid var(--line-strong); }
+}
+
+.side-foot[hidden] { display: none !important; }

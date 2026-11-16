@@ -303,6 +303,20 @@ async function googleCard() {
 }
 let toastAT; function toastApp(t) { const el = $("toast"); if (!el) return; el.textContent = t; el.hidden = false; clearTimeout(toastAT); toastAT = setTimeout(() => { el.hidden = true; }, 3200); }
 
+// ---------- barra de abas do celular: minimiza ao rolar para baixo e volta ao subir ou no topo (HIG · Tab bars) ----------
+{
+  let lastY = scrollY, acc = 0;
+  addEventListener("scroll", () => {
+    if (!matchMedia("(max-width: 760px)").matches) return;
+    const y = scrollY, dy = y - lastY; lastY = y;
+    if (y < 40) { document.documentElement.classList.remove("tb-min"); acc = 0; return; }
+    acc = Math.sign(dy) === Math.sign(acc) ? acc + dy : dy;
+    if (acc > 24) document.documentElement.classList.add("tb-min");
+    else if (acc < -24) document.documentElement.classList.remove("tb-min");
+  }, { passive: true });
+  addEventListener("hashchange", () => document.documentElement.classList.remove("tb-min"));
+}
+
 // ---------- início do app ----------
 // toda abertura do app (não um recarregar) começa na Agenda; o retorno do Google mantém seus parâmetros
 try {
